@@ -4,7 +4,7 @@ services:
   node_alice:
     build:
       context: .
-    image: myriad/node:latest
+    image: myriadsocial/myriad-node:latest
     volumes:
       - data-alice:/data
     command: >
@@ -25,7 +25,7 @@ services:
   node_bob:
     build:
       context: .
-    image: myriad/node:latest
+    image: myriadsocial/myriad-node:latest
     volumes:
       - data-bob:/data
     command: >

@@ -4,7 +4,7 @@ services:
   node:
     build:
       context: .
-    image: myriad/node:latest
+    image: myriadsocial/myriad-node:latest
     volumes:
       - data:/data
     command: >

@@ -10,8 +10,8 @@ ENV RUST_BACKTRACE 1
 
 LABEL social.myriad.node.image.authors="1@myriad.social" \
 	social.myriad.node.image.vendor="Myriad" \
-	social.myriad.node.image.title="myriad/node" \
-	social.myriad.node.image.description="myriad: a platform for web3" \
+	social.myriad.node.image.title="myriadsocial/myriad-node" \
+	social.myriad.node.image.description="myriad-node: a platform for web3" \
 	social.myriad.node.image.source="https://github.com/myriadsocial/myriad-node/blob/${VCS_REF}/docker/Dockerfile" \
 	social.myriad.node.image.revision="${VCS_REF}" \
 	social.myriad.node.image.version="${VERSION}" \
@@ -34,8 +34,8 @@ ENV RUST_BACKTRACE 1
 
 LABEL social.myriad.node.image.authors="1@myriad.social" \
 	social.myriad.node.image.vendor="Myriad" \
-	social.myriad.node.image.title="myriad/node" \
-	social.myriad.node.image.description="myriad: a platform for web3" \
+	social.myriad.node.image.title="myriadsocial/myriad-node" \
+	social.myriad.node.image.description="myriad-node: a platform for web3" \
 	social.myriad.node.image.source="https://github.com/myriadsocial/myriad-node/blob/${VCS_REF}/docker/Dockerfile" \
 	social.myriad.node.image.revision="${VCS_REF}" \
 	social.myriad.node.image.version="${VERSION}" \
