@@ -5,7 +5,7 @@ version = '1.0.0'
 edition = '2018'
 license = 'Unlicense'
 homepage = 'https://www.myriad.social/'
-repository = 'https://github.com/irmannmal/myriad'
+repository = 'https://github.com/myriadsocial/myriad-node'
 authors = ['Myriad <1@myriad.social>']
 
 [package.metadata.docs.rs]

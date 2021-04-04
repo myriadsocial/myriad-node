@@ -55,7 +55,7 @@ pub fn get_properties(symbol: &str, decimals: u32, ss58format: u32) -> Propertie
 }
 
 pub fn local_testnet_config(id: ParaId) -> ChainSpec {
-    let properties = get_properties("MYRIAL", 15, 214);
+    let properties = get_properties("MYRIAL", 15, 31214);
 
     ChainSpec::from_genesis(
         // Name
@@ -103,7 +103,7 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 }
 
 pub fn staging_testnet_config(id: ParaId) -> ChainSpec {
-    let properties = get_properties("MYRIAS", 15, 214);
+    let properties = get_properties("MYRIAS", 15, 31214);
 
     ChainSpec::from_genesis(
         // Name
