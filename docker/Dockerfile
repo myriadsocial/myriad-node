@@ -21,7 +21,7 @@ LABEL social.myriad.node.image.authors="1@myriad.social" \
 WORKDIR /myriad
 
 COPY ./node /myriad/node
-COPY ./pallet /myriad/pallet
+COPY ./pallets /myriad/pallets
 COPY ./runtime /myriad/runtime
 COPY ./Cargo.lock /myriad/Cargo.lock
 COPY ./Cargo.toml /myriad/Cargo.toml
