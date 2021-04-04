@@ -10,7 +10,7 @@ cd $PROJECT_ROOT
 GITUSER=myriadsocial
 GITREPO=myriad-node
 VCS_REF=`git rev-parse --short HEAD`
-VERSION=`grep "^version" ./Cargo.toml | egrep -o "([0-9\.]+)"`
+VERSION=`grep -o "^version" ./node/Cargo.toml | egrep -o "([0-9\.]+)"`
 BUILD_DATE=`date -u +"%Y%m%d"`
 
 # Build the image
