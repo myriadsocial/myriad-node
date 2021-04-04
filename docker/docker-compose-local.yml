@@ -1,0 +1,55 @@
+version: "3"
+
+services:
+  node_alice:
+    build:
+      context: .
+    image: myriad/node:latest
+    volumes:
+      - data-alice:/data
+    command: >
+      --chain local
+      --base-path /data
+      --node-key 0000000000000000000000000000000000000000000000000000000000000001
+      --alice
+    ports:
+      - 30333:30333
+      - 9933:9933
+      - 9944:9944
+    networks:
+      testing_net:
+        ipv4_address: 172.0.1.1
+        aliases:
+          - alice
+
+  node_bob:
+    build:
+      context: .
+    image: myriad/node:latest
+    volumes:
+      - data-bob:/data
+    command: >
+      --chain local 
+      --base-path /data
+      --bob 
+      --bootnodes '/ip4/172.0.1.1/tcp/30333/p2p/QmRpheLN4JWdAnY7HGJfWFNbfkQCb6tFf4vvA6hgjMZKrR'
+    ports:
+      - 30334:30333
+      - 9934:9933
+      - 9945:9944
+    networks:
+      testing_net:
+        ipv4_address: 172.0.1.2
+        aliases:
+          - bob
+
+volumes:
+  data-alice:
+  data-bob:
+
+networks:
+  testing_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.0.0.0/16

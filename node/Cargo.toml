@@ -173,7 +173,7 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
 
-[dependencies.myriad-runtime]
+[dependencies.idrp-runtime]
 path = '../runtime'
 
 [dependencies.pallet-transaction-payment-rpc]
@@ -182,7 +182,7 @@ branch = 'rococo-v1'
 version = '3.0.0'
 
 # Cumulus dependencies
-[dependencies.cumulus-client-consensus]
+[dependencies.cumulus-client-consensus-relay-chain]
 git = 'https://github.com/paritytech/cumulus.git'
 branch = 'rococo-v1'
 
@@ -225,4 +225,4 @@ branch = 'rococo-v1'
 
 [features]
 default = []
-runtime-benchmarks = ['myriad-runtime/runtime-benchmarks']
+runtime-benchmarks = ['parachain-runtime/runtime-benchmarks']

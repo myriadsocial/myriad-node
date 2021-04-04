@@ -32,7 +32,7 @@ use xcm_executor::{
 	traits::{IsConcrete, NativeAsset},
 	Config, XcmExecutor,
 };
-use frame_system::limits::{BlockLength, BlockWeights};
+use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights}};
 
 // A few exports that help ease life for downstream crates.
 #[cfg(any(feature = "std", test))]
@@ -99,7 +99,7 @@ pub mod opaque {
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("myriad"),
-	impl_name: create_runtime_str!("myriad"),
+	impl_name: create_runtime_str!("myriad-v1"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 1,
@@ -277,6 +277,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type SelfParaId = parachain_info::Module<Runtime>;
 	type DownwardMessageHandlers = ();
 	type HrmpMessageHandlers = ();
+	type SendXcmOrigin = EnsureRoot<AccountId>;
+    type AccountIdConverter = LocationConverter;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -521,4 +523,4 @@ impl_runtime_apis! {
 	}
 }
 
-cumulus_pallet_parachain_system::register_validate_block!(Block, Executive);
+cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);
