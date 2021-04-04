@@ -19,7 +19,13 @@ LABEL social.myriad.node.image.authors="1@myriad.social" \
 	social.myriad.node.image.documentation="https://github.com/myriadsocial/myriad-node/tree/${VCS_REF}"
 	
 WORKDIR /myriad
-COPY . /myriad
+
+COPY ./node /myriad/node
+COPY ./pallet /myriad/pallet
+COPY ./runtime /myriad/runtime
+COPY ./Cargo.lock /myriad/Cargo.lock
+COPY ./Cargo.toml /myriad/Cargo.toml
+
 RUN cargo build --$PROFILE
 
 # ===== SECOND STAGE ======
