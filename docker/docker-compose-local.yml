@@ -1,15 +1,15 @@
-version: "3"
+version: '3'
 
 services:
   node_alice:
     build:
       context: .
-    image: myriadsocial/myriad-node:latest
+    image: myriadsocial/myriad-node
     volumes:
       - data-alice:/data
     command: >
-      --chain local
       --base-path /data
+      --chain local
       --node-key 0000000000000000000000000000000000000000000000000000000000000001
       --alice
     ports:
@@ -25,12 +25,12 @@ services:
   node_bob:
     build:
       context: .
-    image: myriadsocial/myriad-node:latest
+    image: myriadsocial/myriad-node
     volumes:
       - data-bob:/data
     command: >
-      --chain local 
       --base-path /data
+      --chain local 
       --bob 
       --bootnodes '/ip4/172.0.1.1/tcp/30333/p2p/QmRpheLN4JWdAnY7HGJfWFNbfkQCb6tFf4vvA6hgjMZKrR'
     ports:
