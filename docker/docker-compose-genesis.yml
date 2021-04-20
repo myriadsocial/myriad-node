@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  genesis_state:
+    image: myriadsocial/myriad-node
+    volumes:
+      - ./genesis-state:/data
+    command: >
+      export-genesis-state
+      --chain rococo
+      /data/genesis-state
+  
+  genesis_wasm:
+    image: myriadsocial/myriad-node
+    volumes:
+      - ./genesis-wasm:/data
+    command: >
+      export-genesis-wasm
+      --chain rococo
+      /data/genesis.wasm

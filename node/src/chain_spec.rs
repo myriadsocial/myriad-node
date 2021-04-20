@@ -27,14 +27,14 @@ impl Extensions {
     }
 }
 
-type AccountPublic = <Signature as Verify>::Signer;
-
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
     TPublic::Pair::from_string(&format!("//{}", seed), None)
         .expect("static values are valid; qed")
         .public()
 }
+
+type AccountPublic = <Signature as Verify>::Signer;
 
 /// Helper function to generate an account ID from seed
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
@@ -59,11 +59,11 @@ pub fn rococo_network_config() -> Result<ChainSpec, String> {
 }
 
 pub fn local_testnet_config(id: ParaId) -> ChainSpec {
-    let properties = get_properties("MYRIAL", 15, 214);
+    let properties = get_properties("MYRIA", 12, 214);
 
     ChainSpec::from_genesis(
         // Name
-        "MYRIAD Local Testnet",
+        "Myriad Local Testnet",
         // ID
         "myriad_local_testnet",  
         ChainType::Local,
@@ -107,11 +107,11 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 }
 
 pub fn staging_testnet_config(id: ParaId) -> ChainSpec {
-    let properties = get_properties("MYRIAS", 15, 214);
+    let properties = get_properties("MYRIAS", 12, 214);
 
     ChainSpec::from_genesis(
         // Name
-        "MYRIAD Staging Testnet",
+        "Myriad Staging Testnet",
         // ID
         "myriad_staging_testnet",  
         ChainType::Live,
@@ -122,6 +122,8 @@ pub fn staging_testnet_config(id: ParaId) -> ChainSpec {
                 hex!["3cd09eecf6faa579ff49a5bb8175c02244da1151cfa75b8b3fc9dcb15b4b281d"].into(),
                 // Pre-funded accounts
 				vec![
+                    //5DSShm3qptXjE5aK7aUoVCQ7ScgCwt8wbH7MzgNwtRg4FPJZ
+                    hex!["3cd09eecf6faa579ff49a5bb8175c02244da1151cfa75b8b3fc9dcb15b4b281d"].into(),
                     //5GE6M2FBBChfGfatFvRmWSgJrvSuxVYB2HNA13Fb5EFMpjst
                     hex!["b819d8c01cbc46e23d9b79f7654f704a828fa1946bc8a97f56889daade1ced4e"].into()
 				],
@@ -161,7 +163,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 10000000000000000000000000000_u128))
+                .map(|k| (k, 1000000000000000000_u128))
                 .collect(),
         },
         pallet_sudo: myriad_runtime::SudoConfig { key: root_key },

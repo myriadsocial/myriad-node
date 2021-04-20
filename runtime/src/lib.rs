@@ -49,9 +49,6 @@ pub use frame_support::{
 	},
 };
 
-/// Import the template pallet.
-pub use template;
-
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -99,7 +96,7 @@ pub mod opaque {
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("myriad"),
-	impl_name: create_runtime_str!("myriad-v1"),
+	impl_name: create_runtime_str!("myriad"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 1,
@@ -277,8 +274,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type SelfParaId = parachain_info::Module<Runtime>;
 	type DownwardMessageHandlers = ();
 	type HrmpMessageHandlers = ();
-	type SendXcmOrigin = EnsureRoot<AccountId>;
-    type AccountIdConverter = LocationConverter;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -333,11 +328,8 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type UpwardMessageSender = ParachainSystem;
 	type HrmpMessageSender = ParachainSystem;
-}
-
-/// Configure the pallet template in pallets/template.
-impl template::Config for Runtime {
-	type Event = Event;
+	type SendXcmOrigin = EnsureRoot<AccountId>;
+	type AccountIdConverter = LocationConverter;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -356,7 +348,6 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Module, Event<T>, Origin},
-		TemplateModule: template::{Module, Call, Storage, Event<T>},
 	}
 );
 

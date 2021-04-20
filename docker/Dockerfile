@@ -1,6 +1,6 @@
 # ===== FIRTS STAGE ======
 FROM paritytech/ci-linux:production as builder
-# This is the build stage for myriad. Here we create the binary.
+# This is the build stage for Myriad. Here we create the binary.
 ARG PROFILE=release
 ARG VCS_REF
 ARG VERSION
@@ -9,9 +9,9 @@ ARG BUILD_DATE
 ENV RUST_BACKTRACE 1
 
 LABEL social.myriad.node.image.authors="1@myriad.social" \
-	social.myriad.node.image.vendor="Myriad" \
+	social.myriad.node.image.vendor="Myriadsocial" \
 	social.myriad.node.image.title="myriadsocial/myriad-node" \
-	social.myriad.node.image.description="myriad-node: a platform for web3" \
+	social.myriad.node.image.description="myriad: a platform for web3" \
 	social.myriad.node.image.source="https://github.com/myriadsocial/myriad-node/blob/${VCS_REF}/docker/Dockerfile" \
 	social.myriad.node.image.revision="${VCS_REF}" \
 	social.myriad.node.image.version="${VERSION}" \
@@ -21,7 +21,6 @@ LABEL social.myriad.node.image.authors="1@myriad.social" \
 WORKDIR /myriad
 
 COPY ./node /myriad/node
-COPY ./pallets /myriad/pallets
 COPY ./runtime /myriad/runtime
 COPY ./Cargo.lock /myriad/Cargo.lock
 COPY ./Cargo.toml /myriad/Cargo.toml
@@ -39,9 +38,9 @@ ARG BUILD_DATE
 ENV RUST_BACKTRACE 1
 
 LABEL social.myriad.node.image.authors="1@myriad.social" \
-	social.myriad.node.image.vendor="Myriad" \
+	social.myriad.node.image.vendor="Myriadsocial" \
 	social.myriad.node.image.title="myriadsocial/myriad-node" \
-	social.myriad.node.image.description="myriad-node: a platform for web3" \
+	social.myriad.node.image.description="myriad: a platform for web3" \
 	social.myriad.node.image.source="https://github.com/myriadsocial/myriad-node/blob/${VCS_REF}/docker/Dockerfile" \
 	social.myriad.node.image.revision="${VCS_REF}" \
 	social.myriad.node.image.version="${VERSION}" \

@@ -66,7 +66,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(31214).into())
+		load_spec(id, self.run.parachain_id.unwrap_or(214).into())
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -87,7 +87,8 @@ impl SubstrateCli for RelayChainCli {
 		"The command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
-		rococo-collator [parachain-args] -- [relaychain-args]".into()
+		collator [parachain-args] -- [relaychain-args]"
+			.into()
 	}
 
 	fn author() -> String {
@@ -256,7 +257,7 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(31214));
+				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(214));
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);

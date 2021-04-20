@@ -4,7 +4,7 @@ description = 'A new Cumulus FRAME-based Substrate node, ready for hacking.'
 version = '1.0.0'
 edition = '2018'
 license = 'Unlicense'
-homepage = 'https://www.myriad.social/'
+homepage = 'https://github.com/myriadsocial/myriad-node'
 repository = 'https://github.com/myriadsocial/myriad-node'
 authors = ['Myriad <1@myriad.social>']
 
@@ -99,8 +99,8 @@ version = '3.0.0'
 
 [dependencies.frame-benchmarking]
 default-features = false
-optional = true
 git = 'https://github.com/paritytech/substrate.git'
+optional = true
 branch = 'rococo-v1'
 version = '3.0.0'
 
@@ -124,8 +124,8 @@ version = '3.0.0'
 
 [dependencies.frame-system-benchmarking]
 default-features = false
-optional = true
 git = 'https://github.com/paritytech/substrate.git'
+optional = true
 branch = 'rococo-v1'
 version = '3.0.0'
 
@@ -171,24 +171,19 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = 'rococo-v1'
 version = '3.0.0'
 
-# Custom pallets
-[dependencies.template]
-default-features = false
-package = 'pallet-template'
-path = '../pallets/template'
-
 # Cumulus dependencies
-[dependencies.cumulus-primitives-core]
-default-features = false
-git = 'https://github.com/paritytech/cumulus.git'
-branch = 'rococo-v1'
-
 [dependencies.parachain-info]
 default-features = false
 git = 'https://github.com/paritytech/cumulus.git'
 branch = 'rococo-v1'
+version = '0.1.0'
 
 [dependencies.cumulus-pallet-parachain-system]
+default-features = false
+git = 'https://github.com/paritytech/cumulus.git'
+branch = 'rococo-v1'
+
+[dependencies.cumulus-primitives-core]
 default-features = false
 git = 'https://github.com/paritytech/cumulus.git'
 branch = 'rococo-v1'
@@ -228,8 +223,8 @@ runtime-benchmarks = [
     'frame-support/runtime-benchmarks',
     'frame-system-benchmarking',
     'frame-system/runtime-benchmarks',
-    'pallet-balances/runtime-benchmarks',
-    'pallet-timestamp/runtime-benchmarks',
+	'pallet-balances/runtime-benchmarks',
+	'pallet-timestamp/runtime-benchmarks',
 ]
 std = [
 	"codec/std",
@@ -250,12 +245,12 @@ std = [
 	"frame-system/std",
 	"pallet-balances/std",
 	"pallet-randomness-collective-flip/std",
-	"pallet-timestamp/std",
 	"pallet-sudo/std",
+	"pallet-timestamp/std",
 	"pallet-transaction-payment/std",
 	"parachain-info/std",
-	"cumulus-primitives-core/std",
 	"cumulus-pallet-parachain-system/std",
+	"cumulus-primitives-core/std",
 	"cumulus-pallet-xcm-handler/std",
 	"xcm/std",
 	"xcm-builder/std",

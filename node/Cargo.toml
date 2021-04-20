@@ -175,6 +175,7 @@ version = '3.0.0'
 
 [dependencies.myriad-runtime]
 path = '../runtime'
+version = '1.0.0'
 
 [dependencies.pallet-transaction-payment-rpc]
 git = 'https://github.com/paritytech/substrate.git'
