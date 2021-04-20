@@ -59,7 +59,7 @@ pub fn rococo_network_config() -> Result<ChainSpec, String> {
 }
 
 pub fn local_testnet_config(id: ParaId) -> ChainSpec {
-    let properties = get_properties("MYRIA", 12, 214);
+    let properties = get_properties("MYRIAL", 12, 214);
 
     ChainSpec::from_genesis(
         // Name
