@@ -5,7 +5,12 @@
   "bootNodes": [
     "/dns/p2p.1.myriad.systems/tcp/30333/p2p/12D3KooWJgwB7anK1yy8xVqeDpvzNqbBymLgkhg6jxNGm8m9oSoR"
   ],
-  "telemetryEndpoints": null,
+  "telemetryEndpoints": [
+    [
+      "wss://telemetry.polkadot.io/submit/",
+      0
+    ]
+  ],
   "protocolId": "myriad",
   "properties": {
     "ss58Format": 214,
