@@ -5,7 +5,6 @@ use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use hex_literal::hex;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<myriad_runtime::GenesisConfig, Extensions>;
@@ -54,12 +53,20 @@ pub fn get_properties(symbol: &str, decimals: u32, ss58format: u32) -> Propertie
 	properties
 }
 
-pub fn rococo_network_config() -> Result<ChainSpec, String> {
-	ChainSpec::from_json_bytes(&include_bytes!("../res/rococo.json")[..])
+pub fn production_network_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/production.json")[..])
+}
+
+pub fn staging_network_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/staging.json")[..])
+}
+
+pub fn development_network_config() -> Result<ChainSpec, String> {
+	ChainSpec::from_json_bytes(&include_bytes!("../res/development.json")[..])
 }
 
 pub fn local_testnet_config(id: ParaId) -> ChainSpec {
-    let properties = get_properties("MYRIAL", 12, 214);
+    let properties = get_properties("MYRIA", 12, 214);
 
     ChainSpec::from_genesis(
         // Name
@@ -101,47 +108,6 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 		// Extensions
         Extensions {
             relay_chain: "rococo-local".into(),
-            para_id: id.into(),
-        },
-    )
-}
-
-pub fn staging_testnet_config(id: ParaId) -> ChainSpec {
-    let properties = get_properties("MYRIAS", 12, 214);
-
-    ChainSpec::from_genesis(
-        // Name
-        "Myriad Staging Testnet",
-        // ID
-        "myriad_staging_testnet",  
-        ChainType::Live,
-        move || {
-            testnet_genesis(
-                // Sudo account
-                //5DSShm3qptXjE5aK7aUoVCQ7ScgCwt8wbH7MzgNwtRg4FPJZ
-                hex!["3cd09eecf6faa579ff49a5bb8175c02244da1151cfa75b8b3fc9dcb15b4b281d"].into(),
-                // Pre-funded accounts
-				vec![
-                    //5DSShm3qptXjE5aK7aUoVCQ7ScgCwt8wbH7MzgNwtRg4FPJZ
-                    hex!["3cd09eecf6faa579ff49a5bb8175c02244da1151cfa75b8b3fc9dcb15b4b281d"].into(),
-                    //5GE6M2FBBChfGfatFvRmWSgJrvSuxVYB2HNA13Fb5EFMpjst
-                    hex!["b819d8c01cbc46e23d9b79f7654f704a828fa1946bc8a97f56889daade1ced4e"].into()
-				],
-				// Parachain Id
-				id
-            )
-        },
-        // Bootnodes
-		vec![],
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("myriad-staging".into()),
-		// Properties
-		Some(properties),
-		// Extensions
-        Extensions {
-            relay_chain: "rococo-staging".into(),
             para_id: id.into(),
         },
     )

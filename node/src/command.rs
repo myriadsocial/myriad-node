@@ -25,9 +25,10 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"" | "local" | "development" => Box::new(chain_spec::local_testnet_config(para_id)),
-		"staging" => Box::new(chain_spec::staging_testnet_config(para_id)),
-		"rococo" => Box::new(chain_spec::rococo_network_config()?),
+		"" | "local" => Box::new(chain_spec::local_testnet_config(para_id)),
+		"development" => Box::new(chain_spec::development_network_config()?),
+		"staging" => Box::new(chain_spec::staging_network_config()?),
+		"production" => Box::new(chain_spec::production_network_config()?),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(
 			std::path::PathBuf::from(path),
 		)?),
@@ -66,7 +67,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(214).into())
+		load_spec(id, self.run.parachain_id.unwrap_or(100).into())
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -257,7 +258,7 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(214));
+				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(100));
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);

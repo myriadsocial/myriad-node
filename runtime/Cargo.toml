@@ -4,7 +4,7 @@ description = 'A new Cumulus FRAME-based Substrate node, ready for hacking.'
 version = '1.0.0'
 edition = '2018'
 license = 'Unlicense'
-homepage = 'https://github.com/myriadsocial/myriad-node'
+homepage = 'https://www.myriad.social'
 repository = 'https://github.com/myriadsocial/myriad-node'
 authors = ['Myriad <1@myriad.social>']
 

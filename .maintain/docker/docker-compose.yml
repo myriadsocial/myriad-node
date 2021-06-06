@@ -2,8 +2,6 @@ version: '3'
 
 services:
   node:
-    build:
-      context: .
     image: myriadsocial/myriad-node
     volumes:
       - data:/data
