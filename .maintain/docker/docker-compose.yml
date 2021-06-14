@@ -1,19 +1,218 @@
 version: '3'
 
 services:
-  node:
-    image: myriadsocial/myriad-node
+  init-relay-chain-spec:
+    image: parity/polkadot:v0.9.3
     volumes:
-      - data:/data
+      - data-relaychain-spec:/polkadot
+    entrypoint: []
     command: >
+      sh -c "polkadot \
+            build-spec \
+            --chain rococo-local \
+            --raw \
+            --disable-default-bootnode > \
+            /polkadot/rococo-local.json"
+    networks:
+      myriad:
+
+  relaychain-alice:
+    image: parity/polkadot:v0.9.3
+    volumes:
+      - data-relaychain-spec:/chain-spec
+      - data-relaychain-alice:/polkadot
+    command: >
+      --base-path /polkadot
+      --chain /chain-spec/rococo-local.json
+      --node-key 0a01249dfc2217bacf9cb12ff896125a66897813e64900f9a9e2552ab78aed88
+      --alice
+      --no-beefy
+      --rpc-cors all
+      --rpc-methods unsafe
+      --unsafe-rpc-external
+      --unsafe-ws-external
+    ports:
+      - 30233:30333
+      - 9833:9933
+      - 9844:9944
+    depends_on:
+      - init-relay-chain-spec
+    networks:
+      myriad:
+        ipv4_address: 172.27.1.1
+        aliases:
+          - relaychain-alice
+  
+  relaychain-bob:
+    image: parity/polkadot:v0.9.3
+    volumes:
+      - data-relaychain-spec:/chain-spec
+      - data-relaychain-bob:/polkadot
+    command: >
+      --base-path /polkadot
+      --chain /chain-spec/rococo-local.json
+      --node-key 42c3702c331e0f0e23cd73bd891ca0de24634a83165a1e43ecf75c6c9089d28a
+      --bob
+      --no-beefy
+      --rpc-cors all
+      --rpc-methods unsafe
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --bootnodes /ip4/172.27.1.1/tcp/30333/p2p/12D3KooWHFi846yMsEKSkyCkXBLMsCsRruWz5WfmngUppD93yd7P
+    ports:
+      - 30234:30333
+      - 9834:9933
+      - 9845:9944
+    depends_on:
+      - relaychain-alice
+    networks:
+      myriad:
+        ipv4_address: 172.27.1.2
+        aliases:
+          - relaychain-bob
+
+  parachain-genesis-state:
+    image: myriadsocial/myriad-node:1.0.0
+    volumes:
+      - data-parachain-genesis-state:/data
+    command: >
+      myriad
+      export-genesis-state
+      --chain local
+      --parachain-id 2000
+      /data/genesis-state
+    depends_on:
+      - relaychain-alice
+      - relaychain-bob
+    networks:
+      myriad:
+  
+  parachain-genesis-wasm:
+    image: myriadsocial/myriad-node:1.0.0
+    volumes:
+      - data-parachain-genesis-wasm:/data
+    command: >
+      myriad
+      export-genesis-wasm
+      /data/genesis-wasm
+    depends_on:
+      - relaychain-alice
+      - relaychain-bob
+    networks:
+      myriad:
+
+  parachain-alice:
+    image: myriadsocial/myriad-node:1.0.0
+    volumes:
+      - data-relaychain-spec:/chain-spec
+      - data-parachain-alice:/data
+    command: >
+      myriad
       --base-path /data
+      --chain local
+      --parachain-id 2000
+      --node-key ac49d94d658067c89f632d824cca1ce1a5b2ab19a3cdb5e9d25964178d2abb29
+      --alice
+      --force-authoring
+      --rpc-cors all
+      --rpc-methods unsafe
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --
+      --execution wasm
+      --chain /chain-spec/rococo-local.json
+      --no-beefy
+      --bootnodes /ip4/172.27.1.1/tcp/30333/p2p/12D3KooWHFi846yMsEKSkyCkXBLMsCsRruWz5WfmngUppD93yd7P
+      --bootnodes /ip4/172.27.1.2/tcp/30333/p2p/12D3KooWJ4K5P5cKz8xCMPPABkkvcUTkg2iv773KA5WZpmT33Fv5
     ports:
       - 30333:30333
       - 9933:9933
       - 9944:9944
-      - 30334:30334
-      - 9934:9934
-      - 9945:9945
+    depends_on:
+      - parachain-genesis-state
+      - parachain-genesis-wasm
+    networks:
+      myriad:
+        ipv4_address: 172.27.1.3
+        aliases:
+          - parachain-alice
+
+  parachain-bob:
+    image: myriadsocial/myriad-node:1.0.0
+    volumes:
+      - data-relaychain-spec:/chain-spec
+      - data-parachain-bob:/data
+    command: >
+      myriad
+      --base-path /data
+      --chain local
+      --parachain-id 2000
+      --bob
+      --force-authoring
+      --rpc-cors all
+      --rpc-methods unsafe
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --bootnodes /ip4/172.27.1.3/tcp/30333/p2p/12D3KooWRD9ZzE6CyibJcStjg3hPr44TD9tdW8QFr3BzV2o5xC4S
+      --
+      --execution wasm
+      --chain /chain-spec/rococo-local.json
+      --no-beefy
+      --bootnodes /ip4/172.27.1.1/tcp/30333/p2p/12D3KooWHFi846yMsEKSkyCkXBLMsCsRruWz5WfmngUppD93yd7P
+      --bootnodes /ip4/172.27.1.2/tcp/30333/p2p/12D3KooWJ4K5P5cKz8xCMPPABkkvcUTkg2iv773KA5WZpmT33Fv5
+    ports:
+      - 30334:30333
+      - 9934:9933
+      - 9945:9944
+    depends_on:
+      - parachain-alice
+    networks:
+      myriad:
+        ipv4_address: 172.27.1.4
+        aliases:
+          - parachain-bob
+
+  register-parachain:
+    image: node:14-buster-slim
+    volumes:
+      - data-parachain-genesis-state:/genesis-state
+      - data-parachain-genesis-wasm:/genesis-wasm
+    command: >
+      sh -c 'yarn global add @polkadot/api-cli && \
+            polkadot-js-api \
+              --ws ws://172.27.1.1:9944 \
+              --seed "//Charlie" \
+              tx.registrar.reserve && \
+            sleep 5s && \
+            polkadot-js-api \
+              --ws ws://172.27.1.1:9944 \
+              --seed "//Charlie" \
+              tx.registrar.register \
+                2000 \
+                "$$(cat /genesis-state/genesis-state)" \
+                @/genesis-wasm/genesis-wasm && \
+            sleep 2.5m && \
+            polkadot-js-api \
+              --ws ws://172.27.1.1:9944 \
+              --sudo \
+              --seed "//Alice" \
+              tx.parasSudoWrapper.sudoScheduleParathreadUpgrade \
+                2000 \
+            '
+    depends_on:
+      - parachain-bob
+    networks:
+      myriad:
 
 volumes:
-  data:
+  data-relaychain-spec:
+  data-relaychain-alice:
+  data-relaychain-bob:
+  data-parachain-genesis-state:
+  data-parachain-genesis-wasm:
+  data-parachain-alice:
+  data-parachain-bob:
+
+networks:
+  myriad:
+    external: true
