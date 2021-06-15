@@ -6,7 +6,7 @@ if [ "$#" -ne 1 ]; then
 	echo "Please provide the number of initial collator!"
 	exit 1
 fi
-SECRET="fall deal book genuine tonight chimney angry steak proof wheel bag faith//collator"
+
 generate_account_id() {
 	subkey inspect ${2:-} ${3:-} "$SECRET//$1" | grep "Account ID" | awk '{ print $3 }'
 }
