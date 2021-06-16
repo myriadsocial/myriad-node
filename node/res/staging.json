@@ -3,10 +3,10 @@
   "id": "myriad_staging_tesnet",
   "chainType": "Live",
   "bootNodes": [
-    "/dns/p2p.collator-1.stg.myriad.social/tcp/30333/p2p/12D3KooWD2UgVTs36BPHiNwsDQ6bGC4ucDxhkXEUuSRmzuGua3J2",
-    "/dns/p2p.collator-2.stg.myriad.social/tcp/30333/p2p/12D3KooWSuGdTDWDPLP8TJyqqCfeeBuLYBeTaAU3cJkjrqzecMQh",
-    "/dns/p2p.collator-3.stg.myriad.social/tcp/30333/p2p/12D3KooWNvcDoyJAD9QFzkbYVtz6179To62LQXE5HtoCjdnGMNHz",
-    "/dns/p2p.collator-4.stg.myriad.social/tcp/30333/p2p/12D3KooWFxLur9TPY3knicn4KwoBgxjE23xSaBhHgebXK6eufbA5"
+    "/dns/p2p.1.stg.myriad.social/tcp/30333/p2p/12D3KooWD2UgVTs36BPHiNwsDQ6bGC4ucDxhkXEUuSRmzuGua3J2",
+    "/dns/p2p.2.stg.myriad.social/tcp/30333/p2p/12D3KooWSuGdTDWDPLP8TJyqqCfeeBuLYBeTaAU3cJkjrqzecMQh",
+    "/dns/p2p.3.stg.myriad.social/tcp/30333/p2p/12D3KooWNvcDoyJAD9QFzkbYVtz6179To62LQXE5HtoCjdnGMNHz",
+    "/dns/p2p.4.stg.myriad.social/tcp/30333/p2p/12D3KooWFxLur9TPY3knicn4KwoBgxjE23xSaBhHgebXK6eufbA5"
   ],
   "telemetryEndpoints": [
     [

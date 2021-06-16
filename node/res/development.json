@@ -3,8 +3,8 @@
   "id": "myriad_development_tesnet",
   "chainType": "Live",
   "bootNodes": [
-    "/dns/p2p.collator-1.dev.myriad.social/tcp/30333/p2p/12D3KooWFBbga2LJe5FqUdHJ3Y3uqUKGjKBvdi7fPeZhNWbfqbdx",
-    "/dns/p2p.collator-2.dev.myriad.social/tcp/30333/p2p/12D3KooWApJunKkvE75fHSBjaZdQhAtomnDTaRoGVnrJ4CXeQxXS"
+    "/dns/p2p.1.dev.myriad.social/tcp/30333/p2p/12D3KooWFBbga2LJe5FqUdHJ3Y3uqUKGjKBvdi7fPeZhNWbfqbdx",
+    "/dns/p2p.2.dev.myriad.social/tcp/30333/p2p/12D3KooWApJunKkvE75fHSBjaZdQhAtomnDTaRoGVnrJ4CXeQxXS"
   ],
   "telemetryEndpoints": [
     [
