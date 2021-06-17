@@ -50,6 +50,7 @@ app.kubernetes.io/name: {{ include "myriad-node.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+
 {{/*
 Create the name of the service account to use
 */}}
@@ -59,4 +60,74 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
+{{- end }}
+
+{{/*
+Custom chain-spec path
+*/}}
+{{- define "myriad-node.customChainSpecPath" -}}
+{{- printf "%s/%s" .Values.image.basePath "chain-spec" }}
+{{- end }}
+
+{{/*
+Relay custom chain-spec
+*/}}
+{{- define "myriad-node.relayCustomChainSpec" -}}
+{{- printf "%s/%s" (include "myriad-node.relayCustomChainSpecPath" .) .Values.node.relayChainFileName }}
+{{- end }}
+
+{{/*
+Relay chain-spec path
+*/}}
+{{- define "myriad-node.relayCustomChainSpecPath" -}}
+{{- printf "%s/%s" .Values.image.basePath "relay-chain-spec" }}
+{{- end }}
+
+{{/*
+Custom chain-spec
+*/}}
+{{- define "myriad-node.customChainSpec" -}}
+{{- printf "%s/%s" (include "myriad-node.customChainSpecPath" .) .Values.node.chainFileName }}
+{{- end }}
+
+{{/*
+Node key Secret
+*/}}
+{{- define "myriad-node.nodeKeySecret" -}}
+{{- printf "%s-%s" "node-key" (include "myriad-node.fullname" .) }}
+{{- end }}
+
+{{/*
+Node key
+*/}}
+{{- define "myriad-node.nodeKey" -}}
+{{- printf "%s/%s" .Values.image.basePath "node-key" }}
+{{- end }}
+
+{{/*
+Session key secret
+*/}}
+{{- define "myriad-node.sessionKeySecret" -}}
+{{- printf "%s-%s" "session-key" (include "myriad-node.fullname" .) }}
+{{- end }}
+
+{{/*
+P2P service
+*/}}
+{{- define "myriad-node.p2pService" -}}
+{{- printf "%s-%s" "p2p" (include "myriad-node.fullname" .) }}
+{{- end }}
+
+{{/*
+HTTP RPC service
+*/}}
+{{- define "myriad-node.httpRpcService" -}}
+{{- printf "%s-%s" "http-rpc" (include "myriad-node.fullname" .) }}
+{{- end }}
+
+{{/*
+P2P ingress
+*/}}
+{{- define "myriad-node.p2pIngress" -}}
+{{- printf "%s-%s" "p2p" (include "myriad-node.fullname" .) }}
 {{- end }}

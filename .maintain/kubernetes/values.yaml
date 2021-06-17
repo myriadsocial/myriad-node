@@ -14,9 +14,6 @@ image:
 
 imagePullSecrets: []
 
-replicaCount: 1
-replicaHistoryLimit: 3
-
 persistence:
   enabled: false
   storageClassName: ssd
@@ -53,27 +50,19 @@ resources: {}
   
 nodeSelector: {}
 
-tolerations: []
-
-affinity: {}
-
 service:
-  createWebsocket: false
-  createBootnode: false
-
-ingress:
-  enabled: false
-  domain: ""
-  createWebsocket: false
+  createP2P: false
+  nodePortP2P: 30333
 
 node:
   chain: local
   customChain: false
   chainURL: ""
   chainFileName: ""
-  collator: false
   customPacahainId: false
   parachainId: 1000
+  wellKnownAccount: ""
+  collator: false
   unsafeEndpointAccess: false
   p2pPort: 30333
   httpRpcPort: 9933
@@ -84,4 +73,6 @@ node:
   relayChainFileName: ""
 
 secrets:
-  nodeKeys: []
+  nodeKey: ""
+  sessionKeys: {}
+    # aura: ""

@@ -3,46 +3,40 @@ kind: Service
 metadata:
   name: {{ include "myriad-node.fullname" . }}
   labels:
-    {{- include "myriad-node.labels" $ | nindent 4 }}
+    {{- include "myriad-node.labels" . | nindent 4 }}
 spec:
   type: NodePort
   ports:
     - port: {{ .Values.node.p2pPort }}
       targetPort: p2p
-      nodePort: {{ .Values.node.p2pPort }}
+      nodePort: {{ .Values.service.nodePortP2P }}
       protocol: TCP
       name: p2p
-  externalTrafficPolicy: Local
   selector:
     {{- include "myriad-node.selectorLabels" . | nindent 4 }}
-{{- if .Values.service.createBootnode -}}
-{{- range until (int .Values.replicaCount) }}
 ---
+{{- if .Values.service.createP2P }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: "p2p-{{ include "myriad-node.fullname" $ }}-{{ . }}"
-  annotations:
-    cloud.google.com/load-balancer-type: "Internal"
+  name: {{ include "myriad-node.p2pService" . }}
   labels:
-    {{- include "myriad-node.labels" $ | nindent 4 }}
+    {{- include "myriad-node.labels" . | nindent 4 }}
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
-    - port: {{ $.Values.node.p2pPort }}
+    - port: {{ .Values.node.p2pPort }}
       targetPort: p2p
       protocol: TCP
       name: p2p
-  externalTrafficPolicy: Local
   selector:
-    statefulset.kubernetes.io/pod-name: "{{ include "myriad-node.fullname" $ }}-{{ . }}"
+    {{- include "myriad-node.selectorLabels" . | nindent 4 }}
 ---
-{{- end }}
 {{- end }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: "http-rpc-{{ include "myriad-node.fullname" . }}"
+  name: {{ include "myriad-node.httpRpcService" . }}
   labels:
     {{- include "myriad-node.labels" . | nindent 4 }}
 spec:
@@ -54,21 +48,3 @@ spec:
       name: http-rpc
   selector:
     {{- include "myriad-node.selectorLabels" . | nindent 4 }}
-{{ if .Values.service.createWebsocket -}}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: "ws-rpc-{{ include "myriad-node.fullname" . }}"
-  labels:
-    {{- include "myriad-node.labels" . | nindent 4 }}
-spec:
-  type: ClusterIP
-  ports:
-    - port: {{ .Values.node.wsRpcPort }}
-      targetPort: ws-rpc
-      protocol: TCP
-      name: ws-rpc
-  selector:
-    {{- include "myriad-node.selectorLabels" . | nindent 4 }}
-{{- end }}

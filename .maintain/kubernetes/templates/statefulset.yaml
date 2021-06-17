@@ -5,8 +5,8 @@ metadata:
   labels:
     {{- include "myriad-node.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
-  revisionHistoryLimit: {{ .Values.replicaHistoryLimit }}
+  replicas: 1
+  revisionHistoryLimit: 3
   updateStrategy:
     type: RollingUpdate
   podManagementPolicy: Parallel
@@ -42,44 +42,26 @@ spec:
       serviceAccountName: {{ include "myriad-node.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.secrets.nodeKeys }}
+      {{- if .Values.secrets.nodeKey }}
       volumes:
-        - name: node-keys
+        - name: node-key
           secret:
-            secretName: "node-keys-{{ include "myriad-node.fullname" . }}"
+            secretName: {{ include "myriad-node.nodeKeySecret" . }}
+            defaultMode: 256
+            items:
+              - key: nodeKey
+                path: node-key
       {{- end }}
-      {{- if or .Values.secrets.nodeKeys (or .Values.node.customChain .Values.node.relayCustomChain) }}
+      {{- if or .Values.node.customChain .Values.node.relayCustomChain }}
       initContainers:
-        {{- if .Values.secrets.nodeKeys }}
-        - name: prepare-secrets
-          image: busybox
-          command: [ "sh"]
-          args:
-            - -c
-            - head -1 /etc/secrets/$POD_NAME > {{ .Values.image.basePath }}/node-key
-          securityContext:
-            runAsNonRoot: false
-            runAsUser: 0
-          env:
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-          volumeMounts:
-            - name: node-keys
-              mountPath: /etc/secrets
-              readOnly: true
-            - name: data
-              mountPath: {{ .Values.image.basePath }}
-        {{- end }}
         {{- if .Values.node.customChain }}
         - name: download-chain-spec
           image: curlimages/curl
           command: ["sh"]
           args:
             - -c
-            - mkdir -p {{ .Values.image.basePath }}/chain-spec &&
-              cd {{ .Values.image.basePath }}/chain-spec &&
+            - mkdir -p {{ include "myriad-node.customChainSpecPath" . }} &&
+              cd {{ include "myriad-node.customChainSpecPath" . }} &&
               curl -LO {{ .Values.node.chainURL }}
           securityContext:
             runAsNonRoot: false
@@ -94,8 +76,8 @@ spec:
           command: ["sh"]
           args:
             - -c
-            - mkdir -p {{ .Values.image.basePath }}/chain-spec/relay &&
-              cd {{ .Values.image.basePath }}/chain-spec/relay &&
+            - mkdir -p {{ include "myriad-node.relayCustomChainSpecPath" . }} &&
+              cd {{ include "myriad-node.relayCustomChainSpecPath" . }} &&
               curl -LO {{ .Values.node.relayChainURL }}
           securityContext:
             runAsNonRoot: false
@@ -115,20 +97,25 @@ spec:
             - exec /usr/local/bin/myriad
               --base-path {{ .Values.image.basePath }}
               {{- if .Values.node.customChain }}
-              --chain {{ .Values.image.basePath }}/chain-spec/{{ .Values.node.chainFileName }}
+              --chain {{ include "myriad-node.customChainSpec" . }}
               {{- else }}
               --chain {{ .Values.node.chain }}
-              {{- end }}
-              --name $(POD_NAME)
-              {{- if .Values.node.collator }}
-              --collator
-              {{- end }}
-              {{- if .Values.secrets.nodeKeys }}
-              --node-key $(cat {{ .Values.image.basePath }}/node-key)
               {{- end }}
               {{- if .Values.node.customPacahainId }}
               --parachain-id {{ .Values.node.parachainId }}
               {{- end }}
+              {{- if .Values.secrets.nodeKey }}
+              --node-key $(cat {{ include "myriad-node.nodeKey" . }})
+              {{- end }}
+              {{- if .Values.node.wellKnownAccount }}
+              --{{ .Values.node.wellKnownAccount }}
+              {{- else }}
+              --name {{ include "myriad-node.fullname" . }}
+              {{- end }}
+              {{- if .Values.node.collator }}
+              --collator
+              {{- end }}
+              --force-authoring
               --port {{ .Values.node.p2pPort }}
               --rpc-port {{ .Values.node.httpRpcPort }}
               --ws-port {{ .Values.node.wsRpcPort }}
@@ -144,18 +131,18 @@ spec:
               --
               --execution wasm
               {{- if .Values.node.relayCustomChain }}
-              --chain {{ .Values.image.basePath }}/chain-spec/relay/{{ .Values.node.relayChainFileName }}
+              --chain {{ include "myriad-node.relayCustomChainSpec" . }}
               {{- else }}
               --chain {{ .Values.node.relayChain }}
               {{- end }}
-          env:
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
           volumeMounts:
             - name: data
               mountPath: {{ .Values.image.basePath }}
+            {{- if .Values.secrets.nodeKey }}
+            - name: node-key
+              subPath: node-key
+              mountPath: {{ include "myriad-node.nodeKey" . }}
+            {{- end }}
           ports:
             - name: p2p
               containerPort: {{ .Values.node.p2pPort }}
@@ -166,14 +153,14 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           readinessProbe:
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 100
             httpGet:
               path: /health
               port: http-rpc
           livenessProbe:
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 100
             httpGet:
@@ -181,13 +168,5 @@ spec:
               port: http-rpc
       {{- with .Values.nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
