@@ -1,0 +1,193 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "myriad-node.fullname" . }}
+  labels:
+    {{- include "myriad-node.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.replicaHistoryLimit }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      {{- include "myriad-node.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "myriad-node.fullname" . }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        {{- if .Values.persistence.enabled }}
+        storageClassName: {{ .Values.persistence.storageClassName }}
+        accessModes: {{ .Values.persistence.accessModes }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.dataSize }}
+        {{- else }}
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 3Gi
+        {{- end }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "myriad-node.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "myriad-node.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.secrets.nodeKeys }}
+      volumes:
+        - name: node-keys
+          secret:
+            secretName: "node-keys-{{ include "myriad-node.fullname" . }}"
+      {{- end }}
+      {{- if or .Values.secrets.nodeKeys (or .Values.node.customChain .Values.node.relayCustomChain) }}
+      initContainers:
+        {{- if .Values.secrets.nodeKeys }}
+        - name: prepare-secrets
+          image: busybox
+          command: [ "sh"]
+          args:
+            - -c
+            - head -1 /etc/secrets/$POD_NAME > {{ .Values.image.basePath }}/node-key
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: node-keys
+              mountPath: /etc/secrets
+              readOnly: true
+            - name: data
+              mountPath: {{ .Values.image.basePath }}
+        {{- end }}
+        {{- if .Values.node.customChain }}
+        - name: download-chain-spec
+          image: curlimages/curl
+          command: ["sh"]
+          args:
+            - -c
+            - mkdir -p {{ .Values.image.basePath }}/chain-spec &&
+              cd {{ .Values.image.basePath }}/chain-spec &&
+              curl -LO {{ .Values.node.chainURL }}
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.image.basePath }}
+        {{- end }}
+        {{- if .Values.node.relayCustomChain }}
+        - name: download-relay-chain-spec
+          image: curlimages/curl
+          command: ["sh"]
+          args:
+            - -c
+            - mkdir -p {{ .Values.image.basePath }}/chain-spec/relay &&
+              cd {{ .Values.image.basePath }}/chain-spec/relay &&
+              curl -LO {{ .Values.node.relayChainURL }}
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.image.basePath }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ include "myriad-node.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [ "sh" ]
+          args:   
+            - -c
+            - exec /usr/local/bin/myriad
+              --base-path {{ .Values.image.basePath }}
+              {{- if .Values.node.customChain }}
+              --chain {{ .Values.image.basePath }}/chain-spec/{{ .Values.node.chainFileName }}
+              {{- else }}
+              --chain {{ .Values.node.chain }}
+              {{- end }}
+              --name $(POD_NAME)
+              {{- if .Values.node.collator }}
+              --collator
+              {{- end }}
+              {{- if .Values.secrets.nodeKeys }}
+              --node-key $(cat {{ .Values.image.basePath }}/node-key)
+              {{- end }}
+              {{- if .Values.node.customPacahainId }}
+              --parachain-id {{ .Values.node.parachainId }}
+              {{- end }}
+              --port {{ .Values.node.p2pPort }}
+              --rpc-port {{ .Values.node.httpRpcPort }}
+              --ws-port {{ .Values.node.wsRpcPort }}
+              --rpc-cors all
+              {{- if .Values.node.unsafeEndpointAccess }}
+              --rpc-methods unsafe
+              --unsafe-rpc-external
+              --unsafe-ws-external
+              {{- else }}
+              --rpc-external
+              --ws-external
+              {{- end }}
+              --
+              --execution wasm
+              {{- if .Values.node.relayCustomChain }}
+              --chain {{ .Values.image.basePath }}/chain-spec/relay/{{ .Values.node.relayChainFileName }}
+              {{- else }}
+              --chain {{ .Values.node.relayChain }}
+              {{- end }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.image.basePath }}
+          ports:
+            - name: p2p
+              containerPort: {{ .Values.node.p2pPort }}
+            - name: http-rpc
+              containerPort: {{ .Values.node.httpRpcPort }}
+            - name: ws-rpc
+              containerPort: {{ .Values.node.wsRpcPort }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 100
+            httpGet:
+              path: /health
+              port: http-rpc
+          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 100
+            httpGet:
+              path: /health
+              port: http-rpc
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,87 @@
+# Default values for myriad-node.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: myriadsocial/myriad-node
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+  basePath: /data
+
+imagePullSecrets: []
+
+replicaCount: 1
+replicaHistoryLimit: 3
+
+persistence:
+  enabled: false
+  storageClassName: ssd
+  accessModes: [ "ReadWriteOnce" ]
+  dataSize: 32Gi
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+   # Annotations to add to the service account
+  annotations: {}
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # runAsNonRoot: true
+  # runAsUser: 1000
+  # fsGroup: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+service:
+  createWebsocket: false
+  createBootnode: false
+
+ingress:
+  enabled: false
+  domain: ""
+  createWebsocket: false
+
+node:
+  chain: local
+  customChain: false
+  chainURL: ""
+  chainFileName: ""
+  collator: false
+  customPacahainId: false
+  parachainId: 1000
+  unsafeEndpointAccess: false
+  p2pPort: 30333
+  httpRpcPort: 9933
+  wsRpcPort: 9944
+  relayChain: rococo-local
+  relayCustomChain: false
+  relayChainURL: ""
+  relayChainFileName: ""
+
+secrets:
+  nodeKeys: []
