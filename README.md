@@ -4,7 +4,7 @@ A new [Cumulus](https://github.com/paritytech/cumulus/)-based Substrate node, re
 
 This project is a fork of the
 [Substrate Developer Hub Node Template](https://github.com/substrate-developer-hub/substrate-node-template)
-modified to include dependencies required for registering this node as a **parathread or parachian**
+modified to include dependencies required for registering this node as a **parathread or parachain**
 to an established **relay chain**
 
 ## Build & Run

@@ -1,6 +1,6 @@
 [package]
-name = 'myriad'
-description = 'myriad'
+name = 'myriad-parachain'
+description = 'myriad-parachain'
 version = '1.0.0'
 edition = '2018'
 license = 'Unlicense'
@@ -26,7 +26,7 @@ hex-literal = '0.2.1'
 jsonrpc-core = '15.1.0'
 
 # Local Dependencies
-myriad-runtime = { path = '../runtime' }
+myriad-parachain-runtime = { path = '../../runtimes/parachain' }
 
 # Substrate Dependencies
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.3' }
@@ -87,4 +87,4 @@ polkadot-parachain = { git = 'https://github.com/paritytech/polkadot', branch = 
 
 [features]
 default = []
-runtime-benchmarks = ['myriad-runtime/runtime-benchmarks']
+runtime-benchmarks = ['myriad-parachain-runtime/runtime-benchmarks']

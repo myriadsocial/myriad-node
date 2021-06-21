@@ -7,7 +7,7 @@ use codec::Encode;
 use cumulus_primitives_core::ParaId;
 use cumulus_client_service::genesis::generate_genesis_block;
 use log::info;
-use myriad_runtime::{RuntimeApi, Block};
+use myriad_parachain_runtime::{RuntimeApi, Block};
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -38,7 +38,7 @@ fn load_spec(
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Myriad".into()
+		"Myriad Parachain".into()
 	}
 
 	fn impl_version() -> String {
@@ -47,7 +47,7 @@ impl SubstrateCli for Cli {
 
 	fn description() -> String {
 		format!(
-			"Myriad\n\nThe command-line arguments provided first will be \
+			"Myriad Parachain\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -72,13 +72,13 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&myriad_runtime::VERSION
+		&myriad_parachain_runtime::VERSION
 	}
 }
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Myriad".into()
+		"Myriad Parachain".into()
 	}
 
 	fn impl_version() -> String {
@@ -86,7 +86,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn description() -> String {
-		"Myriad\n\nThe command-line arguments provided first will be \
+		"Myriad Parachain\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		parachain-collator [parachain-args] -- [relaychain-args]"

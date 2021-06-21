@@ -4475,7 +4475,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "myriad"
+name = "myriad-parachain"
 version = "1.0.0"
 dependencies = [
  "cumulus-client-cli",
@@ -4492,7 +4492,7 @@ dependencies = [
  "hex-literal 0.2.1",
  "jsonrpc-core",
  "log",
- "myriad-runtime",
+ "myriad-parachain-runtime",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -4535,7 +4535,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "myriad-runtime"
+name = "myriad-parachain-runtime"
 version = "1.0.0"
 dependencies = [
  "cumulus-pallet-aura-ext",

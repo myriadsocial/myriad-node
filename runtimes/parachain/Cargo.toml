@@ -1,6 +1,6 @@
 [package]
-name = 'myriad-runtime'
-description = 'myriad-runtime'
+name = 'myriad-parachain-runtime'
+description = 'myriad-parachain-runtime'
 version = '1.0.0'
 edition = '2018'
 license = 'Unlicense'
