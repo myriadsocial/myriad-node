@@ -1,0 +1,44 @@
+[package]
+name = 'pallet-post'
+description = 'pallet-post'
+version = '1.0.0'
+edition = '2018'
+license = 'Unlicense'
+homepage = 'https://www.myriad.social'
+repository = 'https://github.com/myriadsocial/myriad-node'
+authors = ['Myriad <1@myriad.social>']
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+# External Dependencies
+codec = { package = 'parity-scale-codec', version = '2.0.0', default-features = false, features = ['derive'] }
+
+# Substrate Dependencies
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', default-features = false, optional = true }
+frame-support = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', default-features = false }
+
+# Local Dependencies
+pallet-token = { path = '../token', default-features = false }
+
+[dev-dependencies]
+serde = '1.0.119'
+sp-core = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', default-features = false }
+sp-io = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', default-features = false }
+
+[features]
+default = ['std']
+runtime-benchmarks = ['frame-benchmarking']
+std = [
+	'codec/std',
+	'frame-support/std',
+	'frame-system/std',
+	'frame-benchmarking/std',
+	'sp-std/std',
+	'pallet-token/std',
+]
+try-runtime = ['frame-support/try-runtime']

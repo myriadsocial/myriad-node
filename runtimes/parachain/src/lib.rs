@@ -106,8 +106,8 @@ impl_opaque_keys! {
 /// This runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("myriad"),
-	impl_name: create_runtime_str!("myriad"),
+	spec_name: create_runtime_str!("myriad-parachain"),
+	impl_name: create_runtime_str!("myriad-parachain"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 1,

@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use myriad_runtime::{AccountId, AuraId, Signature};
+use myriad_parachain_runtime::{AccountId, AuraId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
@@ -8,7 +8,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use hex_literal::hex;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<myriad_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<myriad_parachain_runtime::GenesisConfig, Extensions>;
 
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
@@ -103,7 +103,7 @@ pub fn make_staging_testnet_config(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn make_staging_testnet_config_genesis(id: ParaId) -> myriad_runtime::GenesisConfig {
+pub fn make_staging_testnet_config_genesis(id: ParaId) -> myriad_parachain_runtime::GenesisConfig {
 	// subkey inspect "$SECRET"
 	let endowed_accounts = vec![
 		// 5DfhGyQdFobKM8NsWvEeAKk5EQQgYe9AydgJ7rMB6E1EqRzV
@@ -145,22 +145,22 @@ pub fn make_staging_testnet_config_genesis(id: ParaId) -> myriad_runtime::Genesi
 	const ENDOWMENT: u128 = 1_000_000 * MYRIA;
 	const AUTHOR: u128 = 100 * MYRIA;
 
-    myriad_runtime::GenesisConfig {
-		frame_system: myriad_runtime::SystemConfig {
-			code: myriad_runtime::WASM_BINARY
+    myriad_parachain_runtime::GenesisConfig {
+		frame_system: myriad_parachain_runtime::SystemConfig {
+			code: myriad_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: myriad_runtime::BalancesConfig {
+		pallet_balances: myriad_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter()
 				.map(|k: &AccountId| (k.clone(), ENDOWMENT))
 				.chain(initial_authorities.iter().map(|x| (x.0.clone(), AUTHOR)))
 				.collect(),
 		},
-		pallet_sudo: myriad_runtime::SudoConfig { key: endowed_accounts[0].clone() },
-		parachain_info: myriad_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_aura: myriad_runtime::AuraConfig {
+		pallet_sudo: myriad_parachain_runtime::SudoConfig { key: endowed_accounts[0].clone() },
+		parachain_info: myriad_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_aura: myriad_parachain_runtime::AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
 		},
 		cumulus_pallet_aura_ext: Default::default(),
@@ -195,7 +195,7 @@ pub fn make_development_testnet_config(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn make_development_testnet_config_genesis(id: ParaId) -> myriad_runtime::GenesisConfig {
+pub fn make_development_testnet_config_genesis(id: ParaId) -> myriad_parachain_runtime::GenesisConfig {
 	// subkey inspect "$SECRET"
 	let endowed_accounts = vec![
 		// 5DfhGyQdFobKM8NsWvEeAKk5EQQgYe9AydgJ7rMB6E1EqRzV
@@ -225,22 +225,22 @@ pub fn make_development_testnet_config_genesis(id: ParaId) -> myriad_runtime::Ge
 	const ENDOWMENT: u128 = 1_000_000 * MYRIA;
 	const AUTHOR: u128 = 100 * MYRIA;
 
-    myriad_runtime::GenesisConfig {
-		frame_system: myriad_runtime::SystemConfig {
-			code: myriad_runtime::WASM_BINARY
+    myriad_parachain_runtime::GenesisConfig {
+		frame_system: myriad_parachain_runtime::SystemConfig {
+			code: myriad_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: myriad_runtime::BalancesConfig {
+		pallet_balances: myriad_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter()
 				.map(|k: &AccountId| (k.clone(), ENDOWMENT))
 				.chain(initial_authorities.iter().map(|x| (x.0.clone(), AUTHOR)))
 				.collect(),
 		},
-		pallet_sudo: myriad_runtime::SudoConfig { key: endowed_accounts[0].clone() },
-		parachain_info: myriad_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_aura: myriad_runtime::AuraConfig {
+		pallet_sudo: myriad_parachain_runtime::SudoConfig { key: endowed_accounts[0].clone() },
+		parachain_info: myriad_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_aura: myriad_parachain_runtime::AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
 		},
 		cumulus_pallet_aura_ext: Default::default(),
@@ -252,9 +252,9 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Local Testnet",
+		"Myriad Local Testnet",
 		// ID
-		"local_testnet",
+		"myriad_local_testnet",
 		ChainType::Local,
 		move || {
 			testnet_genesis(
@@ -301,27 +301,27 @@ fn testnet_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> myriad_runtime::GenesisConfig {
+) -> myriad_parachain_runtime::GenesisConfig {
 	const MYRIA: u128 = 1_000_000_000_000;
 	const ENDOWMENT: u128 = 1_000_000 * MYRIA;
 
-	myriad_runtime::GenesisConfig {
-		frame_system: myriad_runtime::SystemConfig {
-			code: myriad_runtime::WASM_BINARY
+	myriad_parachain_runtime::GenesisConfig {
+		frame_system: myriad_parachain_runtime::SystemConfig {
+			code: myriad_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: myriad_runtime::BalancesConfig {
+		pallet_balances: myriad_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts
                 .iter()
                 .cloned()
                 .map(|k| (k, ENDOWMENT))
                 .collect(),
 		},
-		pallet_sudo: myriad_runtime::SudoConfig { key: root_key },
-		parachain_info: myriad_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_aura: myriad_runtime::AuraConfig {
+		pallet_sudo: myriad_parachain_runtime::SudoConfig { key: root_key },
+		parachain_info: myriad_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_aura: myriad_parachain_runtime::AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
 		},
 		cumulus_pallet_aura_ext: Default::default(),
