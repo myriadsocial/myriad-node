@@ -1,0 +1,56 @@
+[package]
+name = 'myriad'
+description = 'myriad'
+version = '1.0.0'
+edition = '2018'
+license = 'Unlicense'
+homepage = 'https://www.myriad.social'
+repository = 'https://github.com/myriadsocial/myriad-node'
+authors = ['Myriad <1@myriad.social>']
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[build-dependencies]
+substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+
+[dependencies]
+# External Dependencies
+jsonrpc-core = '15.1.0'
+structopt = '0.3.8'
+
+# Substrate Dependencies
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+pallet-transaction-payment-rpc = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-basic-authorship = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-cli = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', features = ['wasmtime'] }
+sc-client-api = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-consensus = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-consensus-aura = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-executor = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', features = ['wasmtime'] }
+sc-finality-grandpa = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-keystore = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-rpc = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-rpc-api = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-service = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05', features = ['wasmtime'] }
+sc-telemetry = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sc-transaction-pool = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-api = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-block-builder = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-blockchain = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-consensus = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-core = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-finality-grandpa = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-inherents = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+sp-transaction-pool = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+substrate-frame-rpc-system = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2021-05' }
+
+# Local Dependencies
+myriad-runtime = { path = '../../runtimes/standalone' }
+
+[features]
+default = []
+runtime-benchmarks = ['myriad-runtime/runtime-benchmarks']
