@@ -12,12 +12,12 @@ authors = ['Myriad <1@myriad.social>']
 targets = ['x86_64-unknown-linux-gnu']
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3" }
+substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.3' }
 
 [dependencies]
 codec = { package = 'parity-scale-codec', version = '2.0.0', default-features = false, features = ['derive']}
-log = { version = "0.4.14", default-features = false }
 serde = { version = '1.0.119', optional = true, features = ['derive'] }
+log = { version = '0.4.14', default-features = false }
 
 # Substrate Dependencies
 ## Substrate Primitive Dependencies
@@ -43,7 +43,7 @@ frame-system-benchmarking = { git = 'https://github.com/paritytech/substrate', b
 frame-system-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.3', default-features = false }
 
 ## Substrate Pallet Dependencies
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.3" }
+pallet-aura = { git = 'https://github.com/paritytech/substrate', default-features = false, branch = 'polkadot-v0.9.3' }
 pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.3', default-features = false }
 pallet-randomness-collective-flip = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.3', default-features = false }
 pallet-sudo = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.3', default-features = false }
@@ -80,39 +80,39 @@ runtime-benchmarks = [
 	'pallet-timestamp/runtime-benchmarks',
 ]
 std = [
-	"codec/std",
-	"serde",
-	"log/std",
-	"sp-api/std",
-	"sp-block-builder/std",
-	"sp-core/std",
-	"sp-consensus-aura/std",
-	"sp-inherents/std",
-	"sp-io/std",
-	"sp-offchain/std",
-	"sp-runtime/std",
-	"sp-session/std",
-	"sp-std/std",
-	"sp-transaction-pool/std",
-	"sp-version/std",
-	"frame-executive/std",
-	"frame-support/std",
-	"frame-system/std",
-	"pallet-aura/std",
-	"pallet-balances/std",
-	"pallet-randomness-collective-flip/std",
-	"pallet-sudo/std",
-	"pallet-timestamp/std",
-	"pallet-transaction-payment/std",
-	"cumulus-pallet-aura-ext/std",
-	"cumulus-pallet-parachain-system/std",
-	"cumulus-pallet-dmp-queue/std",
-	"cumulus-pallet-xcmp-queue/std",
-	"cumulus-pallet-xcm/std",
-	"cumulus-primitives-core/std",
-	"cumulus-primitives-utility/std",
-	"parachain-info/std",
-	"xcm/std",
-	"xcm-builder/std",
-	"xcm-executor/std",
+	'codec/std',
+	'serde',
+	'log/std',
+	'sp-api/std',
+	'sp-block-builder/std',
+	'sp-core/std',
+	'sp-consensus-aura/std',
+	'sp-inherents/std',
+	'sp-io/std',
+	'sp-offchain/std',
+	'sp-runtime/std',
+	'sp-session/std',
+	'sp-std/std',
+	'sp-transaction-pool/std',
+	'sp-version/std',
+	'frame-executive/std',
+	'frame-support/std',
+	'frame-system/std',
+	'pallet-aura/std',
+	'pallet-balances/std',
+	'pallet-randomness-collective-flip/std',
+	'pallet-sudo/std',
+	'pallet-timestamp/std',
+	'pallet-transaction-payment/std',
+	'cumulus-pallet-aura-ext/std',
+	'cumulus-pallet-parachain-system/std',
+	'cumulus-pallet-dmp-queue/std',
+	'cumulus-pallet-xcmp-queue/std',
+	'cumulus-pallet-xcm/std',
+	'cumulus-primitives-core/std',
+	'cumulus-primitives-utility/std',
+	'parachain-info/std',
+	'xcm/std',
+	'xcm-builder/std',
+	'xcm-executor/std',
 ]

@@ -6,7 +6,7 @@ ARG BUILD_DATE
 LABEL social.myriad.node.parachain.image.authors="1@myriad.social" \
 	social.myriad.node.parachain.image.vendor="Myriadsocial" \
 	social.myriad.node.parachain.image.title="myriadsocial/myriad-node-parachain" \
-	social.myriad.node.parachain.image.description="myriad: a platform for web3" \
+	social.myriad.node.parachain.image.description="Myriad is a web3 layer on top of web2 social media" \
 	social.myriad.node.parachain.image.source="https://github.com/myriadsocial/myriad-node/blob/${VCS_REF}/.maintain/docker/parachain.Dockerfile" \
 	social.myriad.node.parachain.image.revision="${VCS_REF}" \
 	social.myriad.node.parachain.image.created="${BUILD_DATE}" \
