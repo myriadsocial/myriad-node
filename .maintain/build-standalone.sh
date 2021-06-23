@@ -9,4 +9,4 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 cd $PROJECT_ROOT
 
 echo "Building binary"
-time cargo build -p myriad-standalone --release
+time cargo build -p myriad --release
