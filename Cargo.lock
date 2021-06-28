@@ -4810,6 +4810,7 @@ dependencies = [
  "pallet-balances 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "pallet-credential",
  "pallet-grandpa 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "pallet-platform",
  "pallet-post",
  "pallet-randomness-collective-flip 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "pallet-sudo 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
@@ -5250,17 +5251,18 @@ dependencies = [
 
 [[package]]
 name = "pallet-credential"
-version = "1.0.0"
+version = "3.0.0"
 dependencies = [
  "frame-benchmarking 3.1.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "frame-support 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "frame-system 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "pallet-platform",
  "parity-scale-codec",
  "serde",
  "sp-core 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "sp-io 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
- "sp-std 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "sp-std 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -5527,19 +5529,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-post"
-version = "1.0.0"
+name = "pallet-platform"
+version = "3.0.0"
 dependencies = [
  "frame-benchmarking 3.1.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "frame-support 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "frame-system 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "parity-scale-codec",
+ "serde",
+ "sp-core 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "sp-io 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "sp-std 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "pallet-post"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking 3.1.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "frame-support 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "frame-system 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "pallet-platform",
  "pallet-token",
  "parity-scale-codec",
  "serde",
  "sp-core 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "sp-io 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
- "sp-std 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "sp-std 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -5782,7 +5800,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-token"
-version = "1.0.0"
+version = "3.0.0"
 dependencies = [
  "frame-benchmarking 3.1.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "frame-support 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
@@ -5792,7 +5810,7 @@ dependencies = [
  "sp-core 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "sp-io 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
  "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
- "sp-std 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "sp-std 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -11512,6 +11530,12 @@ dependencies = [
  "trie-db",
  "trie-root",
 ]
+
+[[package]]
+name = "sp-std"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35391ea974fa5ee869cb094d5b437688fbf3d8127d64d1b9fed5822a1ed39b12"
 
 [[package]]
 name = "sp-std"

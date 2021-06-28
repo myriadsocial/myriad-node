@@ -22,7 +22,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         NewCredentialCreated(T::AccountId, UserCredentialInfo<T::AccountId>),
-        CredentialRemoved(Vec<u8>),
+        CredentialRemoved(PeopleId),
         UserCredentialsUpdated(T::AccountId)
     }
 
