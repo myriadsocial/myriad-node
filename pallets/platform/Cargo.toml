@@ -1,5 +1,5 @@
 [package]
-name = "pallet-credential"
+name = "pallet-platform"
 version = "3.0.0"
 authors = ["Myriad <1@myriad.social>"]
 edition = "2018"
@@ -18,8 +18,6 @@ frame-benchmarking = {default-features = false, optional = true, version = '3.1.
 frame-support = {default-features = false, version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-05'}
 frame-system = {default-features = false, version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-05'}
 sp-std = { default-features = false, version = '3.0.0' }
-pallet-platform = {default-features = false, path = '../platform'}
-
 
 [dev-dependencies]
 serde = '1.0.119'

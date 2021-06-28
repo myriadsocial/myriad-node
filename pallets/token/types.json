@@ -1,11 +1,15 @@
 {
     "HashOf": "H256",
-    "Token": {
-        "id": "H256",
+    "TokenId": "Text",
+    "TokenInfo": {
         "token_id": "Text",
         "token_name": "Text",
         "token_decimal": "u16",
         "token_address_format": "u16",
         "token_rpc_address": "Text"
+    },
+    "TokenDetail": {
+        "id": "H256",
+        "token_info": "TokenInfo"
     }
 }

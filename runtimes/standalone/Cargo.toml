@@ -50,6 +50,7 @@ sp-version = { git = 'https://github.com/paritytech/substrate', tag = 'monthly-2
 pallet-credential = { path = '../../pallets/credential', default-features = false }
 pallet-post = { path = '../../pallets/post', default-features = false }
 pallet-token = { path = '../../pallets/token', default-features = false }
+pallet-platform = { path = '../../pallets/platform', default-features = false }
 
 [features]
 default = ['std']
@@ -64,6 +65,7 @@ runtime-benchmarks = [
 	'pallet-credential/runtime-benchmarks',
 	'pallet-token/runtime-benchmarks',
 	'pallet-post/runtime-benchmarks',
+	'pallet-platform/runtime-benchmarks',
 	'sp-runtime/runtime-benchmarks',
 ]
 std = [
@@ -83,6 +85,7 @@ std = [
 	'pallet-credential/std',
 	'pallet-token/std',
 	'pallet-post/std',
+	'pallet-platform/std',
 	'sp-api/std',
 	'sp-block-builder/std',
 	'sp-consensus-aura/std',

@@ -7,13 +7,13 @@ pub mod pallet {
     use sp_std::prelude::*;
     use frame_system::pallet_prelude::*;
     use frame_support::{
-        dispatch::DispatchResult,
+        dispatch::DispatchResultWithPostInfo,
         pallet_prelude::*,
         sp_runtime::traits::Hash
     };
     
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config + pallet_platform::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
     }
 
@@ -21,8 +21,8 @@ pub mod pallet {
     #[pallet::metadata(T::AccountId = "AccountId")]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        NewCredentialCreated(T::AccountId, Credential<T::Hash, T::AccountId>),
-        CredentialRemoved(T::AccountId),
+        NewCredentialCreated(T::AccountId, UserCredentialInfo<T::AccountId>),
+        CredentialRemoved(Vec<u8>),
         UserCredentialsUpdated(T::AccountId)
     }
 
@@ -33,7 +33,8 @@ pub mod pallet {
         MaximumCredentialExceeded,
         CredentialNotBelong,
         CredentialNotExist,
-        PlatformNotExist
+        PlatformNotExist,
+        WrongCredential
     }
 
     #[pallet::pallet]
@@ -41,12 +42,12 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[pallet::storage]
-    #[pallet::getter(fn credential_by_owner)]
-    pub(super) type Credentials<T: Config> = StorageMap<_, Blake2_128Concat, AccountIdOf<T>, Vec<Credential<HashOf<T>, AccountIdOf<T>>>>;
+    #[pallet::getter(fn credentials)]
+    pub(super) type Credentials<T: Config> = StorageMap<_, Blake2_128Concat, AccountIdOf<T>, UserCredential<HashOf<T>, AccountIdOf<T>>>;
 
     #[pallet::storage] 
-	#[pallet::getter(fn credential_by_people)]
-    pub(super) type CredentialByPeople<T: Config> = StorageMap<_, Blake2_128Concat, PeopleId, Credential<HashOf<T>, AccountIdOf<T>>>;
+	#[pallet::getter(fn credential)]
+    pub(super) type Credential<T: Config> = StorageMap<_, Blake2_128Concat, PeopleId, UserCredentialInfo<AccountIdOf<T>>>;
 
     #[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
@@ -54,103 +55,161 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-        pub fn add_credential(
+        pub fn insert_credential(
             origin: OriginFor<T>, 
-            people_id: Vec<u8>, 
-            platform: Vec<u8>
-        ) -> DispatchResult {
+            credential_info: UserCredentialInfo<AccountIdOf<T>>
+        ) -> DispatchResultWithPostInfo {
             let creator = ensure_signed(origin)?;
-            let platforms: Vec<Vec<u8>> = vec![
-                "twitter".as_bytes().to_vec(),
-                "facebook".as_bytes().to_vec(),
-                "reddit".as_bytes().to_vec()
-            ];
 
-            let found_platform = platforms.iter().find(|x| x == &&platform);
-
-            ensure!(found_platform != None, Error::<T>::PlatformNotExist);
-
-            let found_credential_by_people = Self::credential_by_people(people_id.clone());
-
-            ensure!(found_credential_by_people == None, Error::<T>::CredentialAlreadyExist);
-
-            let mut credentials = Self::credential_by_owner(&creator).unwrap_or(Vec::new());
-
-            ensure!(credentials.len() < 3, Error::<T>::MaximumCredentialExceeded);
-
-            let new_credential = Self::create_credential(&creator, &people_id, &platform);
-
-            credentials.push(new_credential.clone());
-
-            Credentials::<T>::insert(&creator, &credentials);
-
-            Self::deposit_event(Event::NewCredentialCreated(creator, new_credential));
-
-            Ok(().into())
+            match Self::create_credential(&creator, &credential_info) {
+                Ok(user_credential) => {
+                    Self::deposit_event(Event::NewCredentialCreated(creator, user_credential));
+                    
+                    Ok(().into())
+                },
+                Err(error) => Err(error)? 
+            }
         }
 
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-        pub fn remove_credential(origin: OriginFor<T>, people_id: Vec<u8>) -> DispatchResult {
+        pub fn remove_credential(origin: OriginFor<T>, people_id: Vec<u8>) -> DispatchResultWithPostInfo {
             let destroyer = ensure_signed(origin)?;
 
-            match CredentialByPeople::<T>::get(&people_id) {
-                None => {
-                    ensure!(!true, Error::<T>::CredentialNotExist);
+            match Self::delete_credential(&destroyer, &people_id) {
+                Ok(people_id) => {
+                    Self::deposit_event(Event::CredentialRemoved(people_id.clone()));
+                    Self::deposit_event(Event::UserCredentialsUpdated(destroyer.clone()));
+        
+                    Ok(().into())
                 },
-                Some(credential) => {
-                    ensure!(credential.owner_id == destroyer, Error::<T>::CredentialNotBelong);
-                    
-                    CredentialByPeople::<T>::remove(&credential.people_id);
-
-                    Self::deposit_event(Event::CredentialRemoved(destroyer.clone()));
-                }
+                Err(error) => Err(error)?
             }
-
-            match Credentials::<T>::get(&destroyer) {
-                None => {},
-                Some(credentials) => {
-                    let new_credential: Vec<Credential<HashOf<T>, AccountIdOf<T>>> = credentials
-                        .into_iter()
-                        .filter(|credential| credential.people_id != people_id)
-                        .collect();
-
-                    Credentials::<T>::insert(&destroyer, &new_credential);
-
-                    Self::deposit_event(Event::UserCredentialsUpdated(destroyer.clone()))
-                }
-            }
-
-            Ok(().into())
         }
     }
 
     impl<T: Config> Pallet<T> {
         pub fn create_credential(
             owner_id: &T::AccountId,
-            people_id: &Vec<u8>,
-            platform: &Vec<u8>
-        ) -> Credential<HashOf<T>, AccountIdOf<T>> {
-            let credentials_owner = Self::credential_by_owner(owner_id.clone()).unwrap_or(Vec::new());
+            credential_info: &UserCredentialInfo<AccountIdOf<T>>
+        ) -> Result<UserCredentialInfo<AccountIdOf<T>>, Error<T>> {
+            if owner_id.clone() != credential_info.user_id {
+                return Err(Error::<T>::WrongCredential);
+            } 
 
-            let credential_count: u16 = credentials_owner.len() as u16; 
+            let platforms = pallet_platform::Pallet::<T>::platforms().unwrap_or(Vec::new());
 
-            let credential_id = Self::generate_credential_id(&owner_id, &people_id, &platform, credential_count);
+            let found_platform = platforms
+                .clone()
+                .into_iter()
+                .find(|el| el == &credential_info.platform);
 
-            let new_credential = Credential::new(credential_id.clone(), owner_id.clone(), people_id.clone(), platform.clone());
+            if found_platform.is_none() {
+                return Err(Error::<T>::PlatformNotExist)?;
+            }
 
-            CredentialByPeople::<T>::insert(&people_id, &new_credential);
+            if Self::credential(credential_info.people_id.clone()).is_some() {
+                return Err(Error::<T>::CredentialAlreadyExist)?;
+            }
+
+            let credential_owner = Self::credentials(owner_id.clone());
+            let credential_id: HashOf<T>;
+            let new_credential: UserCredential<HashOf<T>, AccountIdOf<T>>;
+            let new_credential_info: UserCredentialInfo<AccountIdOf<T>>;
+            let mut credentials: Vec<UserCredentialInfo<AccountIdOf<T>>>;
+
+            if credential_owner.is_none() {
+                new_credential_info = UserCredentialInfo {
+                    user_id: owner_id.clone(),
+                    people_id: credential_info.people_id.clone(),
+                    platform: credential_info.platform.clone()
+                };
+                credentials = vec![new_credential_info.clone()];
+                credential_id = Self::generate_credential_id(&owner_id, &credential_info, 0);
+                new_credential = UserCredential {
+                    id: credential_id,
+                    owner_id: owner_id.clone(),
+                    credentials: credentials.clone()
+                };
+            } else {
+                let credential_owner = credential_owner.unwrap();
+                let credential_count: u16 = credential_owner.credentials.len() as u16;
+
+                if credential_count >= platforms.len() as u16 {
+                    return Err(Error::<T>::MaximumCredentialExceeded)?;
+                }
+
+                if credential_owner.credentials
+                    .iter()
+                    .find(|credential| credential.platform == credential_info.platform)
+                    .is_some() 
+                {
+                    return Err(Error::<T>::CredentialAlreadyExist)?;
+                }
+                
+                new_credential_info = UserCredentialInfo {
+                    user_id: owner_id.clone(),
+                    people_id: credential_info.people_id.clone(),
+                    platform: credential_info.platform.clone()
+                };
+                credential_id = Self::generate_credential_id(&owner_id, &credential_info, credential_count);
+                credentials = credential_owner.credentials;
+                credentials.push(new_credential_info.clone());
+                new_credential = UserCredential {
+                    id: credential_id,
+                    owner_id: owner_id.clone(),
+                    credentials: credentials.clone()
+                };
+            }
+
+            Credential::<T>::insert(&credential_info.people_id, &new_credential_info);
+            Credentials::<T>::insert(&owner_id, &new_credential);
             
-            new_credential
+            Ok(new_credential_info)
         }
 
-        pub fn generate_credential_id(owner_id: &T::AccountId, people_id: &Vec<u8>, platform: &Vec<u8>, credential_count: u16) -> HashOf<T> {
+        pub fn delete_credential(owner_id: &T::AccountId, people_id: &Vec<u8>) -> Result<Vec<u8>, Error<T>> {
+            let credential = Self::credentials(&owner_id);
+
+            if credential.is_none() {
+                return Err(Error::<T>::CredentialNotExist)?;
+            }
+
+            let credential = credential.unwrap();
+            let credentials = credential.credentials;
+            let found_credential = credentials
+                .iter()
+                .find(|credential| credential.people_id == people_id.clone());
+
+            if found_credential.is_none() {
+                return Err(Error::<T>::CredentialNotExist)?;
+            }
+
+            if found_credential.unwrap().user_id != owner_id.clone() {
+                return Err(Error::<T>::CredentialNotBelong)?;
+            }
+
+            let new_credentials: Vec<UserCredentialInfo<AccountIdOf<T>>> = credentials
+                .into_iter()
+                .filter(|credential| credential.people_id != people_id.clone())
+                .collect();
+
+            Credential::<T>::remove(&people_id);
+            Credentials::<T>::insert(&owner_id, UserCredential {
+                id: credential.id,
+                owner_id: credential.owner_id,
+                credentials: new_credentials
+
+            });
+
+            Ok(people_id.clone())
+        }
+
+        pub fn generate_credential_id(owner_id: &T::AccountId, credential_info: &UserCredentialInfo<AccountIdOf<T>>, credential_count: u16) -> HashOf<T> {
             let mut account_id_bytes = owner_id.encode();
-            let mut people_id_byte = people_id.encode();
-            let mut platform_byte = platform.encode();
+            let mut credential_info_bytes = credential_info.encode();
             let mut credential_count_byte = credential_count.encode();
 
-            account_id_bytes.append(&mut people_id_byte);
-            account_id_bytes.append(&mut platform_byte);
+            account_id_bytes.append(&mut credential_info_bytes);
             account_id_bytes.append(&mut credential_count_byte);
 
             let seed = &account_id_bytes;
@@ -160,24 +219,30 @@ pub mod pallet {
 
     pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
     pub type HashOf<T> = <T as frame_system::Config>::Hash;
+    pub type UserCredentialOf<T> = UserCredential<HashOf<T>, AccountIdOf<T>>;
     pub type PeopleId = Vec<u8>;
 
     #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-    pub struct Credential<Hash, AccountId> {
+    pub struct UserCredential<Hash, AccountId> {
         id: Hash,
         owner_id: AccountId,
+        credentials: Vec<UserCredentialInfo<AccountId>>
+    }
+
+    #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+    pub struct UserCredentialInfo<AccountId> {
+        user_id: AccountId,
         people_id: Vec<u8>,
         platform: Vec<u8>
     }
 
-    impl <Hash, AccountId> Credential<Hash, AccountId> {
+    impl <Hash, AccountId> UserCredential<Hash, AccountId> {
         pub fn new(
             id: Hash,
             owner_id: AccountId,
-            people_id: Vec<u8>,
-            platform: Vec<u8>
+            credentials: Vec<UserCredentialInfo<AccountId>>
         ) -> Self {
-            Self {id, owner_id, people_id, platform}
+            Self {id, owner_id, credentials}
         }
     }
 }
