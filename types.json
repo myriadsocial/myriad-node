@@ -1,0 +1,54 @@
+{
+    "AccountInfo": "AccountInfoWithDualRefCount",
+    "Address": "MultiAddress",
+    "LookupSource": "MultiAddress",
+    "AccountIdOf": "AccountId",
+    "HashOf": "H256",
+    "PeopleId": "Text",
+    "PostId": "Text",
+    "UserCredentialInfoOf": "UserCredentialInfo",
+    "UserCredentialInfo": {
+        "user_id": "AccountId",
+        "people_id": "Text",
+        "platform": "Text"
+    },
+    "UserCredential": {
+        "id": "Hash",
+        "owner_id": "AccountId",
+        "credentials": "Vec<UserCredentialInfo>"
+    },
+    "TokenId": "Text",
+    "TokenInfo": {
+        "token_id": "Text",
+        "token_name": "Text",
+        "token_decimal": "u16",
+        "token_address_format": "u16",
+        "token_rpc_address": "Text"
+    },
+    "TokenDetail": {
+        "id": "H256",
+        "token_info": "TokenInfo"
+    },
+    "FreeBalance": {
+        "free": "u32",
+        "token_id": "Text"
+    },
+    "Post": {
+        "post_id": "Text",
+        "people_id": "Text",
+        "platform": "Text",
+        "balances": "Vec<FreeBalance>"
+    },
+    "Person": {
+        "people_id": "Text",
+        "platform": "Text",
+        "balances": "Vec<FreeBalance>"
+    },
+    "PostInfo": {
+        "post_id": "Text",
+        "people_id": "Text",
+        "platform": "Text",
+        "token_id": "Text",
+        "free": "u32"
+    }
+}
