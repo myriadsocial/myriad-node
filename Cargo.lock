@@ -5615,6 +5615,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-reward"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking 3.1.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "frame-support 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "frame-system 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "parity-scale-codec",
+ "serde",
+ "sp-core 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "sp-io 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate?tag=monthly-2021-05)",
+ "sp-std 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "pallet-scheduler"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.3#c94e0cdfe5556680dca1996004751eeb114755d7"
