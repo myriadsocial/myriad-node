@@ -1,15 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use pallet::*;
-
 #[frame_support::pallet]
 pub mod pallet {
-    use sp_std::prelude::*;
     use frame_system::pallet_prelude::*;
     use frame_support::{
         dispatch::DispatchResultWithPostInfo,
         pallet_prelude::*,
-        sp_runtime::traits::Hash,
 		traits::{Currency, Imbalance, OnUnbalanced, ReservableCurrency},
     };
 
@@ -41,14 +37,8 @@ pub mod pallet {
     #[pallet::metadata(T::AccountId = "AccountId")]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        SlashFunds(AccountId, Balance, BlockNumber),
-		RewardFunds(AccountId, Balance, BlockNumber),
-    }
-
-    #[pallet::error]
-    pub enum Error<T> {
-        SlashFundsFailure
-		RewardFundsFailure
+        SlashFunds(<T as frame_system::Config>::AccountId, BalanceOf<T>, <T as frame_system::Config>::BlockNumber),
+		RewardFunds(<T as frame_system::Config>::AccountId, BalanceOf<T>, <T as frame_system::Config>::BlockNumber),
     }
 
     #[pallet::pallet]
@@ -61,7 +51,7 @@ pub mod pallet {
     // Pallet run from this pallet::call
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000]
+        #[pallet::weight(10_000)]
         pub fn slash_funds(
             origin: OriginFor<T>,
             to_punish: T::AccountId,
@@ -74,6 +64,7 @@ pub mod pallet {
 
 			let now = <frame_system::Module<T>>::block_number();
 			Self::deposit_event(Event::SlashFunds(to_punish, collateral, now));
+			Ok(().into())
         }
 
         #[pallet::weight(10_000)]
@@ -92,6 +83,7 @@ pub mod pallet {
 
 			let now = <frame_system::Module<T>>::block_number();
 			Self::deposit_event(Event::RewardFunds(to_reward, reward, now));
+			Ok(().into())
         }
     }
 }

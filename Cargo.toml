@@ -8,6 +8,7 @@ members = [
 	'pallets/credential',
 	'pallets/post',
 	'pallets/token',
+	'pallets/reward',
 	'runtimes/parachain',
 	'runtimes/standalone',
 ]
