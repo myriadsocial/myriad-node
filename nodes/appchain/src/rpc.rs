@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::collections::BTreeMap;
 
 use sp_keystore::SyncCryptoStorePtr;
-use myriad_runtime::{opaque::Block, BlockNumber, AccountId, Index, Balance, Hash};
+use myriad_appchain_runtime::{opaque::Block, BlockNumber, AccountId, Index, Balance, Hash};
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
@@ -254,7 +254,7 @@ pub fn create_full<C, P, SC, B, BT, BE>(
 		EthApiServer::to_delegate(EthApi::new(
 			client.clone(),
 			pool.clone(),
-			myriad_runtime::TransactionConverter,
+			myriad_appchain_runtime::TransactionConverter,
 			network.clone(),
 			pending_transactions.clone(),
 			signers,

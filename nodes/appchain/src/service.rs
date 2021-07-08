@@ -4,7 +4,7 @@
 
 use std::{sync::{Arc,Mutex},time::Duration,collections::{HashMap,BTreeMap}};
 use sc_consensus_babe;
-use myriad_runtime::{opaque::Block, RuntimeApi};
+use myriad_appchain_runtime::{opaque::Block, RuntimeApi};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_service::{
@@ -27,8 +27,8 @@ use futures::StreamExt;
 // Our native executor instance.
 native_executor_instance!(
 	pub Executor,
-	myriad_runtime::api::dispatch,
-	myriad_runtime::native_version,
+	myriad_appchain_runtime::api::dispatch,
+	myriad_appchain_runtime::native_version,
 	frame_benchmarking::benchmarking::HostFunctions,
 );
 

@@ -245,7 +245,7 @@ The files you will need are in the `./resources` folder, you just created.
 The collator node may need to be restarted to get it functioning as expected. After a
 [new epoch](https://wiki.polkadot.network/docs/en/glossary#epoch) starts on the relay chain,
 your parachain will come online. Once this happens, you should see the collator start
-reporting _parachian_ blocks:
+reporting _parachain_ blocks:
 
 ```bash
 # Notice the relay epoch change! Only then do we start parachain collating!

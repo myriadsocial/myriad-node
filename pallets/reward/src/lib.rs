@@ -62,7 +62,7 @@ pub mod pallet {
 			let imbalance = T::Currency::slash_reserved(&to_punish, collateral).0;
 			T::Slash::on_unbalanced(imbalance);
 
-			let now = <frame_system::Module<T>>::block_number();
+			let now = <frame_system::Pallet<T>>::block_number();
 			Self::deposit_event(Event::SlashFunds(to_punish, collateral, now));
 			Ok(().into())
         }
@@ -81,7 +81,7 @@ pub mod pallet {
 			total_imbalance.maybe_subsume(r);
 			T::Reward::on_unbalanced(total_imbalance);
 
-			let now = <frame_system::Module<T>>::block_number();
+			let now = <frame_system::Pallet<T>>::block_number();
 			Self::deposit_event(Event::RewardFunds(to_reward, reward, now));
 			Ok(().into())
         }

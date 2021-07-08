@@ -1,5 +1,5 @@
 use sp_core::{Pair, Public, sr25519, H160, U256};
-use myriad_runtime::{
+use myriad_appchain_runtime::{
 	AccountId, BabeConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
 	SudoConfig, SystemConfig, EVMConfig, EthereumConfig, WASM_BINARY, Signature,
 	BABE_GENESIS_EPOCH_CONFIG,
@@ -9,7 +9,7 @@ use sp_runtime::traits::{Verify, IdentifyAccount};
 use sc_service::{ChainType, Properties};
 use std::{str::FromStr, collections::BTreeMap};
 
-use myriad_runtime::{
+use myriad_appchain_runtime::{
 	ImOnlineConfig, SessionConfig, opaque::SessionKeys,
 	StakingConfig, Balance, currency::MYRIA,
 };
@@ -17,8 +17,10 @@ use sp_consensus_babe::{AuthorityId as BabeId};
 use sp_runtime::Perbill;
 use pallet_im_online::sr25519::{AuthorityId as ImOnlineId};
 use pallet_staking::StakerStatus;
-use myriad_runtime::BeefyConfig;
+use myriad_appchain_runtime::BeefyConfig;
 use beefy_primitives::ecdsa::AuthorityId as BeefyId;
+use myriad_appchain_runtime::OctopusAppchainConfig;
+use pallet_octopus_appchain::AuthorityId as OctopusId;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -28,8 +30,9 @@ fn session_keys(
 	grandpa: GrandpaId,
 	im_online: ImOnlineId,
 	beefy: BeefyId,
+	octopus: OctopusId,
 ) -> SessionKeys {
-	SessionKeys { babe, grandpa, im_online, beefy }
+	SessionKeys { babe, grandpa, im_online, beefy, octopus }
 }
 
 /// Generate a crypto pair from seed.
@@ -49,13 +52,14 @@ pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId where
 }
 
 /// Helper function to generate stash, controller and session key from seed
-pub fn authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId) {
+pub fn authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId, OctopusId) {
 	(
 		get_account_id_from_seed::<sr25519::Public>(seed),
 		get_from_seed::<BabeId>(seed),
 		get_from_seed::<GrandpaId>(seed),
 		get_from_seed::<ImOnlineId>(seed),
 		get_from_seed::<BeefyId>(seed),
+		get_from_seed::<OctopusId>(seed)
 	)
 }
 
@@ -162,11 +166,12 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 fn testnet_genesis(
 	wasm_binary: &[u8],
 	root_key: AccountId,
-	initial_authorities: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId)>,
+	initial_authorities: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId, OctopusId)>,
 	endowed_accounts: Vec<AccountId>,
 ) -> GenesisConfig {
 	const ENDOWMENT: Balance = 1_000_000 * MYRIA;
 	const STASH: Balance = 100 * MYRIA;
+	const OCTOPUS_STASH: Balance = 100;
 
 	GenesisConfig {
 		system: SystemConfig {
@@ -209,6 +214,7 @@ fn testnet_genesis(
 							x.2.clone(),
 							x.3.clone(),
 							x.4.clone(),
+							x.5.clone(),
 						)
 					)
 				})
@@ -250,5 +256,13 @@ fn testnet_genesis(
 			},
 		},
 		ethereum: EthereumConfig {},
+		octopus_appchain: OctopusAppchainConfig {
+			appchain_id: "".to_string(),
+			validators: initial_authorities
+				.iter()
+				.map(|x| (x.0.clone(), OCTOPUS_STASH))
+				.collect(),
+			asset_id_by_name: vec![("test-stable.testnet".to_string(), 0)],
+		},
 	}
 }

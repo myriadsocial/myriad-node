@@ -138,6 +138,7 @@ pub mod opaque {
 			pub grandpa: Grandpa,
 			pub im_online: ImOnline,
 			pub beefy: Beefy,
+			pub octopus: OctopusAppchain,
 		}
 	}
 }
@@ -146,8 +147,8 @@ pub mod opaque {
 //   https://substrate.dev/docs/en/knowledgebase/runtime/upgrades#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("myriad"),
-	impl_name: create_runtime_str!("myriad"),
+	spec_name: create_runtime_str!("myriad-appchain"),
+	impl_name: create_runtime_str!("myriad-appchain"),
 	authoring_version: 1,
 	// The version of the runtime specification. A full node will not attempt to use its native
 	//   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
@@ -426,7 +427,7 @@ impl pallet_session::Config for Runtime {
 	type ValidatorIdOf = ConvertInto;
 	type ShouldEndSession = Babe;
 	type NextSessionRotation = Babe;
-	type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
+	type SessionManager = OctopusAppchain;
 	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
 	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
@@ -493,6 +494,29 @@ impl pallet_staking::Config for Runtime {
 
 impl pallet_beefy::Config for Runtime {
 	type AuthorityId = BeefyId;
+}
+
+pub struct OctopusAppCrypto;
+
+impl frame_system::offchain::AppCrypto<<Signature as Verify>::Signer, Signature> for OctopusAppCrypto {
+	type RuntimeAppPublic = pallet_octopus_appchain::AuthorityId;
+	type GenericSignature = sp_core::sr25519::Signature;
+	type GenericPublic = sp_core::sr25519::Public;
+}
+
+parameter_types! {
+	pub const GracePeriod: u32 = 5;
+	pub const UnsignedPriority: u64 = 1 << 20;
+}
+
+impl pallet_octopus_appchain::Config for Runtime {
+	type AuthorityId = OctopusAppCrypto;
+	type Event = Event;
+	type Call = Call;
+	type Assets = Assets;
+	type GracePeriod = GracePeriod;
+	type UnsignedPriority = UnsignedPriority;
+	const RELAY_CONTRACT: &'static [u8] = b"oct-relay.testnet";
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -686,6 +710,7 @@ construct_runtime!(
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Mmr: pallet_mmr::{Pallet, Storage},
 		Beefy: pallet_beefy::{Pallet, Storage, Config<T>},
+		OctopusAppchain: pallet_octopus_appchain::{Pallet, Call, Storage, Config<T>, Event<T>, ValidateUnsigned},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
