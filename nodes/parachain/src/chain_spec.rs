@@ -68,15 +68,15 @@ impl Extensions {
 	}
 }
 
-pub fn development_config(id: ParaId) -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+pub fn local_development_tesnet_config(id: ParaId) -> Result<ChainSpec, String> {
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
 	let properties = get_properties("MYRIA", 18, 42);
 
 	Ok(ChainSpec::from_genesis(
 		// Name
-		"Myriad Development Testnet",
+		"Myriad Local Development Testnet",
 		// ID
-		"myriad_development_testnet",
+		"myriad_local_development_testnet",
 		ChainType::Development,
 		move || testnet_genesis(
 			// WASM Binary
@@ -101,7 +101,7 @@ pub fn development_config(id: ParaId) -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("myriad-development".into()),
+		Some("myriad-local-development-tesnet".into()),
 		// Properties
 		Some(properties),
 		// Extensions
@@ -113,7 +113,7 @@ pub fn development_config(id: ParaId) -> Result<ChainSpec, String> {
 }
 
 pub fn local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
 	let properties = get_properties("MYRIA", 18, 42);
 
 	Ok(ChainSpec::from_genesis(
@@ -154,7 +154,7 @@ pub fn local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("myriad-local".into()),
+		Some("myriad-local-tesnet".into()),
 		// Properties
 		Some(properties),
 		// Extensions
