@@ -25,11 +25,8 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"staging" => Box::new(chain_spec::staging_testnet_config()?),
-		"development" => Box::new(chain_spec::development_testnet_config()?),
-		"staging-builder" => Box::new(chain_spec::make_staging_testnet_config(para_id)),
-		"development-builder" => Box::new(chain_spec::make_development_testnet_config(para_id)),
-		"" | "local" => Box::new(chain_spec::local_testnet_config(para_id)),
+		"dev" => Box::new(chain_spec::development_config(para_id)?),
+		"" | "local" => Box::new(chain_spec::local_testnet_config(para_id)?),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(
 			std::path::PathBuf::from(path),
 		)?),
@@ -68,7 +65,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(100).into())
+		load_spec(id, self.run.parachain_id.expect("Missing para_id").into())
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -202,7 +199,7 @@ pub fn run() -> Result<()> {
 
 			let block: Block = generate_genesis_block(&load_spec(
 				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(100).into(),
+				params.parachain_id.expect("Missing ParaId").into(),
 			)?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
@@ -254,9 +251,6 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				// TODO
-				let key = sp_core::Pair::generate().0;
-
 				let para_id =
 					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
 
@@ -267,7 +261,7 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(100));
+				let id = ParaId::from(cli.run.parachain_id.or(para_id).expect("Missing ParaId"));
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
@@ -296,7 +290,7 @@ pub fn run() -> Result<()> {
 					}
 				);
 
-				crate::service::start_node(config, key, polkadot_config, id)
+				crate::service::start_node(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)

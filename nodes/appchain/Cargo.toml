@@ -1,5 +1,5 @@
 [package]
-name = 'myriad'
+name = 'myriad-appchain'
 version = '1.0.0'
 edition = '2018'
 license = 'Unlicense'
@@ -103,10 +103,14 @@ fc-rpc = { git = "https://github.com/purestake/frontier", branch = "moonbeam-pol
 pallet-evm = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.6' }
 pallet-ethereum = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.6' }
 
+# Octopus Dependencies
+## Octopus Pallet Dependencies
+pallet-octopus-appchain = { git = 'https://github.com/blocksphereid/pallet-octopus-appchain.git', branch = 'polkadot-v0.9.6' }
+
 # Local Dependencies
 # Myriad Runtime Dependencies
-myriad-runtime = { path = '../../runtimes/standalone' }
+myriad-appchain-runtime = { path = '../../runtimes/appchain' }
 
 [features]
 default = []
-runtime-benchmarks = ['myriad-runtime/runtime-benchmarks']
+runtime-benchmarks = ['myriad-appchain-runtime/runtime-benchmarks']

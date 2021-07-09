@@ -1,4 +1,5 @@
 use crate::chain_spec;
+use cumulus_client_cli;
 use sc_cli;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -50,7 +51,7 @@ pub struct ExportGenesisStateCommand {
 	/// Id of the parachain this state is for.
 	///
 	/// Default: 100
-	#[structopt(long)]
+	#[structopt(long, conflicts_with = "chain")]
 	pub parachain_id: Option<u32>,
 
 	/// Write output in binary. Default is to write in hex.
@@ -58,7 +59,7 @@ pub struct ExportGenesisStateCommand {
 	pub raw: bool,
 
 	/// The name of the chain for that the genesis state should be exported.
-	#[structopt(long)]
+	#[structopt(long, conflicts_with = "parachain-id")]
 	pub chain: Option<String>,
 }
 

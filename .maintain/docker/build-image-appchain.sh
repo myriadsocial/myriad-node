@@ -10,22 +10,22 @@ cd $PROJECT_ROOT
 
 IMAGE_NAME=myriadsocial/myriad-node
 VCS_REF=`git rev-parse --short HEAD`
-VERSION=`grep -m 1 "^version" ./nodes/parachain/Cargo.toml | egrep -o "([0-9\.]+)"`
+VERSION=`grep -m 1 "^version" ./nodes/appchain/Cargo.toml | egrep -o "([0-9\.]+)"`
 BUILD_DATE=`date -u +"%Y%m%d"`
 
 # Copy binary
 echo "Copiying binary"
-time cp ./target/release/myriad-parachain .
+time cp ./target/release/myriad-appchain .
 
 # Build the image
-echo "Building ${IMAGE_NAME}:parachain-latest docker image, hang on!"
-time docker build -f ./.maintain/docker/node-parachain.Dockerfile --build-arg VCS_REF=${VCS_REF} --build-arg BUILD_DATE=${BUILD_DATE} -t ${IMAGE_NAME}:parachain-latest .
+echo "Building ${IMAGE_NAME}:appchain-latest docker image, hang on!"
+time docker build -f ./.maintain/docker/node-appchain.Dockerfile --build-arg VCS_REF=${VCS_REF} --build-arg BUILD_DATE=${BUILD_DATE} -t ${IMAGE_NAME}:appchain-latest .
 # Build verison
-time docker tag ${IMAGE_NAME}:parachain-latest ${IMAGE_NAME}:parachain-${VERSION}
+time docker tag ${IMAGE_NAME}:appchain-latest ${IMAGE_NAME}:appchain-${VERSION}
 
 # Remove binary
 echo "Removing binary"
-time rm ./myriad-parachain
+time rm ./myriad-appchain
 
 # Show the list of available images for this repo
 echo "Image is ready"

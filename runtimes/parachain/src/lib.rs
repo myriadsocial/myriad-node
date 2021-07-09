@@ -41,8 +41,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 // Polkadot & XCM imports
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-use xcm::v0::Xcm;
-use xcm::v0::{BodyId, Junction::*, MultiAsset, MultiLocation, MultiLocation::*, NetworkId};
+use xcm::v0::{BodyId, Junction::*, MultiAsset, MultiLocation, MultiLocation::*, NetworkId, Xcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
 	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
@@ -51,6 +50,12 @@ use xcm_builder::{
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
+
+/// Import the local pallet.
+pub use pallet_platform;
+pub use pallet_credential;
+pub use pallet_token;
+pub use pallet_post;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -97,6 +102,23 @@ pub type Executive = frame_executive::Executive<
 	AllPallets,
 >;
 
+/// MYRIA, the native token, uses 18 decimals of precision.
+pub mod currency {
+	use super::Balance;
+
+	pub const MYRIA: Balance = 1_000_000_000_000_000_000;
+	pub const KILOMYRIA: Balance = MYRIA * 1_000;
+	pub const MILLIMYRIA: Balance = MYRIA / 1_000;
+	pub const MICROMYRIA: Balance = MILLIMYRIA / 1_000;
+	pub const NANOMYRIA: Balance = MICROMYRIA / 1_000;
+
+	pub const BYTE_FEE: Balance = 100 * MICROMYRIA;
+
+	pub const fn deposit(items: u32, bytes: u32) -> Balance {
+		items as Balance * 1 * MYRIA + (bytes as Balance) * BYTE_FEE
+	}
+}
+
 impl_opaque_keys! {
 	pub struct SessionKeys {
 		pub aura: Aura,
@@ -109,7 +131,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("myriad-parachain"),
 	impl_name: create_runtime_str!("myriad-parachain"),
 	authoring_version: 1,
-	spec_version: 1,
+	spec_version: 101,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -131,11 +153,7 @@ pub const EPOCH_DURATION_IN_BLOCKS: u32 = 10 * MINUTES;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
-
-// Unit = the base number of indivisible units for balances
-pub const UNIT: Balance = 1_000_000_000_000;
-pub const MILLIUNIT: Balance = 1_000_000_000;
-pub const MICROUNIT: Balance = 1_000_000;
+pub const WEEKS: BlockNumber = DAYS * 7;
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
@@ -181,7 +199,7 @@ parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-	pub const SS58Prefix: u8 = 214;
+	pub const SS58Prefix: u8 = 42;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -247,10 +265,12 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1 * MILLIUNIT;
-	pub const TransferFee: u128 = 1 * MILLIUNIT;
-	pub const CreationFee: u128 = 1 * MILLIUNIT;
+	pub const ExistentialDeposit: u128 = 1 * currency::MILLIMYRIA;
+	pub const TransferFee: u128 = 1 * currency::MILLIMYRIA;
+	pub const CreationFee: u128 = 1 * currency::MILLIMYRIA;
+	pub const TransactionByteFee: u128 = 1 * currency::MICROMYRIA;
 	pub const MaxLocks: u32 = 50;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -263,10 +283,8 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type MaxLocks = MaxLocks;
-}
-
-parameter_types! {
-	pub const TransactionByteFee: u128 = 1 * MICROUNIT;
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -277,8 +295,8 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 impl pallet_sudo::Config for Runtime {
-	type Event = Event;
 	type Call = Call;
+	type Event = Event;
 }
 
 parameter_types! {
@@ -300,6 +318,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
+
+impl pallet_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = X1(Parent);
@@ -362,7 +382,7 @@ parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 1_000_000;
 	// One UNIT buys 1 second of weight.
-	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), UNIT);
+	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), currency::MYRIA);
 }
 
 match_type! {
@@ -386,7 +406,7 @@ impl Config for XcmConfig {
 	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
-	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of ROC
+	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of UNIT
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
@@ -395,7 +415,7 @@ impl Config for XcmConfig {
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
-pub type LocalOriginToLocation = (SignedToAccountId32<Origin, AccountId, RelayNetwork>,);
+pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
@@ -439,6 +459,23 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 }
 
+/// Configure local pallet
+impl pallet_platform::Config for Runtime {
+	type Event = Event;
+}
+
+impl pallet_credential::Config for Runtime {
+	type Event = Event;
+}
+
+impl pallet_token::Config for Runtime {
+	type Event = Event;
+}
+
+impl pallet_post::Config for Runtime {
+	type Event = Event;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -465,6 +502,12 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 51,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 52,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
+
+		// Include the custom logic from the local pallet in the runtime.
+		Platform: pallet_platform::{Pallet, Call, Storage, Event<T>},
+		Credential: pallet_credential::{Pallet, Call, Storage, Event<T>},
+		Token: pallet_token::{Pallet, Call, Storage, Event<T>},
+		Post: pallet_post::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -510,10 +553,6 @@ impl_runtime_apis! {
 		) -> sp_inherents::CheckInherentsResult {
 			data.check_extrinsics(&block)
 		}
-
-		// fn random_seed() -> <Block as BlockT>::Hash {
-		//     RandomnessCollectiveFlip::random_seed().0
-		// }
 	}
 
 	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
@@ -616,7 +655,31 @@ impl_runtime_apis! {
 	}
 }
 
+struct CheckInherents;
+
+impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
+	fn check_inherents(
+		block: &Block,
+		relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
+	) -> sp_inherents::CheckInherentsResult {
+		let relay_chain_slot = relay_state_proof
+			.read_slot()
+			.expect("Could not read the relay chain slot from the proof");
+
+		let inherent_data =
+			cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
+				relay_chain_slot,
+				sp_std::time::Duration::from_secs(6),
+			)
+			.create_inherent_data()
+			.expect("Could not create the timestamp inherent data");
+
+		inherent_data.check_extrinsics(&block)
+	}
+}
+
 cumulus_pallet_parachain_system::register_validate_block!(
-	Runtime,
-	cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
+	Runtime = Runtime,
+	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
+	CheckInherents = CheckInherents,
 );
