@@ -134,6 +134,8 @@ pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 				// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
 				hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"].into(),
 			],
+			// Appchain Id
+			"myriad_staging_testnet",
 		),
 		// Bootnodes
 		vec![],
@@ -188,6 +190,8 @@ pub fn development_tesnet_config() -> Result<ChainSpec, String> {
 				// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
 				hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"].into(),
 			],
+			// Appchain Id
+			"myriad_development_testnet",
 		),
 		// Bootnodes
 		vec![],
@@ -231,6 +235,8 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Eve"),
 				get_account_id_from_seed::<sr25519::Public>("Ferdie"),
 			],
+			// Appchain Id
+			"myriad_local_testnet",
 		),
 		// Bootnodes
 		vec![],
@@ -273,6 +279,8 @@ pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Eve"),
 				get_account_id_from_seed::<sr25519::Public>("Ferdie"),
 			],
+			// Appchain Id
+			"myriad_local_development_testnet",
 		),
 		// Bootnodes
 		vec![],
@@ -295,6 +303,7 @@ fn testnet_genesis(
 		AccountId, AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId, OctopusId
 	)>,
 	endowed_accounts: Vec<AccountId>,
+	appchain_id: &str,
 ) -> GenesisConfig {
 	const ENDOWMENT: Balance = 1_000_000 * MYRIA;
 	const STASH: Balance = 100 * MYRIA;
@@ -384,7 +393,7 @@ fn testnet_genesis(
 		},
 		ethereum: EthereumConfig {},
 		octopus_appchain: OctopusAppchainConfig {
-			appchain_id: "".to_string(),
+			appchain_id: appchain_id.to_string(),
 			validators: initial_authorities
 				.iter()
 				.map(|x| (x.0.clone(), OCTOPUS_STASH))
