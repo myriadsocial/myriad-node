@@ -8,6 +8,8 @@ use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use hex_literal::hex;
+use sp_core::crypto::UncheckedInto;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
