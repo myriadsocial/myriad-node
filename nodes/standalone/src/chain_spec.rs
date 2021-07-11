@@ -19,6 +19,8 @@ use pallet_im_online::sr25519::{AuthorityId as ImOnlineId};
 use pallet_staking::StakerStatus;
 use myriad_runtime::BeefyConfig;
 use beefy_primitives::ecdsa::AuthorityId as BeefyId;
+use hex_literal::hex;
+use sp_core::crypto::UncheckedInto;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -49,8 +51,11 @@ pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId where
 }
 
 /// Helper function to generate stash, controller and session key from seed
-pub fn authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId) {
+pub fn authority_keys_from_seed(seed: &str) -> (
+	AccountId, AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId
+) {
 	(
+		get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
 		get_account_id_from_seed::<sr25519::Public>(seed),
 		get_from_seed::<BabeId>(seed),
 		get_from_seed::<GrandpaId>(seed),
@@ -69,31 +74,57 @@ pub fn get_properties(symbol: &str, decimals: u32, ss58format: u32) -> Propertie
 	properties
 }
 
-pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
+pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
 	let properties = get_properties("MYRIA", 18, 42);
 
 	Ok(ChainSpec::from_genesis(
 		// Name
-		"Myriad Local Development Testnet",
+		"Myriad Staging Testnet",
 		// ID
-		"myriad_local_development_testnet",
-		ChainType::Development,
+		"myriad_staging_testnet",
+		ChainType::Live,
 		move || testnet_genesis(
 			// WASM Binary
 			wasm_binary,
 			// Sudo account
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
+			hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"].into(),
 			// Initial PoA authorities
 			vec![
-				authority_keys_from_seed("Alice"),
+				(
+					//5HBdevUsByJZMGqdZucSr8qXvtRKHRzzqjq2NHVwXUiP8LnC
+					hex!["e275bcf8adb68ed14eee7287461236cbe4a1326810e9e22b4baf05964882f828"].into(),
+					//5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
+					hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"].into(),
+					//5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
+					hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"].unchecked_into(),
+					//5G5ghjBD9fkx9gR59LQLmQvFnayjaRhdBKqpujvNjYjmx4ks
+					hex!["b1b04b436a8772b6429a549ae68d72fd88b8533462d03d83d9acaf9500b3ca00"].unchecked_into(),
+					//5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
+					hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"].unchecked_into(),
+					//KW8mwncjSVKxsCbACjDDk2bLHLsq2gkeVw5xjKW4vSLgWimn1
+					hex!["0302c5928b0861672271346c29e30faa2cb5328e024d1c45f2689e886cb12b6de1"].unchecked_into(),
+				),
+				(
+					//5GVjfe6b3s1sdMr2Q5oxVcSGHL33KWmwJZxDThR9b6tteyMG
+					hex!["c40829541f7121c67ccb2bee956887735687e57be0ada26289501636ac60946f"].into(),
+					//5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
+					hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"].into(),
+					//5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
+					hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"].unchecked_into(),
+					//5Dvf9Qq8rmfFdSLACJwvcDEYJMYYq6wYiKkazZrUmWLqUDEE
+					hex!["52556063e8c72431f643c8eb66ba172d5b0d2a095429a8a6e29b522208e26ccd"].unchecked_into(),
+					//5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
+					hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"].unchecked_into(),
+					//KW9uY45eZ65PpHxk21KiXvc8XiTse6amUPKpAWgvxmfhorryw
+					hex!["0334cbe01d6db7bf3d0f4148c468a3a01a5a560f21244d9891c35de23d7c752c24"].unchecked_into(),
+				),
 			],
 			// Pre-funded accounts
 			vec![
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				get_account_id_from_seed::<sr25519::Public>("Bob"),
-				get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
+				hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"].into(),
 			],
 		),
 		// Bootnodes
@@ -101,7 +132,59 @@ pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("myriad-local-development-tesnet".into()),
+		Some("myriad-staging-tesnet".into()),
+		// Properties
+		Some(properties),
+		// Extensions
+		None,
+	))
+}
+
+pub fn development_tesnet_config() -> Result<ChainSpec, String> {
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
+	let properties = get_properties("MYRIA", 18, 42);
+
+	Ok(ChainSpec::from_genesis(
+		// Name
+		"Myriad Development Testnet",
+		// ID
+		"myriad_development_testnet",
+		ChainType::Live,
+		move || testnet_genesis(
+			// WASM Binary
+			wasm_binary,
+			// Sudo account
+			// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
+			hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"].into(),
+			// Initial PoA authorities
+			vec![
+				(
+					//5CXF4c7rRuX3NfEbToR32ScG3mDNvJ1aFGVg7Wd6YZS5cU37
+					hex!["143d6dbd1fa1906ef35a1308afd7940cf8e987271d47a8c196062eca1ef87a5b"].into(),
+					//5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
+					hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"].into(),
+					//5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
+					hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"].unchecked_into(),
+					//5H83G9CMm7wPYq6FeYqrn7ueVBWBvK37xdZYamtm8re2LYn3
+					hex!["dfb839beaf6fe750ca87b9059161d43f2682a6c3a0ac765f1e5054063ed9903b"].unchecked_into(),
+					//5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
+					hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"].unchecked_into(),
+					//KW7hbC4ZzNJEjkofpAhxC51PRHxPxSr6RZ8NG4UyerChmQH3E
+					hex!["02d337069cb73bcefafc4e35e5189ad62932e4f2ee3f985b6bbff654cb68017ff1"].unchecked_into(),
+				),
+			],
+			// Pre-funded accounts
+			vec![
+				// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
+				hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"].into(),
+			],
+		),
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		Some("myriad-development-tesnet".into()),
 		// Properties
 		Some(properties),
 		// Extensions
@@ -137,12 +220,6 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Dave"),
 				get_account_id_from_seed::<sr25519::Public>("Eve"),
 				get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-				get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-				get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 			],
 		),
 		// Bootnodes
@@ -158,11 +235,55 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	))
 }
 
+pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
+	let properties = get_properties("MYRIA", 18, 42);
+
+	Ok(ChainSpec::from_genesis(
+		// Name
+		"Myriad Local Development Testnet",
+		// ID
+		"myriad_local_development_testnet",
+		ChainType::Development,
+		move || testnet_genesis(
+			// WASM Binary
+			wasm_binary,
+			// Sudo account
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			// Initial PoA authorities
+			vec![
+				authority_keys_from_seed("Alice"),
+			],
+			// Pre-funded accounts
+			vec![
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				get_account_id_from_seed::<sr25519::Public>("Dave"),
+				get_account_id_from_seed::<sr25519::Public>("Eve"),
+				get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+			],
+		),
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		Some("myriad-local-development-tesnet".into()),
+		// Properties
+		Some(properties),
+		// Extensions
+		None,
+	))
+}
+
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
 	root_key: AccountId,
-	initial_authorities: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId)>,
+	initial_authorities: Vec<(
+		AccountId, AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId
+	)>,
 	endowed_accounts: Vec<AccountId>,
 ) -> GenesisConfig {
 	const ENDOWMENT: Balance = 1_000_000 * MYRIA;
@@ -205,10 +326,10 @@ fn testnet_genesis(
 						x.0.clone(),
 						x.0.clone(),
 						session_keys(
-							x.1.clone(),
 							x.2.clone(),
 							x.3.clone(),
 							x.4.clone(),
+							x.5.clone(),
 						)
 					)
 				})
@@ -224,7 +345,7 @@ fn testnet_genesis(
 				.map(|x| {
 					(
 						x.0.clone(),
-						x.0.clone(),
+						x.1.clone(),
 						STASH,
 						StakerStatus::Validator,
 					)
