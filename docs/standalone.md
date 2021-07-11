@@ -3,7 +3,7 @@
 # TODO
 ```
 $ cargo build
-$ ./target/debug/myriad-appchain \
+$ ./target/debug/myriad \
 -d .local/standalone \
 --dev
 ```
