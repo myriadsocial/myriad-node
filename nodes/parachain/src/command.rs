@@ -27,6 +27,8 @@ fn load_spec(
 	Ok(match id {
 		"dev" => Box::new(chain_spec::local_development_tesnet_config(para_id)?),
 		"" | "local" => Box::new(chain_spec::local_testnet_config(para_id)?),
+		"development" => Box::new(chain_spec::development_tesnet_config(para_id)?),
+		"staging" => Box::new(chain_spec::staging_tesnet_config(para_id)?),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(
 			std::path::PathBuf::from(path),
 		)?),
