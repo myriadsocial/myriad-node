@@ -299,6 +299,7 @@ fn testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.map(|k| (k.clone(), ENDOWMENT))
+				.chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
 				.collect(),
 		},
 		sudo: SudoConfig {
