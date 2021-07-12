@@ -6,7 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use sp_std::{convert::TryFrom, prelude::*};
+use sp_std::{convert::TryFrom, prelude::*, marker::PhantomData};
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160, H256};
 use sp_runtime::{
 	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, MultiSignature,
@@ -30,7 +30,7 @@ pub use pallet_balances::Call as BalancesCall;
 pub use sp_runtime::{FixedPointNumber, Permill, Perbill, Perquintill};
 pub use frame_support::{
 	construct_runtime, parameter_types, StorageValue, ConsensusEngineId,
-	traits::{KeyOwnerProofSystem, Randomness},
+	traits::{KeyOwnerProofSystem, Randomness, FindAuthor},
 	weights::{
 		Weight, IdentityFee,
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -46,7 +46,7 @@ use frame_system::{
 	EnsureRoot,
 	limits::{BlockWeights, BlockLength}
 };
-use sp_core::{Encode, Decode};
+use sp_core::{Encode, Decode, crypto::Public};
 use sp_runtime::generic::Era;
 use sp_runtime::curve::PiecewiseLinear;
 use sp_runtime::transaction_validity::TransactionPriority;
@@ -705,9 +705,23 @@ impl pallet_evm::Config for Runtime {
 	type OnChargeTransaction = ();
 }
 
+pub struct FindAuthorTruncated<F>(PhantomData<F>);
+impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F>
+{
+	fn find_author<'a, I>(digests: I) -> Option<H160> where
+		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	{
+		if let Some(author_index) = F::find_author(digests) {
+			let authority_id = Babe::authorities()[author_index as usize].0.clone();
+			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+		}
+		None
+	}
+}
+
 impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
-	type FindAuthor = ();
+	type FindAuthor = FindAuthorTruncated<Babe>;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
 
