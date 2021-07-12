@@ -284,7 +284,6 @@ pub fn new_full_base(
 		let keystore = keystore_container.sync_keystore();
 		let chain_spec = config.chain_spec.cloned_box();
 		let is_authority = role.is_authority();
-		let enable_dev_signer = cli.run.enable_dev_signer;
 		let network = network.clone();
 		let pending = pending_transactions.clone();
 		let filter_pool = filter_pool.clone();
@@ -316,7 +315,6 @@ pub fn new_full_base(
 					subscription_executor,
 				},
 				is_authority,
-				enable_dev_signer,
 				network: network.clone(),
 				pending_transactions: pending.clone(),
 				filter_pool: filter_pool.clone(),

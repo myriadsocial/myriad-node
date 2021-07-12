@@ -7,9 +7,6 @@ pub struct RunCmd {
 	#[structopt(flatten)]
 	pub base: sc_cli::RunCmd,
 
-	#[structopt(long = "enable-dev-signer")]
-	pub enable_dev_signer: bool,
-
 	/// Maximum number of logs in a query.
 	#[structopt(long, default_value = "10000")]
 	pub max_past_logs: u32,
