@@ -105,8 +105,6 @@ pub struct FullDeps<C, P, SC, B, BT: BlockT> {
 	pub beefy: BeefyDeps<BT>,
 	/// The Node authority flag
 	pub is_authority: bool,
-	/// Whether to enable dev signer
-	pub enable_dev_signer: bool,
 	/// Network service
 	pub network: Arc<NetworkService<Block, Hash>>,
 	/// Ethereum pending transactions.
@@ -147,8 +145,7 @@ pub fn create_full<C, P, SC, B, BT, BE>(
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 	use fc_rpc::{
 		EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, NetApi, NetApiServer,
-		EthPubSubApi, EthPubSubApiServer, Web3Api, Web3ApiServer, EthDevSigner, EthSigner,
-		HexEncodedIdProvider,
+		EthPubSubApi, EthPubSubApiServer, Web3Api, Web3ApiServer, HexEncodedIdProvider,
 	};
 
 	let mut io = jsonrpc_core::IoHandler::default();
@@ -167,7 +164,6 @@ pub fn create_full<C, P, SC, B, BT, BE>(
 		filter_pool,
 		backend,
 		max_past_logs,
-		enable_dev_signer,
 	} = deps;
 
 	let BabeDeps {
@@ -235,10 +231,8 @@ pub fn create_full<C, P, SC, B, BT, BE>(
 		beefy_gadget_rpc::BeefyRpcHandler::new(beefy.signed_commitment_stream, beefy.subscription_executor),
 	));
 
-	let mut signers = Vec::new();
-	if enable_dev_signer {
-		signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
-	}
+	let signers = Vec::new();
+
 	let mut overrides_map = BTreeMap::new();
 	overrides_map.insert(
 		EthereumStorageSchema::V1,
