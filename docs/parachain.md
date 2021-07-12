@@ -1,10 +1,15 @@
 # Myriad Node Parachain
 
-# TODO
+## Development
+### Build
+```bash
+cargo build -p myriad-parachain
 ```
-$ cargo build
-$ ./target/debug/myriad-parachain \
--d .local/parachain \
+
+### Run
+```bash
+./target/debug/myriad-parachain \
+--base-path .local/parachain \
 --dev \
 --force-authoring \
 --parachain-id 2000 \

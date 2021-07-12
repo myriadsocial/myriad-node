@@ -1,10 +1,14 @@
 # Myriad Node Appchain
 
-# TODO
+## Development
+### Build
+```bash
+cargo build -p myriad-appchain
 ```
-$ cargo build
-$ ./target/debug/myriad-appchain \
--d .local/appchain \
---dev \
---enable-offchain-indexing true
+
+### Run
+```bash
+./target/debug/myriad-appchain \
+--base-path .local/appchain \
+--dev
 ```
