@@ -11,5 +11,4 @@ cd $PROJECT_ROOT
 echo "Starting node..."
 ./target/debug/myriad-appchain \
 -d .local/appchain \
---dev \
---enable-offchain-indexing true
+--dev
