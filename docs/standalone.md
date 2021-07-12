@@ -1,9 +1,14 @@
 # Myriad Node Standalone
 
-# TODO
+## Development
+### Build
+```bash
+cargo build -p myriad
 ```
-$ cargo build
-$ ./target/debug/myriad \
--d .local/standalone \
+
+### Run
+```bash
+./target/debug/myriad \
+--base-path .local/standalone \
 --dev
 ```
