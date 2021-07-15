@@ -9,6 +9,11 @@ services:
       myriad
       --base-path /data
       --dev
+      --alice
+      --rpc-cors all
+      --rpc-methods unsafe
+      --unsafe-rpc-external
+      --unsafe-ws-external
     ports:
       - 30333:30333
       - 9933:9933
