@@ -18,7 +18,7 @@ use sp_runtime::Perbill;
 use pallet_im_online::sr25519::{AuthorityId as ImOnlineId};
 use pallet_staking::StakerStatus;
 use myriad_appchain_runtime::BeefyConfig;
-use beefy_primitives::ecdsa::AuthorityId as BeefyId;
+use beefy_primitives::crypto::AuthorityId as BeefyId;
 use myriad_appchain_runtime::OctopusAppchainConfig;
 use pallet_octopus_appchain::AuthorityId as OctopusId;
 use hex_literal::hex;

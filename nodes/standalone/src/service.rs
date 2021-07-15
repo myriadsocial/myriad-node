@@ -19,7 +19,6 @@ use fc_mapping_sync::MappingSyncWorker;
 
 use sc_finality_grandpa as grandpa;
 
-use beefy_primitives::ecdsa::AuthoritySignature as BeefySignature;
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use crate::cli::Cli;
 use futures::StreamExt;
@@ -73,8 +72,8 @@ pub fn new_partial(
 			FullBabeBlockImport,
 			grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
 			sc_consensus_babe::BabeLink<Block>,
-			beefy_gadget::notification::BeefySignedCommitmentSender<Block, BeefySignature>,
-			beefy_gadget::notification::BeefySignedCommitmentStream<Block, BeefySignature>,
+			beefy_gadget::notification::BeefySignedCommitmentSender<Block>,
+			beefy_gadget::notification::BeefySignedCommitmentStream<Block>,
 		),
 		PendingTransactions,
 		Option<FilterPool>,
@@ -407,7 +406,8 @@ pub fn new_full_base(
 			backoff_authoring_blocks,
 			babe_link,
 			can_author_with,
-			block_proposal_slot_portion: SlotProportion::new(0.5),
+			block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
+			max_block_proposal_slot_portion: None,
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
 		};
 
@@ -436,7 +436,7 @@ pub fn new_full_base(
 	// Start the BEEFY bridge gadget.
 	task_manager.spawn_essential_handle().spawn_blocking(
 		"beefy-gadget",
-		beefy_gadget::start_beefy_gadget::<_, beefy_primitives::ecdsa::AuthorityPair, _, _, _>(beefy_params),
+		beefy_gadget::start_beefy_gadget::<_, _, _, _>(beefy_params),
 	);
 
 	let config = grandpa::Config {

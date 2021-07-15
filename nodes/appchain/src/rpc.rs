@@ -34,7 +34,6 @@ use sc_network::NetworkService;
 use sp_runtime::traits::{Block as BlockT, BlakeTwo256};
 
 use beefy_gadget::notification::BeefySignedCommitmentStream;
-use beefy_primitives::ecdsa::AuthoritySignature as BeefySignature;
 
 use fc_rpc_core::types::{PendingTransactions, FilterPool};
 use jsonrpc_pubsub::manager::SubscriptionManager;
@@ -44,7 +43,7 @@ use fc_rpc::{StorageOverride, SchemaV1Override, OverrideHandle, RuntimeApiStorag
 /// Extra dependencies for BEEFY
 pub struct BeefyDeps<BT: BlockT> {
 	/// Receives notifications about signed commitments from BEEFY.
-	pub signed_commitment_stream: BeefySignedCommitmentStream<BT, BeefySignature>,
+	pub signed_commitment_stream: BeefySignedCommitmentStream<BT>,
 	/// Executor to drive the subscription manager in the BEEFY RPC handler.
 	pub subscription_executor: SubscriptionTaskExecutor,
 }
