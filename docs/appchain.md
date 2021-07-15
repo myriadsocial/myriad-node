@@ -10,5 +10,6 @@ cargo build -p myriad-appchain
 ```bash
 ./target/debug/myriad-appchain \
 --base-path .local/appchain \
---dev
+--dev \
+--alice
 ```
