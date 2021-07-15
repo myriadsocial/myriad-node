@@ -11,6 +11,7 @@ cargo build -p myriad-parachain
 ./target/debug/myriad-parachain \
 --base-path .local/parachain \
 --dev \
+--alice \
 --force-authoring \
 --parachain-id 2000 \
 -- \

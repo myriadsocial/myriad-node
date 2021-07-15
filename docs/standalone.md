@@ -10,5 +10,6 @@ cargo build -p myriad
 ```bash
 ./target/debug/myriad \
 --base-path .local/standalone \
---dev
+--dev \
+--alice
 ```
