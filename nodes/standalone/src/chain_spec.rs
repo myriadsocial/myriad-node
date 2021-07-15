@@ -18,7 +18,7 @@ use sp_runtime::Perbill;
 use pallet_im_online::sr25519::{AuthorityId as ImOnlineId};
 use pallet_staking::StakerStatus;
 use myriad_runtime::BeefyConfig;
-use beefy_primitives::ecdsa::AuthorityId as BeefyId;
+use beefy_primitives::crypto::AuthorityId as BeefyId;
 use hex_literal::hex;
 use sp_core::crypto::UncheckedInto;
 

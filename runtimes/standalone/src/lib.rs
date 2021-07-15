@@ -55,7 +55,7 @@ use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::{historical as pallet_session_historical};
 
 use sp_runtime::traits::Keccak256;
-use beefy_primitives::{ecdsa::AuthorityId as BeefyId, ValidatorSet};
+use beefy_primitives::{crypto::AuthorityId as BeefyId, ValidatorSet};
 use sp_runtime::traits::ConvertInto;
 
 use pallet_evm::{
@@ -492,7 +492,7 @@ impl pallet_staking::Config for Runtime {
 }
 
 impl pallet_beefy::Config for Runtime {
-	type AuthorityId = BeefyId;
+	type BeefyId = BeefyId;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -760,7 +760,7 @@ construct_runtime!(
 		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event, ValidateUnsigned},
 		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
 		Historical: pallet_session_historical::{Pallet},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Mmr: pallet_mmr::{Pallet, Storage},
 		Beefy: pallet_beefy::{Pallet, Storage, Config<T>},
@@ -886,8 +886,9 @@ impl_runtime_apis! {
 		fn validate_transaction(
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
+			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
-			Executive::validate_transaction(source, tx)
+			Executive::validate_transaction(source, tx, block_hash)
 		}
 	}
 
@@ -1046,7 +1047,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl beefy_primitives::BeefyApi<Block, BeefyId> for Runtime {
+	impl beefy_primitives::BeefyApi<Block> for Runtime {
 		fn validator_set() -> ValidatorSet<BeefyId> {
 			Beefy::validator_set()
 		}

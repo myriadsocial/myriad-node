@@ -272,5 +272,6 @@ fn testnet_genesis(
 		parachain_info: ParachainInfoConfig {
 			parachain_id: id
 		},
+		parachain_system: Default::default(),
 	}
 }
