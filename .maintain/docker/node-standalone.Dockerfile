@@ -7,9 +7,9 @@ LABEL social.myriad.node.image.authors="1@myriad.social" \
 	social.myriad.node.image.vendor="Myriadsocial" \
 	social.myriad.node.image.title="myriadsocial/myriad-node" \
 	social.myriad.node.image.description="Myriad is a web3 layer on top of web2 social media" \
-	social.myriad.node.image.source="https://github.com/myriadsocial/myriad-node/blob/${VCS_REF}/.maintain/docker/node-standalone.Dockerfile" \
 	social.myriad.node.image.revision="${VCS_REF}" \
 	social.myriad.node.image.created="${BUILD_DATE}" \
+  social.myriad.node.image.source="https://github.com/myriadsocial/myriad-node/blob/${VCS_REF}/.maintain/docker/node-standalone.Dockerfile" \
 	social.myriad.node.image.documentation="https://github.com/myriadsocial/myriad-node/tree/${VCS_REF}"
 
 # show backtraces

@@ -14,7 +14,7 @@ VERSION=`grep -m 1 "^version" ./nodes/standalone/Cargo.toml | egrep -o "([0-9\.]
 BUILD_DATE=`date -u +"%Y%m%d"`
 
 # Copy binary
-echo "Copiying binary"
+echo "Copiying binary standalone"
 time cp ./target/release/myriad .
 
 # Build the image
@@ -24,11 +24,7 @@ time docker build -f ./.maintain/docker/node-standalone.Dockerfile --build-arg V
 time docker tag ${IMAGE_NAME}:latest ${IMAGE_NAME}:${VERSION}
 
 # Remove binary
-echo "Removing binary"
+echo "Removing binary standalone"
 time rm ./myriad
-
-# Show the list of available images for this repo
-echo "Image is ready"
-docker images | grep ${IMAGE_NAME}
 
 popd

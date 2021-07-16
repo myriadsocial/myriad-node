@@ -14,7 +14,7 @@ VERSION=`grep -m 1 "^version" ./nodes/parachain/Cargo.toml | egrep -o "([0-9\.]+
 BUILD_DATE=`date -u +"%Y%m%d"`
 
 # Copy binary
-echo "Copiying binary"
+echo "Copiying binary parachain"
 time cp ./target/release/myriad-parachain .
 
 # Build the image
@@ -24,11 +24,7 @@ time docker build -f ./.maintain/docker/node-parachain.Dockerfile --build-arg VC
 time docker tag ${IMAGE_NAME}:parachain-latest ${IMAGE_NAME}:parachain-${VERSION}
 
 # Remove binary
-echo "Removing binary"
+echo "Removing binary parachain"
 time rm ./myriad-parachain
-
-# Show the list of available images for this repo
-echo "Image is ready"
-docker images | grep ${IMAGE_NAME}
 
 popd
