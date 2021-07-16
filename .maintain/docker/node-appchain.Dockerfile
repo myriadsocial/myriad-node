@@ -5,11 +5,11 @@ ARG BUILD_DATE
 
 LABEL social.myriad.node.appchain.image.authors="1@myriad.social" \
 	social.myriad.node.appchain.image.vendor="Myriadsocial" \
-	social.myriad.node.appchain.image.title="myriadsocial/myriad-node-appchain" \
+	social.myriad.node.appchain.image.title="myriadsocial/myriad-node:appchain" \
 	social.myriad.node.appchain.image.description="Myriad is a web3 layer on top of web2 social media" \
-	social.myriad.node.appchain.image.source="https://github.com/myriadsocial/myriad-node/blob/${VCS_REF}/.maintain/docker/node-appchain.Dockerfile" \
 	social.myriad.node.appchain.image.revision="${VCS_REF}" \
 	social.myriad.node.appchain.image.created="${BUILD_DATE}" \
+  social.myriad.node.appchain.image.source="https://github.com/myriadsocial/myriad-node/blob/${VCS_REF}/.maintain/docker/node-appchain.Dockerfile" \
 	social.myriad.node.appchain.image.documentation="https://github.com/myriadsocial/myriad-node/tree/${VCS_REF}"
 
 # show backtraces

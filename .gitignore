@@ -5,15 +5,23 @@
 **/*.rs.bk
 *.swp
 
-# OS
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# OSX Operating System Files
 .DS_Store
+.AppleDouble
+.LSOverride
 
 # The cache for docker container dependency
 .cargo
 
 # The cache for chain data in container
 .local
-
-# IDE
-.idea
-.vscode
