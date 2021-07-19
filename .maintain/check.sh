@@ -9,4 +9,4 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 cd $PROJECT_ROOT
 
 echo "Checking project"
-time SKIP_WASM_BUILD=1 cargo check --release
+time SKIP_WASM_BUILD=1 cargo check --release --all

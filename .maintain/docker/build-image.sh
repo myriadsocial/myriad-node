@@ -9,10 +9,12 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 cd $PROJECT_ROOT
 
 IMAGE_NAME=myriadsocial/myriad-node
+VCS_REF=`git rev-parse --short HEAD`
+BUILD_DATE=`date -u +"%Y%m%d"`
 
-echo "Start building"
-time ./.maintain/docker/build-image-standalone.sh && ./.maintain/docker/build-image-standalone.sh && ./.maintain/docker/build-image-standalone.sh
-echo "Finish build"
+# Build the image
+echo "Building ${IMAGE_NAME}:latest docker image, hang on!"
+time docker build -f ./.maintain/docker/Dockerfile --build-arg VCS_REF=${VCS_REF} --build-arg BUILD_DATE=${BUILD_DATE} -t ${IMAGE_NAME}:latest .
 
 # Show the list of available images for this repo
 echo "Image is ready"
