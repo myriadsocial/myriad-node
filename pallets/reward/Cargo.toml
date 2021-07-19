@@ -3,8 +3,8 @@ name = 'pallet-reward'
 version = '1.0.0'
 edition = '2018'
 license = 'Unlicense'
-authors = ['Myriad <1@myriad.social>']
-homepage = 'https://www.myriad.social'
+authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
+homepage = 'https://myriad.social'
 repository = 'https://github.com/myriadsocial/myriad-node'
 
 [package.metadata.docs.rs]
