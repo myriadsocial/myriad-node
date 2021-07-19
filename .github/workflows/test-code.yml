@@ -4,17 +4,23 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
+    types:
+      - ready_for_review
 
 jobs:
   test-code:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.0
+        with:
+          access_token: ${{ github.token }}
+
       - name: Checkout Code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Cache cargo registry
         uses: actions/cache@v2
@@ -29,15 +35,14 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2021-06-17
+          toolchain: nightly-2021-07-17
           components: rustfmt, clippy
           target: wasm32-unknown-unknown
           override: true
           default: true
 
-      # Enable this for clippy linting.
-      # - name: Check and Lint Code
-      #   run: cargo +nightly-2021-06-17 clippy -- -D warnings
+      - name: Check and Lint Code
+        run: cargo +nightly-2021-07-17 clippy -- -D warnings
 
       - name: Check Code
         run: cargo check --all
