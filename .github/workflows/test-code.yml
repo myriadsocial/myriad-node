@@ -4,8 +4,7 @@ on:
   pull_request:
     branches:
       - main
-    types:
-      - ready_for_review
+      - development # TODO : remove this, if we use one branch
 
 jobs:
   test-code:
@@ -36,16 +35,10 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly-2021-07-17
-          components: rustfmt, clippy
+          components: clippy, rustfmt
           target: wasm32-unknown-unknown
           override: true
           default: true
 
-      - name: Check and Lint Code
-        run: cargo +nightly-2021-07-17 clippy -- -D warnings
-
-      - name: Check Code
-        run: cargo check --all
-
       - name: Test Code
-        run: cargo test --all
+        run: ./.maintain/test.sh

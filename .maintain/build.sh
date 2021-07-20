@@ -9,4 +9,4 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 cd $PROJECT_ROOT
 
 echo "Building binary"
-time cargo build --release
+time cargo build
