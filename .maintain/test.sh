@@ -8,5 +8,11 @@ pushd .
 PROJECT_ROOT=`git rev-parse --show-toplevel`
 cd $PROJECT_ROOT
 
-echo "Testing project"
-time SKIP_WASM_BUILD=1 cargo test --release --all
+echo "Check Code"
+time cargo check --all
+echo "Test Code"
+time cargo test --all
+echo "Check Lint"
+time cargo clippy --all -- -D warnings
+echo "Check Format"
+time cargo fmt --all -- --check
