@@ -147,7 +147,7 @@ pub mod opaque {
 //   https://substrate.dev/docs/en/knowledgebase/runtime/upgrades#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("myriad-appchain"),
+	spec_name: create_runtime_str!("appchain"),
 	impl_name: create_runtime_str!("myriad-appchain"),
 	authoring_version: 1,
 	// The version of the runtime specification. A full node will not attempt to use its native
@@ -516,7 +516,6 @@ impl pallet_octopus_appchain::Config for Runtime {
 	type Assets = Assets;
 	type GracePeriod = GracePeriod;
 	type UnsignedPriority = UnsignedPriority;
-	const RELAY_CONTRACT: &'static [u8] = b"oct-relay.testnet";
 }
 
 impl pallet_sudo::Config for Runtime {
