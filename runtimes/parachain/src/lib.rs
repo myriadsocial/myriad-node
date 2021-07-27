@@ -52,10 +52,10 @@ use xcm_builder::{
 use xcm_executor::{Config, XcmExecutor};
 
 /// Import the local pallet.
-pub use pallet_platform;
 pub use pallet_credential;
-pub use pallet_token;
+pub use pallet_platform;
 pub use pallet_post;
+pub use pallet_token;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -115,7 +115,7 @@ pub mod currency {
 	pub const BYTE_FEE: Balance = 100 * MICROMYRIA;
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-		items as Balance * 1 * MYRIA + (bytes as Balance) * BYTE_FEE
+		(items as Balance) * MYRIA + (bytes as Balance) * BYTE_FEE
 	}
 }
 
@@ -161,10 +161,7 @@ pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-	NativeVersion {
-		runtime_version: VERSION,
-		can_author_with: Default::default(),
-	}
+	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
 /// We assume that ~10% of the block weight is consumed by `on_initalize` handlers.
@@ -265,10 +262,10 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1 * currency::MILLIMYRIA;
-	pub const TransferFee: u128 = 1 * currency::MILLIMYRIA;
-	pub const CreationFee: u128 = 1 * currency::MILLIMYRIA;
-	pub const TransactionByteFee: u128 = 1 * currency::MICROMYRIA;
+	pub const ExistentialDeposit: u128 = currency::MILLIMYRIA;
+	pub const TransferFee: u128 = currency::MILLIMYRIA;
+	pub const CreationFee: u128 = currency::MILLIMYRIA;
+	pub const TransactionByteFee: u128 = currency::MICROMYRIA;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -675,7 +672,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 			.create_inherent_data()
 			.expect("Could not create the timestamp inherent data");
 
-		inherent_data.check_extrinsics(&block)
+		inherent_data.check_extrinsics(block)
 	}
 }
 

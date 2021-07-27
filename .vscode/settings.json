@@ -18,4 +18,11 @@
   },
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
+  "rust-analyzer.rustfmt.overrideCommand": [
+    "rustup",
+    "run",
+    "nightly-2021-06-29",
+    "--",
+    "rustfmt"
+    ],
 }

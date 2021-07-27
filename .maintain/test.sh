@@ -9,10 +9,12 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 cd $PROJECT_ROOT
 
 echo "Check Code"
-time cargo check --all
+cargo check --all
 echo "Test Code"
-time cargo test --all
+cargo test --all
 echo "Check Lint"
-time cargo clippy --all -- -D warnings
+cargo +nightly-2021-06-29 clippy --all -- -D warnings
 echo "Check Format"
-time cargo fmt --all -- --check
+cargo +nightly-2021-06-29 fmt --all -- --check
+
+popd

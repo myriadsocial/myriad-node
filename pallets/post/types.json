@@ -1,28 +1,28 @@
 {
-    "FreeBalanceOf": "FreeBalance",
-    "AccountIdOf": "AccountId",
-    "PeopleId": "Text",
-    "PostId": "Text",
-    "FreeBalance": {
-        "free": "u32",
-        "token_id": "Text"
-    },
-    "Post": {
-        "post_id": "Text",
-        "people_id": "Text",
-        "platform": "Text",
-        "balances": "Vec<FreeBalance>"
-    },
-    "Person": {
-        "people_id": "Text",
-        "platform": "Text",
-        "balances": "Vec<FreeBalance>"
-    },
-    "PostInfo": {
-        "post_id": "Text",
-        "people_id": "Text",
-        "platform": "Text",
-        "token_id": "Text",
-        "free": "u32"
-    }
+  "FreeBalanceOf": "FreeBalance",
+  "AccountIdOf": "AccountId",
+  "PeopleId": "Text",
+  "PostId": "Text",
+  "FreeBalance": {
+    "free": "u32",
+    "token_id": "Text"
+  },
+  "Post": {
+    "post_id": "Text",
+    "people_id": "Text",
+    "platform": "Text",
+    "balances": "Vec<FreeBalance>"
+  },
+  "Person": {
+    "people_id": "Text",
+    "platform": "Text",
+    "balances": "Vec<FreeBalance>"
+  },
+  "PostInfo": {
+    "post_id": "Text",
+    "people_id": "Text",
+    "platform": "Text",
+    "token_id": "Text",
+    "free": "u32"
+  }
 }
