@@ -17,8 +17,8 @@ use cumulus_primitives_core::ParaId;
 
 // Substrate Imports
 use sc_client_api::ExecutorProvider;
-pub use sc_executor::NativeExecutor;
 use sc_executor::native_executor_instance;
+pub use sc_executor::NativeExecutor;
 use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -46,6 +46,7 @@ native_executor_instance!(
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
+#[allow(clippy::type_complexity)]
 pub fn new_partial<RuntimeApi, Executor, BIQ>(
 	config: &Configuration,
 	build_import_queue: BIQ,
@@ -98,7 +99,7 @@ where
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, Executor>(
-			&config,
+			config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 		)?;
 	let client = Arc::new(client);
@@ -194,7 +195,7 @@ where
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
 	if matches!(parachain_config.role, Role::Light) {
-		return Err("Light client not supported!".into());
+		return Err("Light client not supported!".into())
 	}
 
 	let parachain_config = prepare_node_config(parachain_config);
@@ -202,14 +203,12 @@ where
 	let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
-	let relay_chain_full_node = cumulus_client_service::build_polkadot_full_node(
-		polkadot_config,
-		telemetry_worker_handle,
-	)
-	.map_err(|e| match e {
-		polkadot_service::Error::Sub(x) => x,
-		s => format!("{}", s).into(),
-	})?;
+	let relay_chain_full_node =
+		cumulus_client_service::build_polkadot_full_node(polkadot_config, telemetry_worker_handle)
+			.map_err(|e| match e {
+				polkadot_service::Error::Sub(x) => x,
+				s => format!("{}", s).into(),
+			})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -320,7 +319,6 @@ pub fn parachain_build_import_queue(
 > {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
-
 	cumulus_client_consensus_aura::import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
 		_,
@@ -330,7 +328,7 @@ pub fn parachain_build_import_queue(
 		_,
 		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
-		block_import:  client.clone(),
+		block_import: client.clone(),
 		client: client.clone(),
 		create_inherent_data_providers: move |_, _| async move {
 			let time = sp_timestamp::InherentDataProvider::from_system_time();
@@ -343,7 +341,7 @@ pub fn parachain_build_import_queue(
 
 			Ok((time, slot))
 		},
-		registry: config.prometheus_registry().clone(),
+		registry: config.prometheus_registry(),
 		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
 		spawner: &task_manager.spawn_essential_handle(),
 		telemetry,
@@ -356,7 +354,10 @@ pub async fn start_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
-) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, ParachainRuntimeExecutor>>)> {
+) -> sc_service::error::Result<(
+	TaskManager,
+	Arc<TFullClient<Block, RuntimeApi, ParachainRuntimeExecutor>>,
+)> {
 	start_node_impl::<RuntimeApi, ParachainRuntimeExecutor, _, _, _>(
 		parachain_config,
 		polkadot_config,
@@ -378,7 +379,7 @@ pub async fn start_node(
 				task_manager.spawn_handle(),
 				client.clone(),
 				transaction_pool,
-				prometheus_registry.clone(),
+				prometheus_registry,
 				telemetry.clone(),
 			);
 
@@ -426,7 +427,7 @@ pub async fn start_node(
 				block_import: client.clone(),
 				relay_chain_client: relay_chain_node.client.clone(),
 				relay_chain_backend: relay_chain_node.backend.clone(),
-				para_client: client.clone(),
+				para_client: client,
 				backoff_authoring_blocks: Option::<()>::None,
 				sync_oracle,
 				keystore,

@@ -1,74 +1,72 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use sp_std::{convert::TryFrom, prelude::*, marker::PhantomData};
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160, H256};
-use sp_runtime::{
-	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, MultiSignature,
-	transaction_validity::{TransactionValidity, TransactionSource},
-};
-use sp_runtime::traits::{
-	BlakeTwo256, Block as BlockT, AccountIdLookup, Verify, IdentifyAccount, NumberFor,
+use pallet_grandpa::{
+	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
 use sp_api::impl_runtime_apis;
-use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
-use pallet_grandpa::fg_primitives;
-use sp_version::RuntimeVersion;
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_runtime::{
+	create_runtime_str, generic, impl_opaque_keys,
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify},
+	transaction_validity::{TransactionSource, TransactionValidity},
+	ApplyExtrinsicResult, MultiSignature,
+};
+use sp_std::{marker::PhantomData, prelude::*};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
+use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
+pub use frame_support::{
+	construct_runtime, parameter_types,
+	traits::{FindAuthor, KeyOwnerProofSystem, Randomness},
+	weights::{
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+		IdentityFee, Weight,
+	},
+	ConsensusEngineId, StorageValue,
+};
+pub use pallet_balances::Call as BalancesCall;
+pub use pallet_timestamp::Call as TimestampCall;
+use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use pallet_timestamp::Call as TimestampCall;
-pub use pallet_balances::Call as BalancesCall;
-pub use sp_runtime::{FixedPointNumber, Permill, Perbill, Perquintill};
-pub use frame_support::{
-	construct_runtime, parameter_types, StorageValue, ConsensusEngineId,
-	traits::{KeyOwnerProofSystem, Randomness, FindAuthor},
-	weights::{
-		Weight, IdentityFee,
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-	},
-};
-use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
+pub use sp_runtime::{FixedPointNumber, Perbill, Permill, Perquintill};
 
-use frame_support::{
-	weights::DispatchClass,
-	traits::U128CurrencyToVote,
-};
+use frame_support::{traits::U128CurrencyToVote, weights::DispatchClass};
 use frame_system::{
+	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
-	limits::{BlockWeights, BlockLength}
 };
-use sp_core::{Encode, Decode, crypto::Public};
-use sp_runtime::generic::Era;
-use sp_runtime::curve::PiecewiseLinear;
-use sp_runtime::transaction_validity::TransactionPriority;
-use sp_runtime::traits::{self, StaticLookup, SaturatedConversion, OpaqueKeys};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use pallet_session::{historical as pallet_session_historical};
-
-use sp_runtime::traits::Keccak256;
-use beefy_primitives::{crypto::AuthorityId as BeefyId, ValidatorSet};
-use sp_runtime::traits::ConvertInto;
-
-use pallet_evm::{
-	Account as EVMAccount, FeeCalculator, HashedAddressMapping,
-	EnsureAddressTruncated, Runner,
+use pallet_session::historical as pallet_session_historical;
+use sp_core::{crypto::Public, Decode, Encode};
+use sp_runtime::{
+	curve::PiecewiseLinear,
+	generic::Era,
+	traits::{self, OpaqueKeys, SaturatedConversion, StaticLookup},
+	transaction_validity::TransactionPriority,
 };
+
+use beefy_primitives::{crypto::AuthorityId as BeefyId, ValidatorSet};
+use sp_runtime::traits::{ConvertInto, Keccak256};
+
 use fp_rpc::TransactionStatus;
+use pallet_evm::{
+	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
+};
 
 /// Import the local pallet.
-pub use pallet_platform;
 pub use pallet_credential;
-pub use pallet_token;
+pub use pallet_platform;
 pub use pallet_post;
+pub use pallet_token;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -112,7 +110,7 @@ pub mod currency {
 	pub const BYTE_FEE: Balance = 100 * MICROMYRIA;
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-		items as Balance * 1 * MYRIA + (bytes as Balance) * BYTE_FEE
+		(items as Balance) * MYRIA + (bytes as Balance) * BYTE_FEE
 	}
 }
 
@@ -207,16 +205,13 @@ pub const WEEKS: BlockNumber = DAYS * 7;
 pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
 	sp_consensus_babe::BabeEpochConfiguration {
 		c: PRIMARY_PROBABILITY,
-		allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryPlainSlots
+		allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryPlainSlots,
 	};
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-	NativeVersion {
-		runtime_version: VERSION,
-		can_author_with: Default::default(),
-	}
+	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
@@ -498,7 +493,9 @@ impl pallet_beefy::Config for Runtime {
 
 pub struct OctopusAppCrypto;
 
-impl frame_system::offchain::AppCrypto<<Signature as Verify>::Signer, Signature> for OctopusAppCrypto {
+impl frame_system::offchain::AppCrypto<<Signature as Verify>::Signer, Signature>
+	for OctopusAppCrypto
+{
 	type RuntimeAppPublic = pallet_octopus_appchain::AuthorityId;
 	type GenericSignature = sp_core::sr25519::Signature;
 	type GenericPublic = sp_core::sr25519::Public;
@@ -530,8 +527,8 @@ parameter_types! {
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
-	where
-		Call: From<LocalCall>,
+where
+	Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: Call,
@@ -541,10 +538,8 @@ impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for R
 	) -> Option<(Call, <UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload)> {
 		let tip = 0;
 		// take the biggest period possible.
-		let period = BlockHashCount::get()
-			.checked_next_power_of_two()
-			.map(|c| c / 2)
-			.unwrap_or(2) as u64;
+		let period =
+			BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
 		let current_block = System::block_number()
 			.saturated_into::<u64>()
 			// The `System::block_number` is initialized with `n+1`,
@@ -565,13 +560,10 @@ impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for R
 				log::warn!("Unable to create signed payload: {:?}", e);
 			})
 			.ok()?;
-		let signature = raw_payload
-			.using_encoded(|payload| {
-				C::sign(payload, public)
-			})?;
+		let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
 		let address = <Self as frame_system::Config>::Lookup::unlookup(account);
 		let (call, extra, _) = raw_payload.deconstruct();
-		Some((call, (address, signature.into(), extra)))
+		Some((call, (address, signature, extra)))
 	}
 }
 
@@ -580,7 +572,8 @@ impl frame_system::offchain::SigningTypes for Runtime {
 	type Signature = Signature;
 }
 
-impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime where
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
 	Call: From<C>,
 {
 	type Extrinsic = UncheckedExtrinsic;
@@ -622,10 +615,10 @@ impl pallet_mmr::Config for Runtime {
 
 parameter_types! {
 	pub const AssetDeposit: Balance = 100 * currency::MYRIA;
-	pub const ApprovalDeposit: Balance = 1 * currency::MYRIA;
+	pub const ApprovalDeposit: Balance = currency::MYRIA;
 	pub const StringLimit: u32 = 50;
 	pub const MetadataDepositBase: Balance = 10 * currency::MYRIA;
-	pub const MetadataDepositPerByte: Balance = 1 * currency::MYRIA;
+	pub const MetadataDepositPerByte: Balance = currency::MYRIA;
 }
 
 impl pallet_assets::Config for Runtime {
@@ -661,7 +654,7 @@ impl pallet_evm::GasWeightMapping for MyriadGasWeightMapping {
 		gas.saturating_mul(WEIGHT_PER_GAS)
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
-		u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
+		weight.wrapping_div(WEIGHT_PER_GAS)
 	}
 }
 
@@ -686,7 +679,7 @@ parameter_types! {
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
 	fn min_gas_price() -> U256 {
-		(1 * currency::NANOMYRIA).into()
+		(currency::NANOMYRIA).into()
 	}
 }
 
@@ -729,14 +722,14 @@ impl pallet_evm::Config for Runtime {
 }
 
 pub struct FindAuthorTruncated<F>(PhantomData<F>);
-impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F>
-{
-	fn find_author<'a, I>(digests: I) -> Option<H160> where
-		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
+	fn find_author<'a, I>(digests: I) -> Option<H160>
+	where
+		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
 		if let Some(author_index) = F::find_author(digests) {
 			let authority_id = Babe::authorities()[author_index as usize].0.clone();
-			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]))
 		}
 		None
 	}
@@ -803,15 +796,23 @@ pub struct TransactionConverter;
 
 impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
 	fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
-		UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact(transaction).into())
+		UncheckedExtrinsic::new_unsigned(
+			pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+		)
 	}
 }
 
 impl fp_rpc::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConverter {
-	fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> opaque::UncheckedExtrinsic {
-		let extrinsic = UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact(transaction).into());
+	fn convert_transaction(
+		&self,
+		transaction: pallet_ethereum::Transaction,
+	) -> opaque::UncheckedExtrinsic {
+		let extrinsic = UncheckedExtrinsic::new_unsigned(
+			pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+		);
 		let encoded = extrinsic.encode();
-		opaque::UncheckedExtrinsic::decode(&mut &encoded[..]).expect("Encoded extrinsic is always valid")
+		opaque::UncheckedExtrinsic::decode(&mut &encoded[..])
+			.expect("Encoded extrinsic is always valid")
 	}
 }
 
@@ -833,7 +834,7 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>
+	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
@@ -855,11 +856,7 @@ mod mmr {
 	use super::Runtime;
 	pub use pallet_mmr::primitives::*;
 
-	pub type Leaf = <
-		<Runtime as pallet_mmr::Config>::LeafData
-		as
-		LeafDataProvider
-	>::LeafData;
+	pub type Leaf = <<Runtime as pallet_mmr::Config>::LeafData as LeafDataProvider>::LeafData;
 	pub type Hash = <Runtime as pallet_mmr::Config>::Hash;
 	pub type Hashing = <Runtime as pallet_mmr::Config>::Hashing;
 }
@@ -1130,7 +1127,7 @@ impl_runtime_apis! {
 				gas_limit.low_u64(),
 				gas_price,
 				nonce,
-				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
+				config.as_ref().unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())
 		}
 
@@ -1158,7 +1155,7 @@ impl_runtime_apis! {
 				gas_limit.low_u64(),
 				gas_price,
 				nonce,
-				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
+				config.as_ref().unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.into())
 		}
 
