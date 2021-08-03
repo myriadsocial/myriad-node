@@ -5,16 +5,15 @@ on:
     branches:
       - main
 
+concurrency:
+  group: test-code-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   test-code:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.0
-        with:
-          access_token: ${{ github.token }}
-
       - name: Checkout Code
         uses: actions/checkout@v2
         with:
