@@ -28,6 +28,9 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+            ${{ runner.os }}-
 
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
