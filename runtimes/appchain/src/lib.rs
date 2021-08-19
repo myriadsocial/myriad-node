@@ -30,7 +30,7 @@ pub use frame_support::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		IdentityFee, Weight,
 	},
-	ConsensusEngineId, StorageValue,
+	ConsensusEngineId, PalletId, StorageValue,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -502,6 +502,7 @@ impl frame_system::offchain::AppCrypto<<Signature as Verify>::Signer, Signature>
 }
 
 parameter_types! {
+	pub const OctopusAppchainPalletId: PalletId = PalletId(*b"py/octps");
 	pub const GracePeriod: u32 = 5;
 	pub const UnsignedPriority: u64 = 1 << 20;
 }
@@ -510,6 +511,8 @@ impl pallet_octopus_appchain::Config for Runtime {
 	type AuthorityId = OctopusAppCrypto;
 	type Event = Event;
 	type Call = Call;
+	type PalletId = OctopusAppchainPalletId;
+	type Currency = Balances;
 	type Assets = Assets;
 	type GracePeriod = GracePeriod;
 	type UnsignedPriority = UnsignedPriority;
