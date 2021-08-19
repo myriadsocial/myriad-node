@@ -331,7 +331,7 @@ fn testnet_genesis(
 ) -> GenesisConfig {
 	const ENDOWMENT: Balance = 1_000_000 * MYRIA;
 	const STASH: Balance = 100 * MYRIA;
-	const OCTOPUS_STASH: Balance = 100;
+	const OCTOPUS_STASH: Balance = 10_000_000_000_000_000;
 
 	GenesisConfig {
 		system: SystemConfig {
@@ -403,7 +403,7 @@ fn testnet_genesis(
 		ethereum: EthereumConfig {},
 		octopus_appchain: OctopusAppchainConfig {
 			appchain_id: appchain_id.to_string(),
-			relay_contract: "octopus-relay.testnet".to_string(),
+			relay_contract: "dev-oct-relay.testnet".to_string(),
 			validators: initial_authorities.iter().map(|x| (x.0.clone(), OCTOPUS_STASH)).collect(),
 			asset_id_by_name: vec![("usdc.testnet".to_string(), 0)],
 		},
