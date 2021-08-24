@@ -78,12 +78,6 @@ pallet-evm-precompile-modexp = { git = 'https://github.com/purestake/frontier', 
 pallet-evm-precompile-sha3fips = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
 pallet-ethereum = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
 
-# Local Dependencies
-pallet-platform = { path = '../../pallets/platform', default-features = false }
-pallet-credential = { path = '../../pallets/credential', default-features = false }
-pallet-token = { path = '../../pallets/token', default-features = false }
-pallet-post = { path = '../../pallets/post', default-features = false }
-
 [features]
 default = ['std']
 runtime-benchmarks = [
@@ -143,8 +137,4 @@ std = [
 	'pallet-evm-precompile-modexp/std',
 	'pallet-evm-precompile-sha3fips/std',
 	'pallet-ethereum/std',
-	'pallet-platform/std',
-	'pallet-credential/std',
-	'pallet-token/std',
-	'pallet-post/std',
 ]

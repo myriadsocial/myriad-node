@@ -82,12 +82,6 @@ pallet-ethereum = { git = 'https://github.com/purestake/frontier', branch = 'moo
 ## Octopus Pallet Dependencies
 pallet-octopus-appchain = { git = 'https://github.com/blocksphereid/pallet-octopus-appchain.git', branch = 'polkadot-v0.9.8', default-features = false }
 
-# Local Dependencies
-pallet-platform = { path = '../../pallets/platform', default-features = false }
-pallet-credential = { path = '../../pallets/credential', default-features = false }
-pallet-token = { path = '../../pallets/token', default-features = false }
-pallet-post = { path = '../../pallets/post', default-features = false }
-
 [features]
 default = ['std']
 runtime-benchmarks = [
@@ -148,8 +142,4 @@ std = [
 	'pallet-evm-precompile-sha3fips/std',
 	'pallet-ethereum/std',
 	'pallet-octopus-appchain/std',
-	'pallet-platform/std',
-	'pallet-credential/std',
-	'pallet-token/std',
-	'pallet-post/std',
 ]

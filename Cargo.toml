@@ -6,7 +6,6 @@ members = [
 	'nodes/appchain',
 	'nodes/parachain',
 	'nodes/standalone',
-	'pallets/*',
 	'runtimes/appchain',
 	'runtimes/parachain',
 	'runtimes/standalone',
