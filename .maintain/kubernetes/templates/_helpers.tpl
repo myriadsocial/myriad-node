@@ -70,20 +70,6 @@ Custom chain-spec path
 {{- end }}
 
 {{/*
-Relay custom chain-spec
-*/}}
-{{- define "myriad-node.relayCustomChainSpec" -}}
-{{- printf "%s/%s" (include "myriad-node.relayCustomChainSpecPath" .) .Values.node.relayChainFileName }}
-{{- end }}
-
-{{/*
-Relay chain-spec path
-*/}}
-{{- define "myriad-node.relayCustomChainSpecPath" -}}
-{{- printf "%s/%s" .Values.image.basePath "relay-chain-spec" }}
-{{- end }}
-
-{{/*
 Custom chain-spec
 */}}
 {{- define "myriad-node.customChainSpec" -}}

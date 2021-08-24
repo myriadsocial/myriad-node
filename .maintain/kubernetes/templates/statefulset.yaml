@@ -70,22 +70,6 @@ spec:
             - name: data
               mountPath: {{ .Values.image.basePath }}
         {{- end }}
-        {{- if .Values.node.relayCustomChain }}
-        - name: download-relay-chain-spec
-          image: curlimages/curl
-          command: ["sh"]
-          args:
-            - -c
-            - mkdir -p {{ include "myriad-node.relayCustomChainSpecPath" . }} &&
-              cd {{ include "myriad-node.relayCustomChainSpecPath" . }} &&
-              curl -LO {{ .Values.node.relayChainURL }}
-          securityContext:
-            runAsNonRoot: false
-            runAsUser: 0
-          volumeMounts:
-            - name: data
-              mountPath: {{ .Values.image.basePath }}
-        {{- end }}
       {{- end }}
       containers:
         - name: {{ include "myriad-node.fullname" . }}
@@ -94,15 +78,12 @@ spec:
           command: [ "sh" ]
           args:
             - -c
-            - exec /usr/local/bin/myriad
+            - exec /usr/local/bin/{{ .Values.node.binnaryName | default myriad }}
               --base-path {{ .Values.image.basePath }}
               {{- if .Values.node.customChain }}
               --chain {{ include "myriad-node.customChainSpec" . }}
               {{- else }}
               --chain {{ .Values.node.chain }}
-              {{- end }}
-              {{- if .Values.node.customPacahainId }}
-              --parachain-id {{ .Values.node.parachainId }}
               {{- end }}
               {{- if .Values.secrets.nodeKey }}
               --node-key $(cat {{ include "myriad-node.nodeKey" . }})
@@ -112,10 +93,9 @@ spec:
               {{- else }}
               --name {{ include "myriad-node.fullname" . }}
               {{- end }}
-              {{- if .Values.node.collator }}
-              --collator
+              {{- if .Values.node.validator }}
+              --validator
               {{- end }}
-              --force-authoring
               --port {{ .Values.node.p2pPort }}
               --rpc-port {{ .Values.node.httpRpcPort }}
               --ws-port {{ .Values.node.wsRpcPort }}
@@ -127,13 +107,6 @@ spec:
               {{- else }}
               --rpc-external
               --ws-external
-              {{- end }}
-              --
-              --execution wasm
-              {{- if .Values.node.relayCustomChain }}
-              --chain {{ include "myriad-node.relayCustomChainSpec" . }}
-              {{- else }}
-              --chain {{ .Values.node.relayChain }}
               {{- end }}
           volumeMounts:
             - name: data
