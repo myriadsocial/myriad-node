@@ -4724,7 +4724,7 @@ dependencies = [
 
 [[package]]
 name = "myriad"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "beefy-gadget",
  "beefy-gadget-rpc",
@@ -4798,7 +4798,7 @@ dependencies = [
 
 [[package]]
 name = "myriad-appchain"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "beefy-gadget",
  "beefy-gadget-rpc",
@@ -4873,7 +4873,7 @@ dependencies = [
 
 [[package]]
 name = "myriad-appchain-runtime"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "beefy-primitives",
  "fp-rpc",
@@ -4926,7 +4926,7 @@ dependencies = [
 
 [[package]]
 name = "myriad-parachain"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "beefy-gadget",
  "beefy-gadget-rpc",
@@ -5012,7 +5012,7 @@ dependencies = [
 
 [[package]]
 name = "myriad-parachain-runtime"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "beefy-primitives",
  "cumulus-pallet-aura-ext",
@@ -5075,7 +5075,7 @@ dependencies = [
 
 [[package]]
 name = "myriad-runtime"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "beefy-primitives",
  "fp-rpc",
