@@ -55,22 +55,17 @@ service:
   nodePortP2P: 30333
 
 node:
+  binnaryName: myriad
   chain: local
   customChain: false
   chainURL: ""
   chainFileName: ""
-  customPacahainId: false
-  parachainId: 1000
   wellKnownAccount: ""
-  collator: false
+  validator: false
   unsafeEndpointAccess: false
   p2pPort: 30333
   httpRpcPort: 9933
   wsRpcPort: 9944
-  relayChain: rococo-local
-  relayCustomChain: false
-  relayChainURL: ""
-  relayChainFileName: ""
 
 secrets:
   nodeKey: ""
