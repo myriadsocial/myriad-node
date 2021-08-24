@@ -51,12 +51,6 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
-/// Import the local pallet.
-pub use pallet_credential;
-pub use pallet_platform;
-pub use pallet_post;
-pub use pallet_token;
-
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
@@ -456,23 +450,6 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 }
 
-/// Configure local pallet
-impl pallet_platform::Config for Runtime {
-	type Event = Event;
-}
-
-impl pallet_credential::Config for Runtime {
-	type Event = Event;
-}
-
-impl pallet_token::Config for Runtime {
-	type Event = Event;
-}
-
-impl pallet_post::Config for Runtime {
-	type Event = Event;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -499,12 +476,6 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 51,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 52,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
-
-		// Include the custom logic from the local pallet in the runtime.
-		Platform: pallet_platform::{Pallet, Call, Storage, Event<T>},
-		Credential: pallet_credential::{Pallet, Call, Storage, Event<T>},
-		Token: pallet_token::{Pallet, Call, Storage, Event<T>},
-		Post: pallet_post::{Pallet, Call, Storage, Event<T>},
 	}
 );
 

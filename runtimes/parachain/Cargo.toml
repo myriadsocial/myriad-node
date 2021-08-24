@@ -99,12 +99,6 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot', branch = 'relea
 ## Polkadot Pallet Dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot', branch = 'release-v0.9.8', default-features = false }
 
-# Local Dependencies
-pallet-platform = { path = '../../pallets/platform', default-features = false }
-pallet-credential = { path = '../../pallets/credential', default-features = false }
-pallet-token = { path = '../../pallets/token', default-features = false }
-pallet-post = { path = '../../pallets/post', default-features = false }
-
 [features]
 default = ['std']
 runtime-benchmarks = [
@@ -175,8 +169,4 @@ std = [
 	'cumulus-pallet-xcmp-queue/std',
 	'parachain-info/std',
 	'pallet-xcm/std',
-	'pallet-platform/std',
-	'pallet-credential/std',
-	'pallet-token/std',
-	'pallet-post/std',
 ]

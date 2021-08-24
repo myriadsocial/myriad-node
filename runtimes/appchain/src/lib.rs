@@ -62,12 +62,6 @@ use pallet_evm::{
 	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
 };
 
-/// Import the local pallet.
-pub use pallet_credential;
-pub use pallet_platform;
-pub use pallet_post;
-pub use pallet_token;
-
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -744,23 +738,6 @@ impl pallet_ethereum::Config for Runtime {
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
 
-/// Configure local pallet
-impl pallet_platform::Config for Runtime {
-	type Event = Event;
-}
-
-impl pallet_credential::Config for Runtime {
-	type Event = Event;
-}
-
-impl pallet_token::Config for Runtime {
-	type Event = Event;
-}
-
-impl pallet_post::Config for Runtime {
-	type Event = Event;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -787,11 +764,6 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
-		// Include the custom logic from the local pallet in the runtime.
-		Platform: pallet_platform::{Pallet, Call, Storage, Event<T>},
-		Credential: pallet_credential::{Pallet, Call, Storage, Event<T>},
-		Token: pallet_token::{Pallet, Call, Storage, Event<T>},
-		Post: pallet_post::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
