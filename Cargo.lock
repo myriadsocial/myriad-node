@@ -5837,7 +5837,7 @@ dependencies = [
 [[package]]
 name = "pallet-octopus-appchain"
 version = "3.0.0-pre.0"
-source = "git+https://github.com/blocksphereid/pallet-octopus-appchain.git?branch=polkadot-v0.9.8#48597295cee55dca21d7f64def4f22089f58bbf5"
+source = "git+https://github.com/blocksphereid/pallet-octopus-appchain.git?branch=polkadot-v0.9.8#b1817d400d33bdd56bc1d2e56f4cdb87e4dcfbce"
 dependencies = [
  "base64 0.13.0",
  "borsh",
@@ -11441,7 +11441,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f559b464de2e2bdabcac6a210d12e9b5a5973c251e102c44c585c71d51bd78e"
 dependencies = [
  "cfg-if 1.0.0",
- "rand 0.8.4",
+ "rand 0.3.23",
  "static_assertions",
 ]
 
