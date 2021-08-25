@@ -129,6 +129,9 @@ pub fn development_tesnet_config(id: ParaId) -> Result<ChainSpec, String> {
 					// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
 					hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
 						.unchecked_into(),
+					// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
+					hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
+						.unchecked_into(),
 				],
 				// Pre-funded accounts
 				vec![
