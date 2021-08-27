@@ -1,4 +1,4 @@
-name: Publish Docker image for new releases
+name: Publish docker image for new release
 
 on:
   release:
@@ -6,11 +6,11 @@ on:
       - published
 
 jobs:
-  build-docker:
+  build-and-publish-docker-image:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
@@ -24,7 +24,7 @@ jobs:
       - name: Cache Docker layers
         uses: actions/cache@v2
         with:
-          path: /tmp/release/.buildx-cache
+          path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
@@ -35,27 +35,34 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Compute build info
+        id: build-info
+        shell: bash
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=date::$(date +'%Y%m%d')"
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           push: true
           file: .maintain/docker/Dockerfile
           tags: |
-            myriadsocial/myriad-node:latest
-            myriadsocial/myriad-node:${{ github.event.release.tag_name }}
+            ${{ github.repository }}:latest
+            ${{ github.repository }}:${{ github.event.release.tag_name }}
           build-args: |
-            VCS_REF=${{ github.ref }}
-            BUILD_DATE=${{ github.event.release.published_at }}
-          cache-from: type=local,src=/tmp/release/.buildx-cache
-          cache-to: type=local,dest=/tmp/release/.buildx-cache-new
+            VCS_REF=${{ steps.build-info.sha_short }}
+            BUILD_DATE=${{ steps.build-info.date }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       # Temp fix
       # https://github.com/docker/build-push-action/issues/252
       # https://github.com/moby/buildkit/issues/1896
       - name: Move cache
         run: |
-          rm -rf /tmp/release/.buildx-cache
-          mv /tmp/release/.buildx-cache-new /tmp/release/.buildx-cache
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
