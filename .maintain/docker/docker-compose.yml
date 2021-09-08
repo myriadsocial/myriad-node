@@ -1,4 +1,4 @@
-version: "3"
+version: '3'
 
 services:
   node:
@@ -6,11 +6,10 @@ services:
     image: myriadsocial/myriad-node
     build:
       context: ../../
-      dockerfile: Dockerfile
+      dockerfile: .maintain/docker/Dockerfile
     volumes:
       - data:/data
     command: >
-      myriad
       --base-path /data
       --dev
       --alice
@@ -18,10 +17,13 @@ services:
       --rpc-methods unsafe
       --unsafe-rpc-external
       --unsafe-ws-external
+      --prometheus-external
+      --no-telemetry
     ports:
       - 30333:30333
       - 9933:9933
       - 9944:9944
+      - 9615:9615
     networks:
       myriad:
         ipv4_address: 172.27.1.1
