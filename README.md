@@ -1,4 +1,4 @@
-# Myraid Node
+# Myriad Node
 
 ## Standalone
 
