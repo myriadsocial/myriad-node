@@ -20,8 +20,6 @@ RUN useradd -m -u 1001 -U -s /bin/sh -d /home/myriad myriad && \
   ln -s /data /home/myriad/.local/share/myriad
 # Copy from builder stage
 COPY --from=builder /build/target/release/myriad /usr/local/bin
-COPY --from=builder /build/target/release/myriad-appchain /usr/local/bin
-COPY --from=builder /build/target/release/myriad-parachain /usr/local/bin
 # Set to a non-root built-in user
 USER myriad
 # Set environment variable
