@@ -19,6 +19,7 @@ services:
       --unsafe-ws-external
       --prometheus-external
       --no-telemetry
+      --enable-offchain-indexing true
     ports:
       - 30333:30333
       - 9933:9933
