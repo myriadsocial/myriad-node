@@ -1,13 +1,17 @@
 # Myriad Node
 
-## Standalone
+### Build
 
-[read this](./docs/standalone.md)
+```bash
+cargo build
+```
 
-## Parachain
+### Run
 
-[read this](./docs/parachain.md)
-
-## Appchain
-
-[read this](./docs/appchain.md)
+```bash
+./target/debug/myriad \
+--base-path .local \
+--dev \
+--alice \
+--enable-offchain-indexing true
+```

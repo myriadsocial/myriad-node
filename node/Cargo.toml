@@ -76,7 +76,6 @@ substrate-prometheus-endpoint = { git = 'https://github.com/paritytech/substrate
 ## Substrate Pallet Dependencies
 pallet-transaction-payment-rpc = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8' }
 pallet-im-online = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8' }
-pallet-staking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8' }
 pallet-mmr-rpc = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8' }
 
 # Grandpa Bridge Dependencies
@@ -103,9 +102,14 @@ fc-rpc = { git = "https://github.com/purestake/frontier", branch = "moonbeam-pol
 pallet-evm = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
 pallet-ethereum = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
 
+# Octopus Dependencies
+## Octopus Pallet Dependencies
+pallet-octopus-appchain = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8' }
+pallet-octopus-lpos = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8' }
+
 # Local Dependencies
 # Myriad Runtime Dependencies
-myriad-runtime = { path = '../../runtimes/standalone' }
+myriad-runtime = { path = '../runtime' }
 
 [features]
 default = []
