@@ -1,25 +1,26 @@
-use myriad_appchain_runtime::{
-	AccountId, BabeConfig, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig, GrandpaConfig,
-	Signature, SudoConfig, SystemConfig, BABE_GENESIS_EPOCH_CONFIG, WASM_BINARY,
-};
-use sc_service::{ChainType, Properties};
-use sp_core::{sr25519, Pair, Public, H160, U256};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::{collections::BTreeMap, str::FromStr};
+use hex_literal::hex;
 
 use beefy_primitives::crypto::AuthorityId as BeefyId;
-use hex_literal::hex;
-use myriad_appchain_runtime::{
-	currency::MYRIA, opaque::SessionKeys, Balance, BeefyConfig, ImOnlineConfig,
-	OctopusAppchainConfig, SessionConfig, StakingConfig,
+use sp_consensus_babe::AuthorityId as BabeId;
+use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::{
+	traits::{IdentifyAccount, Verify},
+	Perbill,
 };
+
+use sc_service::{ChainType, Properties};
+
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_octopus_appchain::AuthorityId as OctopusId;
-use pallet_staking::StakerStatus;
-use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::crypto::UncheckedInto;
-use sp_runtime::Perbill;
+use pallet_octopus_lpos::StakerStatus;
+
+use myriad_runtime::{
+	currency::MYRIA, opaque::SessionKeys, AccountId, BabeConfig, Balance, BalancesConfig,
+	BeefyConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, OctopusAppchainConfig,
+	OctopusLposConfig, SessionConfig, Signature, SudoConfig, SystemConfig,
+	BABE_GENESIS_EPOCH_CONFIG, WASM_BINARY,
+};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -36,7 +37,7 @@ fn session_keys(
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-	TPublic::Pair::from_string(&format!("//{}", seed), None)
+	TPublic::Pair::from_string(seed, None)
 		.expect("static values are valid; qed")
 		.public()
 }
@@ -54,9 +55,8 @@ where
 /// Helper function to generate stash, controller and session key from seed
 pub fn authority_keys_from_seed(
 	seed: &str,
-) -> (AccountId, AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId, OctopusId) {
+) -> (AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId, OctopusId) {
 	(
-		get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
 		get_account_id_from_seed::<sr25519::Public>(seed),
 		get_from_seed::<BabeId>(seed),
 		get_from_seed::<GrandpaId>(seed),
@@ -76,6 +76,15 @@ pub fn get_properties(symbol: &str, decimals: u32, ss58format: u32) -> Propertie
 	properties
 }
 
+/// Helper function to generate appchain config
+pub fn appchain_config(
+	id: &str,
+	relay_contract: &str,
+	asset_id_by_name: &str,
+) -> (String, String, String) {
+	(id.to_string(), relay_contract.to_string(), asset_id_by_name.to_string())
+}
+
 pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
 	let properties = get_properties("MYRIA", 18, 42);
@@ -87,7 +96,7 @@ pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 		"myriad_staging_testnet",
 		ChainType::Live,
 		move || {
-			testnet_genesis(
+			genesis(
 				// WASM Binary
 				wasm_binary,
 				// Sudo account
@@ -96,9 +105,6 @@ pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 				// Initial PoA authorities
 				vec![
 					(
-						// 5HBdevUsByJZMGqdZucSr8qXvtRKHRzzqjq2NHVwXUiP8LnC
-						hex!["e275bcf8adb68ed14eee7287461236cbe4a1326810e9e22b4baf05964882f828"]
-							.into(),
 						// 5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
 						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"]
 							.into(),
@@ -119,9 +125,6 @@ pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 							.unchecked_into(),
 					),
 					(
-						// 5GVjfe6b3s1sdMr2Q5oxVcSGHL33KWmwJZxDThR9b6tteyMG
-						hex!["c40829541f7121c67ccb2bee956887735687e57be0ada26289501636ac60946f"]
-							.into(),
 						// 5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
 						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"]
 							.into(),
@@ -142,13 +145,22 @@ pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 							.unchecked_into(),
 					),
 				],
+				// Initial nominators
+				vec![],
 				// Pre-funded accounts
-				vec![
+				Some(vec![
 					// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
 					hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"].into(),
-				],
-				// Appchain Id
-				"myriad_staging_testnet",
+				]),
+				// Appchain config
+				appchain_config(
+					// Appchain Id
+					"",
+					// Appchain Relay Contract
+					"oct-relay.testnet",
+					// Appchain Asset Id by Name
+					"usdc.testnet",
+				),
 			)
 		},
 		// Bootnodes
@@ -175,7 +187,7 @@ pub fn development_tesnet_config() -> Result<ChainSpec, String> {
 		"myriad_development_testnet",
 		ChainType::Live,
 		move || {
-			testnet_genesis(
+			genesis(
 				// WASM Binary
 				wasm_binary,
 				// Sudo account
@@ -184,9 +196,6 @@ pub fn development_tesnet_config() -> Result<ChainSpec, String> {
 				// Initial PoA authorities
 				vec![
 					(
-						// 5CXF4c7rRuX3NfEbToR32ScG3mDNvJ1aFGVg7Wd6YZS5cU37
-						hex!["143d6dbd1fa1906ef35a1308afd7940cf8e987271d47a8c196062eca1ef87a5b"]
-							.into(),
 						// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
 						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
 							.into(),
@@ -207,9 +216,6 @@ pub fn development_tesnet_config() -> Result<ChainSpec, String> {
 							.unchecked_into(),
 					),
 					(
-						// 5Hbd73z3J7nHQn6nPXi7SPBEVdZ7rYj9yAz2E8ZvF41TMTTG
-						hex!["f4c1c7326f9d28d6d3d42e7f976b6dd4a00b0d0b5635ed6082907436d242e267"]
-							.into(),
 						// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
 						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
 							.into(),
@@ -230,13 +236,22 @@ pub fn development_tesnet_config() -> Result<ChainSpec, String> {
 							.unchecked_into(),
 					),
 				],
+				// Initial nominators
+				vec![],
 				// Pre-funded accounts
-				vec![
+				Some(vec![
 					// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
 					hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"].into(),
-				],
-				// Appchain Id
-				"myriad_development_testnet",
+				]),
+				// Appchain config
+				appchain_config(
+					// Appchain Id
+					"",
+					// Appchain Relay Contract
+					"oct-relay.testnet",
+					// Appchain Asset Id by Name
+					"usdc.testnet",
+				),
 			)
 		},
 		// Bootnodes
@@ -263,24 +278,33 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		"myriad_local_testnet",
 		ChainType::Local,
 		move || {
-			testnet_genesis(
+			genesis(
 				// WASM Binary
 				wasm_binary,
 				// Sudo account
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Initial PoA authorities
 				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
+				// Initial nominators
+				vec![],
 				// Pre-funded accounts
-				vec![
+				Some(vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
 					get_account_id_from_seed::<sr25519::Public>("Dave"),
 					get_account_id_from_seed::<sr25519::Public>("Eve"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-				],
-				// Appchain Id
-				"myriad_local_testnet",
+				]),
+				// Appchain config
+				appchain_config(
+					// Appchain Id
+					"",
+					// Appchain Relay Contract
+					"oct-relay.testnet",
+					// Appchain Asset Id by Name
+					"usdc.testnet",
+				),
 			)
 		},
 		// Bootnodes
@@ -307,24 +331,33 @@ pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
 		"myriad_local_development_testnet",
 		ChainType::Development,
 		move || {
-			testnet_genesis(
+			genesis(
 				// WASM Binary
 				wasm_binary,
 				// Sudo account
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Initial PoA authorities
 				vec![authority_keys_from_seed("Alice")],
+				// Initial nominators
+				vec![],
 				// Pre-funded accounts
-				vec![
+				Some(vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
 					get_account_id_from_seed::<sr25519::Public>("Dave"),
 					get_account_id_from_seed::<sr25519::Public>("Eve"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-				],
-				// Appchain Id
-				"myriad_local_development_testnet",
+				]),
+				// Appchain config
+				appchain_config(
+					// Appchain Id
+					"",
+					// Appchain Relay Contract
+					"oct-relay.testnet",
+					// Appchain Asset Id by Name
+					"usdc.testnet",
+				),
 			)
 		},
 		// Bootnodes
@@ -341,24 +374,48 @@ pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
 }
 
 /// Configure initial storage state for FRAME modules.
-fn testnet_genesis(
+fn genesis(
 	wasm_binary: &[u8],
 	root_key: AccountId,
-	initial_authorities: Vec<(
-		AccountId,
-		AccountId,
-		BabeId,
-		GrandpaId,
-		ImOnlineId,
-		BeefyId,
-		OctopusId,
-	)>,
-	endowed_accounts: Vec<AccountId>,
-	appchain_id: &str,
+	initial_authorities: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId, OctopusId)>,
+	initial_nominators: Vec<AccountId>,
+	endowed_accounts: Option<Vec<AccountId>>,
+	appchain_config: (String, String, String),
 ) -> GenesisConfig {
 	const ENDOWMENT: Balance = 1_000_000 * MYRIA;
 	const STASH: Balance = 100 * MYRIA;
 	const OCTOPUS_STASH: Balance = 10_000_000_000_000_000;
+
+	let mut endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_default();
+	// endow all authorities and nominators.
+	initial_authorities
+		.iter()
+		.map(|x| &x.0)
+		.chain(initial_nominators.iter())
+		.for_each(|x| {
+			if !endowed_accounts.contains(x) {
+				endowed_accounts.push(x.clone())
+			}
+		});
+
+	// stakers: all validators and nominators.
+	let mut rng = rand::thread_rng();
+	let stakers = initial_authorities
+		.iter()
+		.map(|x| (x.0.clone(), STASH, StakerStatus::Validator))
+		.chain(initial_nominators.iter().map(|x| {
+			use rand::{seq::SliceRandom, Rng};
+			let limit = (16_usize).min(initial_authorities.len());
+			let count = rng.gen::<usize>() % limit;
+			let nominations = initial_authorities
+				.as_slice()
+				.choose_multiple(&mut rng, count)
+				.into_iter()
+				.map(|choice| choice.0.clone())
+				.collect::<Vec<_>>();
+			(x.clone(), STASH, StakerStatus::Nominator(nominations))
+		}))
+		.collect::<Vec<_>>();
 
 	GenesisConfig {
 		system: SystemConfig {
@@ -367,11 +424,7 @@ fn testnet_genesis(
 			changes_trie_config: Default::default(),
 		},
 		balances: BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.map(|k| (k.clone(), ENDOWMENT))
-				.chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
-				.collect(),
+			balances: endowed_accounts.iter().cloned().map(|x| (x, ENDOWMENT)).collect(),
 		},
 		sudo: SudoConfig {
 			// Assign network admin rights.
@@ -389,50 +442,31 @@ fn testnet_genesis(
 						x.0.clone(),
 						x.0.clone(),
 						session_keys(
+							x.1.clone(),
 							x.2.clone(),
 							x.3.clone(),
 							x.4.clone(),
 							x.5.clone(),
-							x.6.clone(),
 						),
 					)
 				})
 				.collect::<Vec<_>>(),
 		},
-		staking: StakingConfig {
+		ethereum: Default::default(),
+		evm: Default::default(),
+		octopus_appchain: OctopusAppchainConfig {
+			appchain_id: appchain_config.0,
+			relay_contract: appchain_config.1,
+			validators: initial_authorities.iter().map(|x| (x.0.clone(), OCTOPUS_STASH)).collect(),
+			asset_id_by_name: vec![(appchain_config.2, 0)],
+		},
+		octopus_lpos: OctopusLposConfig {
 			validator_count: initial_authorities.len() as u32,
 			minimum_validator_count: initial_authorities.len() as u32,
 			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 			slash_reward_fraction: Perbill::from_percent(10),
-			stakers: initial_authorities
-				.iter()
-				.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
-				.collect(),
+			stakers,
 			..Default::default()
-		},
-		evm: EVMConfig {
-			accounts: {
-				let mut map = BTreeMap::new();
-				map.insert(
-					H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
-						.expect("internal H160 is valid; qed"),
-					pallet_evm::GenesisAccount {
-						balance: U256::from_str("0xD3C21BCECCEDA1000000")
-							.expect("internal U256 is valid; qed"),
-						code: Default::default(),
-						nonce: Default::default(),
-						storage: Default::default(),
-					},
-				);
-				map
-			},
-		},
-		ethereum: EthereumConfig {},
-		octopus_appchain: OctopusAppchainConfig {
-			appchain_id: appchain_id.to_string(),
-			relay_contract: "dev-oct-relay.testnet".to_string(),
-			validators: initial_authorities.iter().map(|x| (x.0.clone(), OCTOPUS_STASH)).collect(),
-			asset_id_by_name: vec![("usdc.testnet".to_string(), 0)],
 		},
 	}
 }

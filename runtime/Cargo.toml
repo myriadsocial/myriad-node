@@ -56,8 +56,6 @@ pallet-grandpa = { git = 'https://github.com/paritytech/substrate', branch = 'po
 pallet-im-online = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
 pallet-authorship = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
 pallet-session = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false, features = ['historical'] }
-pallet-staking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-staking-reward-curve = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
 pallet-mmr = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
 
 # Grandpa Bridge Dependencies
@@ -77,6 +75,12 @@ pallet-evm-precompile-simple = { git = 'https://github.com/purestake/frontier', 
 pallet-evm-precompile-modexp = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
 pallet-evm-precompile-sha3fips = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
 pallet-ethereum = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
+
+# Octopus Dependencies
+## Octopus Pallet Dependencies
+pallet-octopus-appchain = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
+pallet-octopus-lpos = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
+pallet-octopus-lpos-reward-curve = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
 
 [features]
 default = ['std']
@@ -129,12 +133,12 @@ std = [
 	'pallet-im-online/std',
 	'pallet-beefy/std',
 	'pallet-authorship/std',
-	'pallet-session/std',
-	'pallet-staking/std',
 	'pallet-mmr/std',
 	'pallet-evm/std',
 	'pallet-evm-precompile-simple/std',
 	'pallet-evm-precompile-modexp/std',
 	'pallet-evm-precompile-sha3fips/std',
 	'pallet-ethereum/std',
+	'pallet-octopus-appchain/std',
+	'pallet-octopus-lpos/std',
 ]
