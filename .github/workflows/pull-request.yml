@@ -19,9 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache cargo registry
-        uses: Swatinem/rust-cache@v1
-
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -31,6 +28,11 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
           default: true
+
+      - name: Cache rust or cargo project
+        uses: Swatinem/rust-cache@v1
+        with:
+          sharedKey: ${{ runner.os }}-rust-cache
 
       - name: Test Code
         run: ./.maintain/test.sh
