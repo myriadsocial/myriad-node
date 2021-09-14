@@ -6,35 +6,38 @@ nameOverride: ""
 fullnameOverride: ""
 
 image:
-  repository: myriadsocial/myriad-node
+  repository: myriadsocial/myriad-api
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
-  basePath: /data
 
 imagePullSecrets: []
 
-persistence:
-  enabled: false
-  storageClassName: ssd
-  accessModes: [ "ReadWriteOnce" ]
-  dataSize: 32Gi
+config:
+  chain: ""
+  nodeKey: ""
+  name: ""
+  validator: false
+  bootnodes: []
+    # - "/dns4/myriad-node-0/tcp/30333/p2p/QmRpheLN4JWdAnY7HGJfWFNbfkQCb6tFf4vvA6hgjMZKrR"
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
-   # Annotations to add to the service account
-  annotations: {}
 
 podAnnotations: {}
 
 podSecurityContext: {}
-  # runAsNonRoot: true
-  # runAsUser: 1000
-  # fsGroup: 1000
+  # fsGroup: 2000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -48,26 +51,14 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
+replicaCount: 1
+
+volume:
+  storageClassName: ""
+  dataSize: 10Gi
+
 nodeSelector: {}
 
-service:
-  createP2P: false
-  nodePortP2P: 30333
+tolerations: []
 
-node:
-  binnaryName: myriad
-  chain: local
-  customChain: false
-  chainURL: ""
-  chainFileName: ""
-  wellKnownAccount: ""
-  validator: false
-  unsafeEndpointAccess: false
-  p2pPort: 30333
-  httpRpcPort: 9933
-  wsRpcPort: 9944
-
-secrets:
-  nodeKey: ""
-  sessionKeys: {}
-    # aura: ""
+affinity: {}

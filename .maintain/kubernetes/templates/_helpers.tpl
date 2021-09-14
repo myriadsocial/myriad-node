@@ -50,7 +50,6 @@ app.kubernetes.io/name: {{ include "myriad-node.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-
 {{/*
 Create the name of the service account to use
 */}}
@@ -63,57 +62,47 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Custom chain-spec path
+Create the name of the service p2p
 */}}
-{{- define "myriad-node.customChainSpecPath" -}}
-{{- printf "%s/%s" .Values.image.basePath "chain-spec" }}
+{{- define "myriad-node.serviceP2P" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "p2p" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
-Custom chain-spec
+Create the name of the service http-rpc
 */}}
-{{- define "myriad-node.customChainSpec" -}}
-{{- printf "%s/%s" (include "myriad-node.customChainSpecPath" .) .Values.node.chainFileName }}
+{{- define "myriad-node.serviceHttpRPC" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "http-rpc" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
-Node key Secret
+Create the name of the service websocket-rpc
 */}}
-{{- define "myriad-node.nodeKeySecret" -}}
-{{- printf "%s-%s" "node-key" (include "myriad-node.fullname" .) }}
+{{- define "myriad-node.serviceWebsocketRPC" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "websocket-rpc" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
-Node key
+Create the name of the service prometheus
 */}}
-{{- define "myriad-node.nodeKey" -}}
-{{- printf "%s/%s" .Values.image.basePath "node-key" }}
+{{- define "myriad-node.servicePrometheus" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "prometheus" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
-Session key secret
+Create the name of tls secret.
 */}}
-{{- define "myriad-node.sessionKeySecret" -}}
-{{- printf "%s-%s" "session-key" (include "myriad-node.fullname" .) }}
+{{- define "myriad-node.tlsSecretName" -}}
+{{- if .Values.ingress.tlsSecretName }}
+{{- .Values.ingress.tlsSecretName }}
+{{- else }}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "tls" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
 {{- end }}
 
 {{/*
-P2P service
+Create the name of node key secret.
 */}}
-{{- define "myriad-node.p2pService" -}}
-{{- printf "%s-%s" "p2p" (include "myriad-node.fullname" .) }}
-{{- end }}
-
-{{/*
-HTTP RPC service
-*/}}
-{{- define "myriad-node.httpRpcService" -}}
-{{- printf "%s-%s" "http-rpc" (include "myriad-node.fullname" .) }}
-{{- end }}
-
-{{/*
-P2P ingress
-*/}}
-{{- define "myriad-node.p2pIngress" -}}
-{{- printf "%s-%s" "p2p" (include "myriad-node.fullname" .) }}
+{{- define "myriad-node.nodeKeySecretName" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "node-key" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}

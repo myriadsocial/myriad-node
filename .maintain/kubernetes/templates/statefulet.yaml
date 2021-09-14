@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "myriad-node.fullname" . }}
+  labels:
+    {{- include "myriad-node.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "myriad-node.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "myriad-node.fullname" . }}-headless
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: {{ .Values.volume.storageClassName }}
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.volume.dataSize }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "myriad-node.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "myriad-node.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [ "sh" ]
+          args:
+            - -c
+            - exec /usr/local/bin/myriad
+              --base-path /data
+              --chain {{ .Values.config.chain }}
+              {{- if .Values.config.nodeKey }}
+              --node-key $(cat /etc/secrets/NODE_KEY)
+              {{- end }}
+              --name {{ .Values.config.name }}
+              {{- if .Values.config.validator }}
+              --validator
+              {{- end }}
+              --port 30333
+              --rpc-cors all
+              --rpc-methods unsafe
+              --rpc-port 9933
+              --ws-port 9944
+              --unsafe-rpc-external
+              --unsafe-ws-external
+              --prometheus-port 9615
+              --prometheus-external
+              --no-telemetry
+              --enable-offchain-indexing true \
+              {{- range $value := .Values.config.bootnodes }}
+              --bootnodes={{ $value }}
+              {{- end }}
+          {{- if .Values.config.nodeKey }}
+          volumeMounts:
+            - name: node-key
+              mountPath: /etc/secrets
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          ports:
+            - name: p2p
+              containerPort: 30333
+              protocol: TCP
+            - name: http-rpc
+              containerPort: 9933
+              protocol: TCP
+            - name: websocket-rpc
+              containerPort: 9944
+              protocol: TCP
+            - name: prometheus
+              containerPort: 9615
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http-rpc
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http-rpc
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http-rpc
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
+      {{- if .Values.config.nodeKey }}
+      volumes:
+        - name: node-key
+          secret:
+            secretName: {{ include "myriad-node.nodeKeySecretName" . }}
+            items:
+              - key: node-key
+                path: NODE_KEY
+                mode: 0444
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
