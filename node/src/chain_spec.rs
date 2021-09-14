@@ -4,10 +4,7 @@ use beefy_primitives::crypto::AuthorityId as BeefyId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::{
-	traits::{IdentifyAccount, Verify},
-	Perbill,
-};
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use sc_service::{ChainType, Properties};
 
@@ -37,7 +34,7 @@ fn session_keys(
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-	TPublic::Pair::from_string(seed, None)
+	TPublic::Pair::from_string(&format!("//{}", seed), None)
 		.expect("static values are valid; qed")
 		.public()
 }
@@ -384,7 +381,6 @@ fn genesis(
 ) -> GenesisConfig {
 	const ENDOWMENT: Balance = 1_000_000 * MYRIA;
 	const STASH: Balance = 100 * MYRIA;
-	const OCTOPUS_STASH: Balance = 10_000_000_000_000_000;
 
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_default();
 	// endow all authorities and nominators.
@@ -457,16 +453,8 @@ fn genesis(
 		octopus_appchain: OctopusAppchainConfig {
 			appchain_id: appchain_config.0,
 			relay_contract: appchain_config.1,
-			validators: initial_authorities.iter().map(|x| (x.0.clone(), OCTOPUS_STASH)).collect(),
 			asset_id_by_name: vec![(appchain_config.2, 0)],
 		},
-		octopus_lpos: OctopusLposConfig {
-			validator_count: initial_authorities.len() as u32,
-			minimum_validator_count: initial_authorities.len() as u32,
-			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
-			slash_reward_fraction: Perbill::from_percent(10),
-			stakers,
-			..Default::default()
-		},
+		octopus_lpos: OctopusLposConfig { stakers, ..Default::default() },
 	}
 }
