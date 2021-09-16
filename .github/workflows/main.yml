@@ -131,7 +131,7 @@ jobs:
             --set-string config.nodeKey=${{ steps.secrets.outputs.bootnode1PrivateKey }} \
             --set-string config.name=myriad-node-boot-1 \
             --set-string volume.storageClassName=premium-rwo \
-            --set-string volume.dataSize=50Gi \
+            --set-string volume.dataSize=50Gi
           kubectl rollout status deployment/myriad-node-boot-1
 
       - name: Deploy validator node 1
@@ -145,7 +145,7 @@ jobs:
             --set config.validator=true \
             --set-string config.bootnodes[0]=/dns4/myriad-node-boot-1.default.svc.cluster.local/tcp/30333/p2p/${{ steps.secrets.outputs.bootnode1PublicKey }} \
             --set-string volume.storageClassName=premium-rwo \
-            --set-string volume.dataSize=50Gi \
+            --set-string volume.dataSize=50Gi
           kubectl rollout status deployment/myriad-node-validator-1
 
       - name: Deploy validator node 2
@@ -159,5 +159,5 @@ jobs:
             --set config.validator=true \
             --set-string config.bootnodes[0]=/dns4/myriad-node-boot-1.default.svc.cluster.local/tcp/30333/p2p/${{ steps.secrets.outputs.bootnode1PublicKey }} \
             --set-string volume.storageClassName=premium-rwo \
-            --set-string volume.dataSize=50Gi \
+            --set-string volume.dataSize=50Gi
           kubectl rollout status deployment/myriad-node-validator-2
