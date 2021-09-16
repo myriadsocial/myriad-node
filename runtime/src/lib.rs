@@ -194,7 +194,7 @@ pub const WEEKS: BlockNumber = DAYS * 7;
 pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
 	sp_consensus_babe::BabeEpochConfiguration {
 		c: PRIMARY_PROBABILITY,
-		allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryPlainSlots,
+		allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryVRFSlots,
 	};
 
 /// The version information used to identify this runtime when compiled natively.
@@ -203,9 +203,9 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
-/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
-/// This is used to limit the maximal weight of a single extrinsic.
-const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+/// We assume that an on-initialize consumes 1% of the weight on average, hence a single extrinsic
+/// will not be allowed to consume more than `AvailableBlockRatio - 1%`.
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(1);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
@@ -284,7 +284,7 @@ impl frame_system::Config for Runtime {
 	/// The data to be stored in an account.
 	type AccountData = pallet_balances::AccountData<Balance>;
 	/// Weight information for the extrinsics of this pallet.
-	type SystemWeightInfo = ();
+	type SystemWeightInfo = (); // TODO: change this for dynamic fee
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = SS58Prefix;
 	/// The set code logic, just the default since we're not a parachain.
@@ -322,7 +322,7 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = Moment;
 	type OnTimestampSet = Babe;
 	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = ();
+	type WeightInfo = (); // TODO: change this for dynamic fee
 }
 
 parameter_types! {
@@ -344,7 +344,7 @@ impl pallet_balances::Config for Runtime {
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>; // TODO: change this for dynamic fee
 }
 
 parameter_types! {
@@ -370,6 +370,8 @@ parameter_types! {
 impl pallet_babe::Config for Runtime {
 	type EpochDuration = EpochDuration;
 	type ExpectedBlockTime = ExpectedBlockTime;
+
+	// session module is the trigger
 	type EpochChangeTrigger = pallet_babe::ExternalTrigger;
 
 	type KeyOwnerProofSystem = Historical;
@@ -391,7 +393,7 @@ impl pallet_babe::Config for Runtime {
 }
 
 parameter_types! {
-	pub const UncleGenerations: BlockNumber = 5;
+	pub const UncleGenerations: BlockNumber = 0;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -415,7 +417,7 @@ impl pallet_session::Config for Runtime {
 	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
 	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
-	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>; // TODO: change this for dynamic fee
 }
 
 impl pallet_session::historical::Config for Runtime {
@@ -435,10 +437,14 @@ pallet_octopus_lpos_reward_curve::build! {
 }
 
 parameter_types! {
+	// Six sessions in an era (6 hours).
 	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
-	pub const BondingDuration: pallet_octopus_lpos::EraIndex = 24 * 28;
-	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+	// 28 eras for unbonding (7 days).
+	pub const BondingDuration: pallet_octopus_lpos::EraIndex = 28;
+	// 27 eras in which slashes can be cancelled (slightly less than 7 days).
+	pub const SlashDeferDuration: pallet_octopus_lpos::EraIndex = 27;
 	pub const MaxNominatorRewardedPerValidator: u32 = 256;
+	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
 	pub OffchainRepeat: BlockNumber = 5;
 }
 
@@ -456,7 +462,7 @@ impl pallet_octopus_lpos::Config for Runtime {
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
 	type StakersProvider = OctopusAppchain;
 	type GenesisStakersProvider = Self::StakersProvider;
-	type WeightInfo = pallet_octopus_lpos::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_octopus_lpos::weights::SubstrateWeight<Runtime>; // TODO: change this for dynamic fee
 }
 
 impl pallet_beefy::Config for Runtime {
@@ -563,7 +569,7 @@ impl pallet_im_online::Config for Runtime {
 	type ValidatorSet = Historical;
 	type ReportUnresponsiveness = ();
 	type UnsignedPriority = ImOnlineUnsignedPriority;
-	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>; // TODO: change this for dynamic fee
 }
 
 type MmrHash = <Keccak256 as sp_runtime::traits::Hash>::Output;
@@ -610,7 +616,7 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>; // TODO: change this for dynamic fee
 }
 
 /// Current approximation of the gas/s consumption considering
