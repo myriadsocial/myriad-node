@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "myriad-node.fullname" . }}:{{ .Values.service.rcpPort }}']
+      args: ['{{ include "myriad-node.fullname" . }}:9933']
   restartPolicy: Never
