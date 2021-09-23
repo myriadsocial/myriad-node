@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
+
 set -e
 
-if [ "$#" -ne 1 ]; then
+if [ -z "$1" ]; then
 	echo "Please provide the number of initial validators!"
 	exit 1
+fi
+
+if [ ! -z "$2" ]; then
+    SECRET=$2
 fi
 
 generate_account_id() {
