@@ -148,53 +148,38 @@ jobs:
         uses: google-github-actions/get-secretmanager-secrets@main
         with:
           secrets: |-
-            bootnode1PublicKey:${{ secrets.STG_GCP_PROJECT_ID }}/bootnode1PublicKey
-            bootnode1PrivateKey:${{ secrets.STG_GCP_PROJECT_ID }}/bootnode1PrivateKey
-            node1PublicKey:${{ secrets.STG_GCP_PROJECT_ID }}/node1PublicKey
-            node1PrivateKey:${{ secrets.STG_GCP_PROJECT_ID }}/node1PrivateKey
-            node2PublicKey:${{ secrets.STG_GCP_PROJECT_ID }}/node2PublicKey
-            node2PrivateKey:${{ secrets.STG_GCP_PROJECT_ID }}/node2PrivateKey
+            NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
+            NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
+            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
+            NODE_KEY_PRIVATE_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
+            NODE_KEY_PUBLIC_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
 
       - name: Install Helm
         run: |
           curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 
-      - name: Deploy bootnode 1
+      - name: Deploy
         run: |
-          helm upgrade myriad-node-boot-1 .maintain/kubernetes \
+          helm upgrade myriad-node .maintain/kubernetes \
             --install \
             --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }}-${{ needs.compute-build-info.outputs.date }} \
-            --set-string config.chain=staging \
-            --set-string config.nodeKey=${{ steps.secrets.outputs.bootnode1PrivateKey }} \
-            --set-string config.name=myriad-node-boot-1 \
+            --set-string config.chain=development \
+            --set-string nodes[0].name=validator1 \
+            --set nodes[0].bootnode=true \
+            --set nodes[0].validator=true \
+            --set-string nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
+            --set-string nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+            --set-string nodes[1].name=validator2 \
+            --set nodes[1].bootnode=true \
+            --set nodes[1].validator=true \
+            --set-string nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
+            --set-string nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
+            --set-string nodes[2].name=node1 \
+            --set nodes[2].bootnode=false \
+            --set nodes[2].validator=false \
+            --set-string nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
+            --set-string nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
             --set-string volume.storageClassName=premium-rwo \
             --set-string volume.dataSize=50Gi
-          kubectl rollout status deployment/myriad-node-boot-1
-
-      - name: Deploy validator node 1
-        run: |
-          helm upgrade myriad-node-validator-1 .maintain/kubernetes \
-            --install \
-            --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }}-${{ needs.compute-build-info.outputs.date }} \
-            --set-string config.chain=staging \
-            --set-string config.nodeKey=${{ steps.secrets.outputs.bootnode1PrivateKey }} \
-            --set-string config.name=myriad-node-validator-1 \
-            --set config.validator=true \
-            --set-string config.bootnodes[0]=/dns4/myriad-node-boot-1.default.svc.cluster.local/tcp/30333/p2p/${{ steps.secrets.outputs.bootnode1PublicKey }} \
-            --set-string volume.storageClassName=premium-rwo \
-            --set-string volume.dataSize=50Gi
-          kubectl rollout status deployment/myriad-node-validator-1
-
-      - name: Deploy validator node 2
-        run: |
-          helm upgrade myriad-node-validator-2 .maintain/kubernetes \
-            --install \
-            --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }}-${{ needs.compute-build-info.outputs.date }} \
-            --set-string config.chain=staging \
-            --set-string config.nodeKey=${{ steps.secrets.outputs.bootnode2PrivateKey }} \
-            --set-string config.name=myriad-node-validator-2 \
-            --set config.validator=true \
-            --set-string config.bootnodes[0]=/dns4/myriad-node-boot-1.default.svc.cluster.local/tcp/30333/p2p/${{ steps.secrets.outputs.bootnode1PublicKey }} \
-            --set-string volume.storageClassName=premium-rwo \
-            --set-string volume.dataSize=50Gi
-          kubectl rollout status deployment/myriad-node-validator-2
+          kubectl rollout status statefulset/myriad-node
