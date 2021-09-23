@@ -333,7 +333,7 @@ parameter_types! {
 	// This number may need to be adjusted in the future if this assumption no longer holds true.
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
-	pub const ExistentialDeposit: Balance = 1 * currency::MYRIA;
+	pub const ExistentialDeposit: Balance = currency::MYRIA;
 }
 
 impl pallet_balances::Config for Runtime {
