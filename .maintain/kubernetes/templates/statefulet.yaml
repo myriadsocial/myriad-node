@@ -6,6 +6,11 @@ metadata:
   labels:
     {{- include "myriad-node.labels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -15,6 +20,11 @@ spec:
     matchLabels:
       {{- include "myriad-node.selectorLabels" $ | nindent 6 }}
       component: {{ .name }}
+      {{- if .validator }}
+      part-of: validator
+      {{- else }}
+      part-of: full-node
+      {{- end }}
   serviceName: {{ include "myriad-node.fullname" $ }}-{{ .name }}-headless
   volumeClaimTemplates:
     - metadata:
@@ -34,6 +44,11 @@ spec:
       labels:
         {{- include "myriad-node.selectorLabels" $ | nindent 8 }}
         component: {{ .name }}
+        {{- if .validator }}
+        part-of: validator
+        {{- else }}
+        part-of: full-node
+        {{- end }}
     spec:
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
