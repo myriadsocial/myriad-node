@@ -1,57 +1,72 @@
+{{- range .Values.nodes }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "myriad-node.fullname" . }}
+  name: {{ include "myriad-node.fullname" $ }}-{{ .name }}
   labels:
-    {{- include "myriad-node.labels" . | nindent 4 }}
+    {{- include "myriad-node.labels" $ | nindent 4 }}
+    component: {{ .name }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
+  revisionHistoryLimit: 3
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
-      {{- include "myriad-node.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "myriad-node.fullname" . }}-headless
+      {{- include "myriad-node.selectorLabels" $ | nindent 6 }}
+      component: {{ .name }}
+  serviceName: {{ include "myriad-node.fullname" $ }}-{{ .name }}-headless
   volumeClaimTemplates:
     - metadata:
         name: data
       spec:
-        storageClassName: {{ .Values.volume.storageClassName }}
+        storageClassName: {{ $.Values.volume.storageClassName }}
         accessModes: [ "ReadWriteOnce" ]
         resources:
           requests:
-            storage: {{ .Values.volume.dataSize }}
+            storage: {{ $.Values.volume.dataSize }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- with $.Values.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $ | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "myriad-node.selectorLabels" . | nindent 8 }}
+        {{- include "myriad-node.selectorLabels" $ | nindent 8 }}
+        component: {{ .name }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $ | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "myriad-node.serviceAccountName" . }}
+      {{- if and $.Values.serviceAccount.create (and $.Values.serviceAccount.name (ne $.Values.serviceAccount.name "default")) }}
+      serviceAccountName: {{ include "myriad-node.serviceAccountName" $ }}-{{ .name }}
+      {{- else }}
+      serviceAccountName: {{ include "myriad-node.serviceAccountName" $ }}
+      {{- end }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ $.Chart.Name }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
           command: [ "sh" ]
           args:
             - -c
             - exec /usr/local/bin/myriad
               --base-path /data
-              --chain {{ .Values.config.chain }}
-              {{- if .Values.config.nodeKey }}
-              --node-key $(cat /etc/secrets/NODE_KEY)
+              {{- if $.Values.config.chain }}
+              --chain {{ $.Values.config.chain }}
               {{- end }}
-              --name {{ .Values.config.name }}
-              {{- if .Values.config.validator }}
+              {{- if $.Values.config.nodeKey }}
+              --node-key $(cat /etc/secrets/node-key/KEY)
+              {{- end }}
+              {{- if .name }}
+              --name {{ .name }}
+              {{- end }}
+              {{- if .validator }}
               --validator
               {{- end }}
               --port 30333
@@ -64,17 +79,24 @@ spec:
               --prometheus-port 9615
               --prometheus-external
               --no-telemetry
-              --enable-offchain-indexing true \
-              {{- range $value := .Values.config.bootnodes }}
+              --enable-offchain-indexing true
+              {{- range $value := $.Values.nodes }}
+              {{- if $value.bootnode }}
+              --bootnodes=/dns/{{ include "myriad-node.name" $ }}-{{ .name }}-0.{{ include "myriad-node.name" $ }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local/tcp/30333/p2p/{{ .keys.public }}
+              {{- end }}
+              {{- end }}
+              {{- range $value := $.Values.config.bootnodes }}
               --bootnodes={{ $value }}
               {{- end }}
-          {{- if .Values.config.nodeKey }}
           volumeMounts:
+            - name: data
+              mountPath: /data
+            {{- if .keys.private }}
             - name: node-key
-              mountPath: /etc/secrets
-          {{- end }}
+              mountPath: /etc/secrets/node-key
+            {{- end }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml $.Values.resources | nindent 12 }}
           ports:
             - name: p2p
               containerPort: 30333
@@ -115,25 +137,32 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 30
             successThreshold: 1
-      {{- if .Values.config.nodeKey }}
+      {{- if .keys.private }}
       volumes:
         - name: node-key
           secret:
-            secretName: {{ include "myriad-node.nodeKeySecretName" . }}
+            secretName: {{ include "myriad-node.nodeKeySecretName" $ }}-{{ .name }}
             items:
-              - key: node-key
-                path: NODE_KEY
+              - key: private
+                path: KEY
+                mode: 0444
+              - key: public
+                path: KEY_PUB
                 mode: 0444
       {{- end }}
-      {{- with .Values.nodeSelector }}
+      {{- with $.Values.nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $ | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with $.Values.affinity }}
       affinity:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $ | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with $.Values.tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $ | nindent 8 }}
       {{- end }}
+
+---
+
+{{- end }}

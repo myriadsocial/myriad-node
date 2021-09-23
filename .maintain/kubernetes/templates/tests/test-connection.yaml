@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "myriad-node.fullname" . }}:9933']
+      args: ['{{ include "myriad-node.name" . }}-{{ .name }}-0.{{ include "myriad-node.name" . }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local:9933']
   restartPolicy: Never

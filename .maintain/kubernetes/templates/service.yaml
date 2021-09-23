@@ -1,9 +1,11 @@
+{{- range .Values.nodes }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "myriad-node.fullname" . }}-headless
+  name: {{ include "myriad-node.fullname" $ }}-{{ .name }}-headless
   labels:
-    {{- include "myriad-node.labels" . | nindent 4 }}
+    {{- include "myriad-node.labels" $ | nindent 4 }}
+    component: {{ .name }}
 spec:
   type: ClusterIP
   ports:
@@ -25,16 +27,18 @@ spec:
       name: prometheus
   clusterIP: None
   selector:
-    {{- include "myriad-node.selectorLabels" . | nindent 4 }}
+    {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
+    component: {{ .name }}
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "myriad-node.fullname" . }}-p2p
+  name: {{ include "myriad-node.fullname" $ }}-{{ .name }}-p2p
   labels:
-    {{- include "myriad-node.labels" . | nindent 4 }}
+    {{- include "myriad-node.labels" $ | nindent 4 }}
+    component: {{ .name }}
 spec:
   type: LoadBalancer
   ports:
@@ -44,16 +48,18 @@ spec:
       name: p2p
   externalTrafficPolicy: Local
   selector:
-    {{- include "myriad-node.selectorLabels" . | nindent 4 }}
+    {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
+    component: {{ .name }}
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "myriad-node.fullname" . }}-http-rpc
+  name: {{ include "myriad-node.fullname" $ }}-{{ .name }}-http-rpc
   labels:
-    {{- include "myriad-node.labels" . | nindent 4 }}
+    {{- include "myriad-node.labels" $ | nindent 4 }}
+    component: {{ .name }}
 spec:
   type: ClusterIP
   ports:
@@ -62,16 +68,18 @@ spec:
       protocol: TCP
       name: http-rpc
   selector:
-    {{- include "myriad-node.selectorLabels" . | nindent 4 }}
+    {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
+    component: {{ .name }}
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "myriad-node.fullname" . }}-websocket-rpc
+  name: {{ include "myriad-node.fullname" $ }}-{{ .name }}-websocket-rpc
   labels:
-    {{- include "myriad-node.labels" . | nindent 4 }}
+    {{- include "myriad-node.labels" $ | nindent 4 }}
+    component: {{ .name }}
 spec:
   type: ClusterIP
   ports:
@@ -80,16 +88,18 @@ spec:
       protocol: TCP
       name: websocket-rpc
   selector:
-    {{- include "myriad-node.selectorLabels" . | nindent 4 }}
+    {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
+    component: {{ .name }}
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "myriad-node.fullname" . }}-prometheus
+  name: {{ include "myriad-node.fullname" $ }}-{{ .name }}-prometheus
   labels:
-    {{- include "myriad-node.labels" . | nindent 4 }}
+    {{- include "myriad-node.labels" $ | nindent 4 }}
+    component: {{ .name }}
 spec:
   type: ClusterIP
   ports:
@@ -98,4 +108,9 @@ spec:
       protocol: TCP
       name: prometheus
   selector:
-    {{- include "myriad-node.selectorLabels" . | nindent 4 }}
+    {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
+    component: {{ .name }}
+
+---
+
+{{- end }}
