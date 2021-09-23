@@ -17,6 +17,7 @@ substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate', bran
 # External Dependencies
 codec = { package = 'parity-scale-codec', version = '2.0.0', default-features = false, features = ['derive'] }
 log = { version = '0.4.14', default-features = false }
+hex-literal = { version = '0.3.3', optional = true }
 
 # Substrate Dependencies
 ## Substrate Primitive Dependencies
@@ -56,6 +57,7 @@ pallet-grandpa = { git = 'https://github.com/paritytech/substrate', branch = 'po
 pallet-im-online = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
 pallet-authorship = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
 pallet-session = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false, features = ['historical'] }
+pallet-session-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false, optional = true }
 pallet-mmr = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
 
 # Grandpa Bridge Dependencies
@@ -82,19 +84,11 @@ pallet-octopus-appchain = { git = 'https://github.com/blocksphereid/octopus-pall
 pallet-octopus-lpos = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
 pallet-octopus-lpos-reward-curve = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
 
+[dev-dependencies]
+hex-literal = '0.3.3'
+
 [features]
 default = ['std']
-runtime-benchmarks = [
-	'sp-runtime/runtime-benchmarks',
-
-    'frame-support/runtime-benchmarks',
-	'frame-system/runtime-benchmarks',
-    'frame-system-benchmarking',
-	'frame-benchmarking',
-
-	'pallet-timestamp/runtime-benchmarks',
-    'pallet-balances/runtime-benchmarks',
-]
 std = [
     'codec/std',
 	'log/std',
@@ -141,4 +135,24 @@ std = [
 	'pallet-ethereum/std',
 	'pallet-octopus-appchain/std',
 	'pallet-octopus-lpos/std',
+]
+runtime-benchmarks = [
+	'hex-literal',
+
+	'sp-runtime/runtime-benchmarks',
+
+    'frame-support/runtime-benchmarks',
+	'frame-system/runtime-benchmarks',
+    'frame-system-benchmarking',
+	'frame-election-provider-support/runtime-benchmarks',
+	'frame-benchmarking',
+
+	'pallet-timestamp/runtime-benchmarks',
+    'pallet-balances/runtime-benchmarks',
+	'pallet-assets/runtime-benchmarks',
+	'pallet-babe/runtime-benchmarks',
+	'pallet-grandpa/runtime-benchmarks',
+	'pallet-im-online/runtime-benchmarks',
+	#'pallet-session-benchmarking',
+	'pallet-mmr/runtime-benchmarks',
 ]
