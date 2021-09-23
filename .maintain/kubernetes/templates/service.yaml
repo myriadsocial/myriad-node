@@ -6,6 +6,11 @@ metadata:
   labels:
     {{- include "myriad-node.labels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 spec:
   type: ClusterIP
   ports:
@@ -29,6 +34,11 @@ spec:
   selector:
     {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 
 ---
 
@@ -39,6 +49,11 @@ metadata:
   labels:
     {{- include "myriad-node.labels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 spec:
   type: LoadBalancer
   ports:
@@ -50,6 +65,11 @@ spec:
   selector:
     {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 
 ---
 
@@ -60,6 +80,11 @@ metadata:
   labels:
     {{- include "myriad-node.labels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 spec:
   type: ClusterIP
   ports:
@@ -70,6 +95,11 @@ spec:
   selector:
     {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 
 ---
 
@@ -80,6 +110,11 @@ metadata:
   labels:
     {{- include "myriad-node.labels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 spec:
   type: ClusterIP
   ports:
@@ -90,6 +125,11 @@ spec:
   selector:
     {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 
 ---
 
@@ -100,6 +140,11 @@ metadata:
   labels:
     {{- include "myriad-node.labels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 spec:
   type: ClusterIP
   ports:
@@ -110,6 +155,11 @@ spec:
   selector:
     {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
     component: {{ .name }}
+    {{- if .validator }}
+    part-of: validator
+    {{- else }}
+    part-of: full-node
+    {{- end }}
 
 ---
 
