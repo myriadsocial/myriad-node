@@ -1,5 +1,4 @@
 {{- if .Values.serviceAccount.create -}}
-{{- if and .Values.serviceAccount.name (ne .Values.serviceAccount.name "default") }}
 {{- range .Values.nodes }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -18,6 +17,5 @@ rules:
 
 ---
 
-{{- end }}
 {{- end }}
 {{- end }}

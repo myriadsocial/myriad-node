@@ -54,7 +54,7 @@ spec:
       imagePullSecrets:
         {{- toYaml $ | nindent 8 }}
       {{- end }}
-      {{- if and $.Values.serviceAccount.create (and $.Values.serviceAccount.name (ne $.Values.serviceAccount.name "default")) }}
+      {{- if $.Values.serviceAccount.create }}
       serviceAccountName: {{ include "myriad-node.serviceAccountName" $ }}-{{ .name }}
       {{- else }}
       serviceAccountName: {{ include "myriad-node.serviceAccountName" $ }}
