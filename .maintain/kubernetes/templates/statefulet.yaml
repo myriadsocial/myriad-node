@@ -160,10 +160,8 @@ spec:
             items:
               - key: private
                 path: KEY
-                mode: 0444
               - key: public
                 path: KEY_PUB
-                mode: 0444
       {{- end }}
       {{- with $.Values.nodeSelector }}
       nodeSelector:
