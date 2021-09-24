@@ -163,8 +163,8 @@ jobs:
         run: |
           helm upgrade myriad-node .maintain/kubernetes \
             --install \
-            --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }}-${{ needs.compute-build-info.outputs.date }} \
-            --set-string config.chain=development \
+            --set-string image.tag=${{ needs.compute-build-info.outputs.new_tag }} \
+            --set-string config.chain=staging \
             --set-string nodes[0].name=validator1 \
             --set nodes[0].bootnode=true \
             --set nodes[0].validator=true \
@@ -182,4 +182,4 @@ jobs:
             --set-string nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
             --set-string volume.storageClassName=premium-rwo \
             --set-string volume.dataSize=50Gi
-          kubectl rollout status statefulset/myriad-node
+          kubectl rollout status statefulset/myriad-node-validator1
