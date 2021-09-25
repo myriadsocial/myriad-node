@@ -1,0 +1,16 @@
+{
+  "CurrencyId": "Vec<u8>",
+  "TokenBalance": {
+    "free": "u128"
+  },
+  "Amount": "u128",
+  "PeopleId": "Vec<u8>",
+  "PostId": "Vec<u8>",
+  "TotalBalance": "u128",
+  "Post": {
+    "post_id": "Vec<u8>",
+    "people_id": "Vec<u8>",
+    "platform": "Vec<u8>"
+  },
+  "Platform": "Vec<u8>"
+}
