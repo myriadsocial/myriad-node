@@ -6,25 +6,26 @@ pub use pallet::*;
 pub mod pallet {
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use sp_std::prelude::*;
+	use sp_std::vec::Vec;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 	}
 
+	pub type Platform = Vec<u8>;
+
 	#[pallet::event]
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		PlatformCreated(Vec<u8>),
-		PlatformDeleted(Vec<u8>),
+		/// Platform add success. \[platform\]
+		PlatformAdded(Platform),
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
-		PlatformAlreadyExist,
-		PlatformNotExist,
+		PlatformExist,
 	}
 
 	#[pallet::pallet]
@@ -41,70 +42,25 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn insert_platform(
+		pub fn add_platform(
 			origin: OriginFor<T>,
-			platform: Vec<u8>,
+			platform: Platform,
 		) -> DispatchResultWithPostInfo {
-			let _creator = ensure_signed(origin)?;
+			ensure_root(origin)?;
+			let platform: Vec<u8> = platform.into();
+			let mut platforms = Self::platforms().unwrap_or(Vec::new());
 
-			match Self::create_platform(&platform) {
-				Ok(_) => {
-					Self::deposit_event(Event::PlatformCreated(platform));
+			let found = platforms.iter().find(|x| x == &&platform);
 
-					Ok(().into())
-				},
-				Err(error) => Err(error.into()),
-			}
-		}
+			ensure!(found.is_none(), Error::<T>::PlatformExist);
 
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn remove_platform(
-			origin: OriginFor<T>,
-			platform: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
-			let _destroyer = ensure_signed(origin)?;
+			platforms.push(platform.clone());
 
-			match Self::delete_platform(&platform) {
-				Ok(_) => {
-					Self::deposit_event(Event::PlatformDeleted(platform));
+			Platforms::<T>::put(platforms);
 
-					Ok(().into())
-				},
-				Err(error) => Err(error.into()),
-			}
-		}
-	}
+			Self::deposit_event(Event::PlatformAdded(platform));
 
-	impl<T: Config> Pallet<T> {
-		pub fn create_platform(platform: &[u8]) -> Result<(), Error<T>> {
-			let mut platforms: Vec<Vec<u8>> = Self::platforms().unwrap_or_default();
-
-			let found_platform = platforms.iter().find(|e| *e == platform);
-
-			if found_platform.is_none() {
-				platforms.push(platform.into());
-			} else {
-				return Err(Error::<T>::PlatformAlreadyExist)
-			}
-
-			Platforms::<T>::put(platforms.clone());
-
-			Ok(())
-		}
-
-		pub fn delete_platform(platform: &[u8]) -> Result<(), Error<T>> {
-			let platforms: Vec<Vec<u8>> = Self::platforms().unwrap_or_default();
-
-			let updated_platforms: Vec<Vec<u8>> =
-				platforms.clone().into_iter().filter(|e| e != platform).collect();
-
-			if updated_platforms.len() == platforms.len() {
-				return Err(Error::<T>::PlatformNotExist)
-			}
-
-			Platforms::<T>::put(updated_platforms);
-
-			Ok(())
+			Ok(().into())
 		}
 	}
 }
