@@ -84,6 +84,11 @@ pallet-octopus-appchain = { git = 'https://github.com/blocksphereid/octopus-pall
 pallet-octopus-lpos = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
 pallet-octopus-lpos-reward-curve = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
 
+# Local Pallet
+pallet-currency = { path = '../pallets/currencies', version = '1.0.0' }
+pallet-escrow = { path = '../pallets/escrow', version = '1.0.0' }
+pallet-platform = { path = '../pallets/platform', version = '1.0.0' }
+
 [dev-dependencies]
 hex-literal = '0.3.3'
 
@@ -135,6 +140,10 @@ std = [
 	'pallet-ethereum/std',
 	'pallet-octopus-appchain/std',
 	'pallet-octopus-lpos/std',
+
+	'pallet-escrow/std',
+	'pallet-currency/std',
+	'pallet-platform/std',
 ]
 runtime-benchmarks = [
 	'hex-literal',
