@@ -714,7 +714,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	{
 		if let Some(author_index) = F::find_author(digests) {
 			let authority_id = Babe::authorities()[author_index as usize].0.clone();
-			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]))
+			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
 		}
 		None
 	}
@@ -724,6 +724,18 @@ impl pallet_ethereum::Config for Runtime {
 	type Event = Event;
 	type FindAuthor = FindAuthorTruncated<Babe>;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
+}
+
+impl pallet_currency::Config for Runtime {
+	type Event = Event;
+}
+
+impl pallet_escrow::Config for Runtime {
+	type Event = Event;
+}
+
+impl pallet_platform::Config for Runtime {
+	type Event = Event;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -752,6 +764,10 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
+
+		Currencies: pallet_currency::{Pallet, Storage, Call, Event<T>},
+		Escrow: pallet_escrow::{Pallet, Storage, Call, Event<T>},
+		Platform: pallet_platform::{Pallet, Storage, Call, Event<T>}
 	}
 );
 
