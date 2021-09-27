@@ -16,7 +16,7 @@ imagePullSecrets: []
 config:
   chain: ""
   bootnodes: []
-    # - "/dns4/myriad-node-0/tcp/30333/p2p/QmRpheLN4JWdAnY7HGJfWFNbfkQCb6tFf4vvA6hgjMZKrR"
+    # - "/dns/myriad-node-0/tcp/30333/p2p/QmRpheLN4JWdAnY7HGJfWFNbfkQCb6tFf4vvA6hgjMZKrR"
 
 nodes: []
   # - name: validator1

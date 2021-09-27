@@ -25,7 +25,7 @@ spec:
       {{- else }}
       part-of: full-node
       {{- end }}
-  serviceName: {{ include "myriad-node.fullname" $ }}-{{ .name }}-headless
+  serviceName: {{ include "myriad-node.fullname" $ }}-{{ .name }}
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -75,7 +75,7 @@ spec:
               {{- if $.Values.config.chain }}
               --chain {{ $.Values.config.chain }}
               {{- end }}
-              {{- if $.Values.config.nodeKey }}
+              {{- if .keys.private }}
               --node-key $(cat /etc/secrets/node-key/KEY)
               {{- end }}
               {{- if .name }}
@@ -95,9 +95,10 @@ spec:
               --prometheus-external
               --no-telemetry
               --enable-offchain-indexing true
+              {{- $name := .name }}
               {{- range $value := $.Values.nodes }}
-              {{- if $value.bootnode }}
-              --bootnodes=/dns/{{ include "myriad-node.name" $ }}-{{ .name }}-0.{{ include "myriad-node.name" $ }}-{{ .name }}.{{ $.Release.Namespace }}.svc.cluster.local/tcp/30333/p2p/{{ .keys.public }}
+              {{- if and $value.bootnode (ne $value.name $name ) }}
+              --bootnodes=/dns/{{ include "myriad-node.name" $ }}-{{ $value.name }}-0.{{ include "myriad-node.name" $ }}-{{ $value.name }}.{{ $.Release.Namespace }}.svc.cluster.local/tcp/30333/p2p/{{ $value.keys.public }}
               {{- end }}
               {{- end }}
               {{- range $value := $.Values.config.bootnodes }}
