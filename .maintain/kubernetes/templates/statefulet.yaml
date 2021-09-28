@@ -54,11 +54,7 @@ spec:
       imagePullSecrets:
         {{- toYaml $ | nindent 8 }}
       {{- end }}
-      {{- if $.Values.serviceAccount.create }}
       serviceAccountName: {{ include "myriad-node.serviceAccountName" $ }}-{{ .name }}
-      {{- else }}
-      serviceAccountName: {{ include "myriad-node.serviceAccountName" $ }}
-      {{- end }}
       securityContext:
         {{- toYaml $.Values.podSecurityContext | nindent 8 }}
       containers:
@@ -71,30 +67,30 @@ spec:
           args:
             - -c
             - exec /usr/local/bin/myriad
-              --base-path /data
+              --base-path=/data
               {{- if $.Values.config.chain }}
-              --chain {{ $.Values.config.chain }}
+              --chain={{ $.Values.config.chain }}
               {{- end }}
               {{- if .keys.private }}
-              --node-key $(cat /etc/secrets/node-key/KEY)
+              --node-key=$(cat /etc/secrets/node-key/key)
               {{- end }}
               {{- if .name }}
-              --name {{ .name }}
+              --name={{ .name }}
               {{- end }}
               {{- if .validator }}
               --validator
               {{- end }}
-              --port 30333
-              --rpc-cors all
-              --rpc-methods unsafe
-              --rpc-port 9933
-              --ws-port 9944
+              --port=30333
+              --rpc-cors=all
+              --rpc-methods=unsafe
+              --rpc-port=9933
+              --ws-port=9944
               --unsafe-rpc-external
               --unsafe-ws-external
-              --prometheus-port 9615
+              --prometheus-port=9615
               --prometheus-external
               --no-telemetry
-              --enable-offchain-indexing true
+              --enable-offchain-indexing=true
               {{- $name := .name }}
               {{- range $value := $.Values.nodes }}
               {{- if and $value.bootnode (ne $value.name $name ) }}
@@ -110,6 +106,7 @@ spec:
             {{- if .keys.private }}
             - name: node-key
               mountPath: /etc/secrets/node-key
+              readOnly: true
             {{- end }}
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
@@ -160,9 +157,9 @@ spec:
             secretName: {{ include "myriad-node.nodeKeySecretName" $ }}-{{ .name }}
             items:
               - key: private
-                path: KEY
+                path: key
               - key: public
-                path: KEY_PUB
+                path: key.pub
       {{- end }}
       {{- with $.Values.nodeSelector }}
       nodeSelector:
