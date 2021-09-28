@@ -11,7 +11,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
 
-	const PALLET_ID: PalletId = PalletId(*b"Charity!");
+	const PALLET_ID: PalletId = PalletId(*b"Tipping!");
 
 	#[pallet::config]
 	pub trait Config:
