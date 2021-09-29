@@ -11,16 +11,9 @@ fn donate_works() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
-		));
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			1,
-			String::from("ACA").into_bytes(),
-			21000000
 		));
 		assert_ok!(Platform::add_platform(Origin::root(), String::from("twitter").into_bytes()));
 		assert_ok!(Escrow::donate(
@@ -44,14 +37,6 @@ fn donate_works() {
 			100
 		));
 
-		assert_eq!(
-			Currencies::accounts(1, String::from("ACA").into_bytes()),
-			Some(pallet_currency::CurrencyBalance { free: 20999800 })
-		);
-		assert_eq!(
-			Currencies::accounts(Escrow::account_id(), String::from("ACA").into_bytes()),
-			Some(pallet_currency::CurrencyBalance { free: 200 })
-		);
 		assert_eq!(
 			Escrow::people_balance((
 				String::from("ACA").into_bytes(),
@@ -87,16 +72,9 @@ fn cant_donate_when_platform_not_exist() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
-		));
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			1,
-			String::from("ACA").into_bytes(),
-			21000000
 		));
 
 		assert_noop!(
@@ -116,6 +94,55 @@ fn cant_donate_when_platform_not_exist() {
 }
 
 #[test]
+fn cant_donate_when_currency_not_exist() {
+	ExternalityBuilder::build().execute_with(|| {
+		assert_ok!(Platform::add_platform(Origin::root(), String::from("twitter").into_bytes()));
+
+		assert_noop!(
+			Escrow::donate(
+				Origin::signed(1),
+				String::from("ACA").into_bytes(),
+				pallet_escrow::Post {
+					post_id: String::from("60efac8c565ab8004ed28bb3").into_bytes(),
+					people_id: String::from("60efac8c565ab8004ed28ba6").into_bytes(),
+					platform: String::from("twitter").into_bytes()
+				},
+				100
+			),
+			Error::<Test>::CurrencyNotExist
+		);
+	})
+}
+
+#[test]
+fn cant_donate_when_amount_is_zero() {
+	ExternalityBuilder::build().execute_with(|| {
+		assert_ok!(Platform::add_platform(Origin::root(), String::from("twitter").into_bytes()));
+		assert_ok!(Currencies::add_currency(
+			Origin::root(),
+			String::from("ACA").into_bytes(),
+			12,
+			String::from("wss://rpc.myriad.systems").into_bytes(),
+			true
+		));
+
+		assert_noop!(
+			Escrow::donate(
+				Origin::signed(1),
+				String::from("ACA").into_bytes(),
+				pallet_escrow::Post {
+					post_id: String::from("60efac8c565ab8004ed28bb3").into_bytes(),
+					people_id: String::from("60efac8c565ab8004ed28ba6").into_bytes(),
+					platform: String::from("twitter").into_bytes()
+				},
+				0
+			),
+			Error::<Test>::InsufficientAmount
+		);
+	})
+}
+
+#[test]
 fn call_event_should_work() {
 	ExternalityBuilder::build().execute_with(|| {
 		System::set_block_number(1);
@@ -123,7 +150,6 @@ fn call_event_should_work() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
