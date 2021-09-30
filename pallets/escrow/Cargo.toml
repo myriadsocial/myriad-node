@@ -1,0 +1,44 @@
+[package]
+name = "pallet-escrow"
+version = "1.0.0"
+edition = "2018"
+license = 'Unlicense'
+authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
+homepage = 'https://myriad.social'
+repository = 'https://github.com/myriadsocial/myriad-node'
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+codec = { package = 'parity-scale-codec', version = '2.0.0', default-features = false, features = ['derive'] }
+serde = { version = "1.0.119", optional = true, features = ["derive"] }
+hex-literal = '0.3.3'
+pallet-currency = { path = '../currencies', version = '1.0.0' }
+pallet-platform = { path = '../platform', version = '1.0.0' }
+
+# Substrate packages
+frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.8', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.8', default-features = false }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false, optional = true }
+
+# Substrate packages
+sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.8', default-features = false }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.8', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.8', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
+
+[features]
+default = ['std']
+runtime-benchmarks = [
+	'frame-benchmarking'
+]
+std = [
+	'codec/std',
+	'serde',
+	'frame-support/std',
+	'frame-system/std',
+	'frame-benchmarking/std',
+	'sp-std/std',
+]
+try-runtime = ['frame-support/try-runtime']
