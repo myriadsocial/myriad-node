@@ -140,7 +140,6 @@ pub mod pallet {
 		pub fn add_currency(
 			origin: OriginFor<T>,
 			currency_id: Vec<u8>,
-			name: Vec<u8>,
 			decimal: u16,
 			rpc_url: Vec<u8>,
 			native: bool,
@@ -151,7 +150,7 @@ pub mod pallet {
 
 			ensure!(currency.is_none(), Error::<T>::CurrencyExist);
 
-			let new_currency = CurrencyInfo { name, decimal, rpc_url, native };
+			let new_currency = CurrencyInfo { decimal, rpc_url, native };
 			let mut currencies = Self::currencies().unwrap_or(Vec::new());
 
 			currencies.push(currency_id.clone());
@@ -172,7 +171,6 @@ pub mod pallet {
 
 	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 	pub struct CurrencyInfo {
-		pub name: Vec<u8>,
 		pub decimal: u16,
 		pub rpc_url: Vec<u8>,
 		pub native: bool,
