@@ -11,7 +11,6 @@ fn update_balance_work() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
@@ -36,7 +35,6 @@ fn transfer_works() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
@@ -71,7 +69,6 @@ fn add_currency_works() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
@@ -80,7 +77,6 @@ fn add_currency_works() {
 		assert_eq!(
 			Currencies::currency(String::from("ACA").into_bytes()),
 			Some(pallet_currency::CurrencyInfo {
-				name: String::from("acala").into_bytes(),
 				decimal: 12,
 				rpc_url: String::from("wss://rpc.myriad.systems").into_bytes(),
 				native: true
@@ -95,7 +91,6 @@ fn cant_add_existing_currency() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
@@ -105,7 +100,6 @@ fn cant_add_existing_currency() {
 			Currencies::add_currency(
 				Origin::root(),
 				String::from("ACA").into_bytes(),
-				String::from("acala").into_bytes(),
 				12,
 				String::from("wss://rpc.myriad.systems").into_bytes(),
 				true
@@ -131,7 +125,6 @@ fn cant_spend_more_than_you_have() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
@@ -156,7 +149,6 @@ fn cant_transfer_to_same_account() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
@@ -181,7 +173,6 @@ fn cant_set_transfer_amount_to_zero() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
@@ -208,7 +199,6 @@ fn call_event_should_work() {
 		assert_ok!(Currencies::add_currency(
 			Origin::root(),
 			String::from("ACA").into_bytes(),
-			String::from("acala").into_bytes(),
 			12,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
