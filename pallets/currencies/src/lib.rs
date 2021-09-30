@@ -21,7 +21,6 @@ pub mod pallet {
 
 	pub type Amount = u128;
 	pub type CurrencyId = Vec<u8>;
-	// pub type TokenId<T> = Currencies::Pallet<T>::get();
 
 	#[pallet::event]
 	#[pallet::metadata(T::AccountId = "AccountId")]
