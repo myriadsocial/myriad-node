@@ -27,9 +27,9 @@ spec:
       protocol: TCP
       name: websocket-rpc
     - port: 9615
-      targetPort: prometheus
+      targetPort: metrics
       protocol: TCP
-      name: prometheus
+      name: metrics
   clusterIP: None
   selector:
     {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
