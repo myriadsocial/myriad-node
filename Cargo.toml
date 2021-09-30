@@ -5,4 +5,7 @@ panic = 'unwind'
 members = [
 	'node',
 	'runtime',
+	'pallets/currencies',
+	'pallets/platform',
+	'pallets/escrow',
 ]
