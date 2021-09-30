@@ -39,7 +39,7 @@ spec:
     metadata:
       {{- with $.Values.podAnnotations }}
       annotations:
-        {{- toYaml $ | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "myriad-node.selectorLabels" $ | nindent 8 }}
@@ -52,7 +52,7 @@ spec:
     spec:
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml $ | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "myriad-node.serviceAccountName" $ }}-{{ .name }}
       securityContext:
@@ -120,7 +120,7 @@ spec:
             - name: websocket-rpc
               containerPort: 9944
               protocol: TCP
-            - name: prometheus
+            - name: metrics
               containerPort: 9615
               protocol: TCP
           livenessProbe:
@@ -163,15 +163,15 @@ spec:
       {{- end }}
       {{- with $.Values.nodeSelector }}
       nodeSelector:
-        {{- toYaml $ | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with $.Values.affinity }}
       affinity:
-        {{- toYaml $ | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with $.Values.tolerations }}
       tolerations:
-        {{- toYaml $ | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
 ---
