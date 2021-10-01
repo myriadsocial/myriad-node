@@ -13,21 +13,13 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{
-		dispatch::DispatchResultWithPostInfo, pallet_prelude::*,
-		sp_runtime::traits::AccountIdConversion, PalletId,
-	};
-	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
 
-	const PALLET_ID: PalletId = PalletId(*b"Tipping!");
-
-	#[pallet::config]
-	pub trait Config:
-		frame_system::Config + pallet_currency::Config + pallet_platform::Config
-	{
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-	}
+	use frame_support::{
+		dispatch::DispatchResult, pallet_prelude::*, sp_runtime::traits::AccountIdConversion,
+		PalletId,
+	};
+	use frame_system::pallet_prelude::*;
 
 	pub type CurrencyBalance = pallet_currency::CurrencyBalance;
 	pub type Amount = u128;
@@ -37,19 +29,20 @@ pub mod pallet {
 	pub type Platform = Vec<u8>;
 	pub type TotalBalance = u128;
 
-	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId")]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
-		/// Currency donate success. \[currency_id, pot, donor, amount, pot_balance\]
-		DonationReceived(CurrencyId, T::AccountId, T::AccountId, Amount, CurrencyBalance),
+	const PALLET_ID: PalletId = PalletId(*b"Tipping!");
+
+	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+	pub struct Post {
+		pub post_id: Vec<u8>,
+		pub people_id: Vec<u8>,
+		pub platform: Vec<u8>,
 	}
 
-	#[pallet::error]
-	pub enum Error<T> {
-		InsufficientAmount,
-		CurrencyNotExist,
-		PlatformNotExist,
+	#[pallet::config]
+	pub trait Config:
+		frame_system::Config + pallet_currency::Config + pallet_platform::Config
+	{
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 	}
 
 	#[pallet::pallet]
@@ -83,53 +76,68 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	#[pallet::event]
+	#[pallet::metadata(T::AccountId = "AccountId")]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		/// Currency tip success. [currency_id, amount, pot_balance, pot, who]
+		TipReceived(CurrencyId, Amount, CurrencyBalance, T::AccountId, T::AccountId),
+	}
+
+	#[pallet::error]
+	pub enum Error<T> {
+		PlatformNotExist,
+		CurrencyNotExist,
+		InsufficientAmount,
+	}
+
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Donate some funds to the charity
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn donate(
+		pub fn send_tip(
 			origin: OriginFor<T>,
-			currency_id: CurrencyId,
 			post: Post,
+			currency_id: CurrencyId,
 			amount: u128,
-		) -> DispatchResultWithPostInfo {
-			let donor = ensure_signed(origin.clone())?;
-			let currency = pallet_currency::Pallet::<T>::currency(currency_id.clone());
-			let platforms = pallet_platform::Pallet::<T>::platforms().unwrap_or(Vec::new());
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			let platforms = pallet_platform::Pallet::<T>::platforms().unwrap_or_default();
 			let platform = platforms.iter().find(|x| x == &&post.platform);
+			let currency = pallet_currency::Pallet::<T>::currency(currency_id.clone());
 
 			ensure!(platform.is_some(), Error::<T>::PlatformNotExist);
 			ensure!(currency.is_some(), Error::<T>::CurrencyNotExist);
 			ensure!(amount > 0, Error::<T>::InsufficientAmount);
 
-			Self::do_update_balance(post, amount, currency_id.clone());
-			Self::deposit_event(Event::DonationReceived(
+			Self::do_update_balance(post, currency_id.clone(), amount);
+			Self::deposit_event(Event::TipReceived(
 				currency_id.clone(),
-				donor,
-				Self::account_id(),
 				amount,
-				Self::pot(&currency_id),
+				Self::pot(currency_id),
+				Self::account_id(),
+				who,
 			));
-			Ok(().into())
+
+			Ok(())
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// The account ID that holds the Charity's funds
+		/// The account ID that holds tipping's funds
 		pub fn account_id() -> T::AccountId {
 			PALLET_ID.into_account()
 		}
 
-		/// The Charity's balance
-		fn pot(currency_id: &CurrencyId) -> CurrencyBalance {
-			return pallet_currency::Pallet::<T>::accounts(&Self::account_id(), currency_id)
-				.unwrap_or(CurrencyBalance { free: 0 });
+		/// The tipping's balance
+		fn pot(currency_id: CurrencyId) -> CurrencyBalance {
+			pallet_currency::Pallet::<T>::accounts(&Self::account_id(), currency_id)
+				.unwrap_or(CurrencyBalance { free: 0 })
 		}
 
-		fn do_update_balance(post: Post, amount: u128, currency_id: CurrencyId) {
+		fn do_update_balance(post: Post, currency_id: CurrencyId, amount: u128) {
 			let Post { post_id, people_id, platform } = post;
 
 			// Get balances
@@ -160,12 +168,5 @@ pub mod pallet {
 				CurrencyBalance { free: updated_pot_balance },
 			);
 		}
-	}
-
-	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-	pub struct Post {
-		pub post_id: Vec<u8>,
-		pub people_id: Vec<u8>,
-		pub platform: Vec<u8>,
 	}
 }

@@ -1,7 +1,7 @@
 [package]
-name = "pallet-escrow"
-version = "1.0.0"
-edition = "2018"
+name = 'pallet-escrow'
+version = '1.0.0'
+edition = '2018'
 license = 'Unlicense'
 authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
 homepage = 'https://myriad.social'
@@ -14,23 +14,23 @@ targets = ['x86_64-unknown-linux-gnu']
 # External Dependencies
 codec = { package = 'parity-scale-codec', version = '2.0.0', default-features = false, features = ['derive'] }
 
-# Local Dependencies
-pallet-currency = { path = '../currencies', version = '1.0.0' }
-pallet-platform = { path = '../platform', version = '1.0.0' }
-
 # Substrate packages
+## Substrate Primitive Dependencies
+sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
+
 ## Substrate Frame Dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.8', default-features = false }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.8', default-features = false }
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false, optional = true }
 
-## Substrate Primitive Dependencies
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
+# Local Dependencies
+pallet-platform = { path = '../platform', default-features = false }
+pallet-currency = { path = '../currency', default-features = false }
 
 [dev-dependencies]
 # External Dependencies
-serde = '1.0.119'
-hex-literal = '0.3.3'
+serde = { version = '1.0.119', default-features = false }
+hex-literal = { version = '0.3.3', default-features = false }
 
 # Substrate Dependencies
 ## Substrate Primitive Dependencies
@@ -40,9 +40,6 @@ sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = 'po
 
 [features]
 default = ['std']
-runtime-benchmarks = [
-	'frame-benchmarking'
-]
 std = [
 	'codec/std',
 
@@ -52,7 +49,10 @@ std = [
 	'frame-system/std',
 	'frame-benchmarking/std',
 
-	'pallet-currency/std',
 	'pallet-platform/std',
+	'pallet-currency/std',
+]
+runtime-benchmarks = [
+	'frame-benchmarking'
 ]
 try-runtime = ['frame-support/try-runtime']
