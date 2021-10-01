@@ -85,12 +85,9 @@ pallet-octopus-lpos = { git = 'https://github.com/blocksphereid/octopus-pallets.
 pallet-octopus-lpos-reward-curve = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
 
 # Local Pallet
-pallet-currency = { path = '../pallets/currencies', version = '1.0.0' }
-pallet-escrow = { path = '../pallets/escrow', version = '1.0.0' }
-pallet-platform = { path = '../pallets/platform', version = '1.0.0' }
-
-[dev-dependencies]
-hex-literal = '0.3.3'
+pallet-platform = { path = '../pallets/platform', default-features = false }
+pallet-currency = { path = '../pallets/currency', default-features = false }
+pallet-escrow = { path = '../pallets/escrow', default-features = false }
 
 [features]
 default = ['std']
@@ -141,9 +138,9 @@ std = [
 	'pallet-octopus-appchain/std',
 	'pallet-octopus-lpos/std',
 
-	'pallet-escrow/std',
-	'pallet-currency/std',
 	'pallet-platform/std',
+	'pallet-currency/std',
+	'pallet-escrow/std',
 ]
 runtime-benchmarks = [
 	'hex-literal',
@@ -164,4 +161,8 @@ runtime-benchmarks = [
 	'pallet-im-online/runtime-benchmarks',
 	#'pallet-session-benchmarking',
 	'pallet-mmr/runtime-benchmarks',
+
+	'pallet-platform/runtime-benchmarks',
+	'pallet-currency/runtime-benchmarks',
+	'pallet-escrow/runtime-benchmarks',
 ]

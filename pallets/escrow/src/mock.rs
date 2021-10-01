@@ -18,9 +18,9 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Escrow: pallet_escrow::{Pallet, Call, Storage, Event<T>},
-		Currencies: pallet_currency::{Pallet, Call, Storage, Event<T>},
 		Platform: pallet_platform::{Pallet, Call, Storage, Event<T>},
+		Currencies: pallet_currency::{Pallet, Call, Storage, Event<T>},
+		Escrow: pallet_escrow::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -57,7 +57,7 @@ impl system::Config for Test {
 	type OnSetCode = ();
 }
 
-impl pallet_escrow::Config for Test {
+impl pallet_platform::Config for Test {
 	type Event = Event;
 }
 
@@ -65,7 +65,7 @@ impl pallet_currency::Config for Test {
 	type Event = Event;
 }
 
-impl pallet_platform::Config for Test {
+impl pallet_escrow::Config for Test {
 	type Event = Event;
 }
 

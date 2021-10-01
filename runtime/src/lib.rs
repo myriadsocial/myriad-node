@@ -46,6 +46,8 @@ use frame_system::{
 };
 
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_currency;
+pub use pallet_escrow;
 use pallet_evm::{
 	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
 };
@@ -53,6 +55,8 @@ use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+/// Import the template pallet.
+pub use pallet_platform;
 use pallet_session::historical as pallet_session_historical;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
@@ -714,7 +718,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	{
 		if let Some(author_index) = F::find_author(digests) {
 			let authority_id = Babe::authorities()[author_index as usize].0.clone();
-			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]))
 		}
 		None
 	}
@@ -726,15 +730,16 @@ impl pallet_ethereum::Config for Runtime {
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
 
+/// Configure local pallets
+impl pallet_platform::Config for Runtime {
+	type Event = Event;
+}
+
 impl pallet_currency::Config for Runtime {
 	type Event = Event;
 }
 
 impl pallet_escrow::Config for Runtime {
-	type Event = Event;
-}
-
-impl pallet_platform::Config for Runtime {
 	type Event = Event;
 }
 
@@ -764,10 +769,9 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
-
-		Currencies: pallet_currency::{Pallet, Storage, Call, Event<T>},
+		Platform: pallet_platform::{Pallet, Storage, Call, Event<T>},
+		Currency: pallet_currency::{Pallet, Storage, Call, Event<T>},
 		Escrow: pallet_escrow::{Pallet, Storage, Call, Event<T>},
-		Platform: pallet_platform::{Pallet, Storage, Call, Event<T>}
 	}
 );
 
@@ -1165,6 +1169,34 @@ impl_runtime_apis! {
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
+		fn benchmark_metadata(extra: bool) -> (
+			Vec<frame_benchmarking::BenchmarkList>,
+			Vec<frame_support::traits::StorageInfo>,
+		) {
+			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
+			use frame_support::traits::StorageInfoTrait;
+			use frame_system_benchmarking::Pallet as SystemBench;
+
+			let mut list = Vec::<BenchmarkList>::new();
+
+			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
+			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
+			list_benchmark!(list, extra, pallet_balances, Balances);
+			list_benchmark!(list, extra, pallet_assets, Assets);
+			list_benchmark!(list, extra, pallet_babe, Babe);
+			list_benchmark!(list, extra, pallet_grandpa, Grandpa);
+			list_benchmark!(list, extra, pallet_im_online, ImOnline);
+			// list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
+			list_benchmark!(list, extra, pallet_mmr, Mmr);
+			list_benchmark!(list, extra, pallet_platform, Platform);
+			list_benchmark!(list, extra, pallet_currency, Currency);
+			list_benchmark!(list, extra, pallet_escrow, Escrow);
+
+			let storage_info = AllPalletsWithSystem::storage_info();
+
+			return (list, storage_info)
+		}
+
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
@@ -1201,6 +1233,9 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_im_online, ImOnline);
 			// add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_mmr, Mmr);
+			add_benchmark!(params, batches, pallet_platform, Platform);
+			add_benchmark!(params, batches, pallet_currency, Currency);
+			add_benchmark!(params, batches, pallet_escrow, Escrow);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

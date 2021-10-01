@@ -1,45 +1,41 @@
-use crate::{
-	self as pallet_escrow,
-	mock::{Event, *},
-	Error,
-};
+use crate::{self as pallet_escrow, mock::*, Error};
 use frame_support::{assert_noop, assert_ok};
 
 #[test]
-fn donate_works() {
+fn send_tip_works() {
 	ExternalityBuilder::build().execute_with(|| {
 		assert_ok!(Currencies::add_currency(
-			Origin::root(),
-			String::from("ACA").into_bytes(),
-			12,
+			Origin::signed(1),
+			String::from("MYRIA").into_bytes(),
+			18,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
 		));
-		assert_ok!(Platform::add_platform(Origin::root(), String::from("twitter").into_bytes()));
-		assert_ok!(Escrow::donate(
+		assert_ok!(Platform::add_platform(Origin::signed(1), String::from("twitter").into_bytes()));
+		assert_ok!(Escrow::send_tip(
 			Origin::signed(1),
-			String::from("ACA").into_bytes(),
 			pallet_escrow::Post {
 				post_id: String::from("60efac8c565ab8004ed28bb3").into_bytes(),
 				people_id: String::from("60efac8c565ab8004ed28ba6").into_bytes(),
 				platform: String::from("twitter").into_bytes()
 			},
+			String::from("MYRIA").into_bytes(),
 			100
 		));
-		assert_ok!(Escrow::donate(
+		assert_ok!(Escrow::send_tip(
 			Origin::signed(1),
-			String::from("ACA").into_bytes(),
 			pallet_escrow::Post {
 				post_id: String::from("60efac8c565ab8004ed28bb5").into_bytes(),
 				people_id: String::from("60efac8c565ab8004ed28ba6").into_bytes(),
 				platform: String::from("twitter").into_bytes()
 			},
+			String::from("MYRIA").into_bytes(),
 			100
 		));
 
 		assert_eq!(
 			Escrow::people_balance((
-				String::from("ACA").into_bytes(),
+				String::from("MYRIA").into_bytes(),
 				String::from("60efac8c565ab8004ed28ba6").into_bytes(),
 				String::from("twitter").into_bytes()
 			)),
@@ -47,7 +43,7 @@ fn donate_works() {
 		);
 		assert_eq!(
 			Escrow::post_balance((
-				String::from("ACA").into_bytes(),
+				String::from("MYRIA").into_bytes(),
 				String::from("60efac8c565ab8004ed28bb3").into_bytes(),
 				String::from("60efac8c565ab8004ed28ba6").into_bytes(),
 				String::from("twitter").into_bytes()
@@ -56,7 +52,7 @@ fn donate_works() {
 		);
 		assert_eq!(
 			Escrow::post_balance((
-				String::from("ACA").into_bytes(),
+				String::from("MYRIA").into_bytes(),
 				String::from("60efac8c565ab8004ed28bb5").into_bytes(),
 				String::from("60efac8c565ab8004ed28ba6").into_bytes(),
 				String::from("twitter").into_bytes()
@@ -67,25 +63,25 @@ fn donate_works() {
 }
 
 #[test]
-fn cant_donate_when_platform_not_exist() {
+fn cant_send_tip_when_platform_not_exist() {
 	ExternalityBuilder::build().execute_with(|| {
 		assert_ok!(Currencies::add_currency(
-			Origin::root(),
-			String::from("ACA").into_bytes(),
-			12,
+			Origin::signed(1),
+			String::from("MYRIA").into_bytes(),
+			18,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
 		));
 
 		assert_noop!(
-			Escrow::donate(
+			Escrow::send_tip(
 				Origin::signed(1),
-				String::from("ACA").into_bytes(),
 				pallet_escrow::Post {
 					post_id: String::from("60efac8c565ab8004ed28bb3").into_bytes(),
 					people_id: String::from("60efac8c565ab8004ed28ba6").into_bytes(),
 					platform: String::from("twitter").into_bytes()
 				},
+				String::from("MYRIA").into_bytes(),
 				100
 			),
 			Error::<Test>::PlatformNotExist
@@ -94,19 +90,19 @@ fn cant_donate_when_platform_not_exist() {
 }
 
 #[test]
-fn cant_donate_when_currency_not_exist() {
+fn cant_send_tip_when_currency_not_exist() {
 	ExternalityBuilder::build().execute_with(|| {
-		assert_ok!(Platform::add_platform(Origin::root(), String::from("twitter").into_bytes()));
+		assert_ok!(Platform::add_platform(Origin::signed(1), String::from("twitter").into_bytes()));
 
 		assert_noop!(
-			Escrow::donate(
+			Escrow::send_tip(
 				Origin::signed(1),
-				String::from("ACA").into_bytes(),
 				pallet_escrow::Post {
 					post_id: String::from("60efac8c565ab8004ed28bb3").into_bytes(),
 					people_id: String::from("60efac8c565ab8004ed28ba6").into_bytes(),
 					platform: String::from("twitter").into_bytes()
 				},
+				String::from("MYRIA").into_bytes(),
 				100
 			),
 			Error::<Test>::CurrencyNotExist
@@ -115,26 +111,26 @@ fn cant_donate_when_currency_not_exist() {
 }
 
 #[test]
-fn cant_donate_when_amount_is_zero() {
+fn cant_send_tip_when_amount_is_zero() {
 	ExternalityBuilder::build().execute_with(|| {
-		assert_ok!(Platform::add_platform(Origin::root(), String::from("twitter").into_bytes()));
+		assert_ok!(Platform::add_platform(Origin::signed(1), String::from("twitter").into_bytes()));
 		assert_ok!(Currencies::add_currency(
-			Origin::root(),
-			String::from("ACA").into_bytes(),
-			12,
+			Origin::signed(1),
+			String::from("MYRIA").into_bytes(),
+			18,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
 		));
 
 		assert_noop!(
-			Escrow::donate(
+			Escrow::send_tip(
 				Origin::signed(1),
-				String::from("ACA").into_bytes(),
 				pallet_escrow::Post {
 					post_id: String::from("60efac8c565ab8004ed28bb3").into_bytes(),
 					people_id: String::from("60efac8c565ab8004ed28ba6").into_bytes(),
 					platform: String::from("twitter").into_bytes()
 				},
+				String::from("MYRIA").into_bytes(),
 				0
 			),
 			Error::<Test>::InsufficientAmount
@@ -148,35 +144,35 @@ fn call_event_should_work() {
 		System::set_block_number(1);
 
 		assert_ok!(Currencies::add_currency(
-			Origin::root(),
-			String::from("ACA").into_bytes(),
-			12,
+			Origin::signed(1),
+			String::from("MYRIA").into_bytes(),
+			18,
 			String::from("wss://rpc.myriad.systems").into_bytes(),
 			true
 		));
 		assert_ok!(Currencies::update_balance(
-			Origin::root(),
+			Origin::signed(1),
 			1,
-			String::from("ACA").into_bytes(),
+			String::from("MYRIA").into_bytes(),
 			21000000
 		));
-		assert_ok!(Platform::add_platform(Origin::root(), String::from("twitter").into_bytes()));
-		assert_ok!(Escrow::donate(
+		assert_ok!(Platform::add_platform(Origin::signed(1), String::from("twitter").into_bytes()));
+		assert_ok!(Escrow::send_tip(
 			Origin::signed(1),
-			String::from("ACA").into_bytes(),
 			pallet_escrow::Post {
 				post_id: String::from("60efac8c565ab8004ed28bb3").into_bytes(),
 				people_id: String::from("60efac8c565ab8004ed28ba6").into_bytes(),
 				platform: String::from("twitter").into_bytes()
 			},
+			String::from("MYRIA").into_bytes(),
 			100
 		));
-		System::assert_last_event(Event::Escrow(crate::Event::DonationReceived(
-			String::from("ACA").into_bytes(),
-			1,
-			Escrow::account_id(),
+		System::assert_last_event(Event::Escrow(crate::Event::TipReceived(
+			String::from("MYRIA").into_bytes(),
 			100,
 			pallet_currency::CurrencyBalance { free: 100 },
+			Escrow::account_id(),
+			1,
 		)));
 	})
 }
