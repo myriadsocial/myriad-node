@@ -90,17 +90,6 @@ Create the name of the service prometheus
 {{- end }}
 
 {{/*
-Create the name of tls secret.
-*/}}
-{{- define "myriad-node.tlsSecretName" -}}
-{{- if .Values.ingress.tlsSecretName }}
-{{- .Values.ingress.tlsSecretName }}
-{{- else }}
-{{- printf "%s-%s" (include "myriad-node.fullname" .) "tls" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-
-{{/*
 Create the name of node key secret.
 */}}
 {{- define "myriad-node.nodeKey" -}}
