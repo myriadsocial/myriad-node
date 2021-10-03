@@ -62,31 +62,31 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Create the name of the service p2p
-*/}}
-{{- define "myriad-node.serviceP2P" -}}
-{{- printf "%s-%s" (include "myriad-node.fullname" .) "p2p" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
 Create the name of the service http-rpc
 */}}
-{{- define "myriad-node.serviceHttpRPC" -}}
+{{- define "myriad-node.serviceHttpRPCName" -}}
 {{- printf "%s-%s" (include "myriad-node.fullname" .) "http-rpc" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create the name of the service websocket-rpc
 */}}
-{{- define "myriad-node.serviceWebsocketRPC" -}}
+{{- define "myriad-node.serviceWebsocketRPCName" -}}
 {{- printf "%s-%s" (include "myriad-node.fullname" .) "websocket-rpc" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
-Create the name of the service prometheus
+Create the name of the ingress http-rpc
 */}}
-{{- define "myriad-node.servicePrometheus" -}}
-{{- printf "%s-%s" (include "myriad-node.fullname" .) "prometheus" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- define "myriad-node.ingressHttpRPCName" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "http-rpc" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create the name of the ingress websocket-rpc
+*/}}
+{{- define "myriad-node.ingressWebsocketRPCName" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "websocket-rpc" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*

@@ -15,52 +15,51 @@ imagePullSecrets: []
 
 config:
   chain: ""
-  bootnodes: []
+  nodes: []
+    # - name: node1
+    #   bootnode: true
+    #   validator: false
+    #   keys:
+    #     private: ""
+    #     public: ""
+    #   sessionInjectionEnabled: false
+    #   sessionKeys: {}
+    # - name: node2
+    #   bootnode: true
+    #   validator: false
+    #   keys:
+    #     private: ""
+    #     public: ""
+    #   sessionInjectionEnabled: false
+    #   sessionKeys: {}
+    # - name: validator1
+    #   bootnode: true
+    #   validator: true
+    #   keys:
+    #     private: ""
+    #     public: ""
+    #   sessionInjectionEnabled: true
+    #   sessionKeys:
+    #     keySeed: ""
+    #     grandpa: ""
+    #     babe: ""
+    #     imonline: ""
+    #     beefy: ""
+    # - name: validator2
+    #   bootnode: true
+    #   validator: true
+    #   keys:
+    #     private: ""
+    #     public: ""
+    #   sessionInjectionEnabled: true
+    #   sessionKeys:
+    #     keySeed: ""
+    #     grandpa: ""
+    #     babe: ""
+    #     imonline: ""
+    #     beefy: ""
+  extraBootnodes: []
     # - "/dns/myriad-node-0/tcp/30333/p2p/QmRpheLN4JWdAnY7HGJfWFNbfkQCb6tFf4vvA6hgjMZKrR"
-
-nodes: []
-  # - name: node1
-  #   bootnode: true
-  #   validator: false
-  #   keys:
-  #     private: ""
-  #     public: ""
-  #   sessionInjectionEnabled: false
-  #   sessionKeys: {}
-  # - name: node2
-  #   bootnode: true
-  #   validator: false
-  #   keys:
-  #     private: ""
-  #     public: ""
-  #   sessionInjectionEnabled: false
-  #   sessionKeys: {}
-  # - name: validator1
-  #   bootnode: true
-  #   validator: true
-  #   keys:
-  #     private: ""
-  #     public: ""
-  #   sessionInjectionEnabled: true
-  #   sessionKeys:
-  #     keySeed: ""
-  #     grandpa: ""
-  #     babe: ""
-  #     imonline: ""
-  #     beefy: ""
-  # - name: validator2
-  #   bootnode: true
-  #   validator: true
-  #   keys:
-  #     private: ""
-  #     public: ""
-  #   sessionInjectionEnabled: true
-  #   sessionKeys:
-  #     keySeed: ""
-  #     grandpa: ""
-  #     babe: ""
-  #     imonline: ""
-  #     beefy: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -70,6 +69,15 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
 
 services:
   httpRPC:
@@ -87,38 +95,35 @@ ingress:
     className: ""
     annotations: {}
       # kubernetes.io/ingress.class: nginx
+      # cert-manager.io/cluster-issuer: letsencrypt
+      # nginx.ingress.kubernetes.io/limit-rps: "10"
     hosts: []
       # - host: http-rpc.example.com
       #   paths:
       #     - path: /
       #       pathType: ImplementationSpecific
     tls: []
-    #  - secretName: http-rpc-example-tls
-    #    hosts:
-    #      - http-rpc.example.com
+      # - secretName: http-rpc-example-tls
+      #   hosts:
+      #     - http-rpc.example.com
   websocketRPC:
     enabled: false
     className: ""
     annotations: {}
       # kubernetes.io/ingress.class: nginx
+      # cert-manager.io/cluster-issuer: letsencrypt
+      # nginx.ingress.kubernetes.io/limit-rps: "10"
+      # nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      # nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
     hosts: []
       # - host: ws-rpc.example.com
       #   paths:
       #     - path: /
       #       pathType: ImplementationSpecific
     tls: []
-    #  - secretName: websocket-rpc-example-tls
-    #    hosts:
-    #      - ws-rpc.example.com
-
-podAnnotations: {}
-
-podSecurityContext:
-  fsGroup: 1001
-
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 1001
+      # - secretName: websocket-rpc-example-tls
+      #   hosts:
+      #     - ws-rpc.example.com
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -138,6 +143,6 @@ volume:
 
 nodeSelector: {}
 
-tolerations: []
-
 affinity: {}
+
+tolerations: []

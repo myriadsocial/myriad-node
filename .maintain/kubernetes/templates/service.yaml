@@ -1,4 +1,4 @@
-{{- range .Values.nodes }}
+{{- range .Values.config.nodes }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -15,21 +15,21 @@ spec:
   type: ClusterIP
   ports:
     - name: p2p
-      targetPort: p2p
       port: 30333
       protocol: TCP
+      targetPort: p2p
     - name: http-rpc
-      targetPort: http-rpc
       port: 9933
       protocol: TCP
+      targetPort: http-rpc
     - name: websocket-rpc
-      targetPort: websocket-rpc
       port: 9944
       protocol: TCP
+      targetPort: websocket-rpc
     - name: metrics
-      targetPort: metrics
       port: 9615
       protocol: TCP
+      targetPort: metrics
   clusterIP: None
   selector:
     {{- include "myriad-node.selectorLabels" $ | nindent 4 }}
@@ -47,7 +47,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "myriad-node.fullname" . }}-http-rpc
+  name: {{ include "myriad-node.serviceHttpRPCName" . }}
   labels:
     {{- include "myriad-node.labels" . | nindent 4 }}
     part-of: full-node
@@ -55,9 +55,9 @@ spec:
   type: ClusterIP
   ports:
     - name: http-rpc
-      targetPort: http-rpc
       port: 9933
       protocol: TCP
+      targetPort: http-rpc
   selector:
     {{- include "myriad-node.selectorLabels" . | nindent 4 }}
     part-of: full-node
@@ -71,7 +71,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "myriad-node.fullname" . }}-websocket-rpc
+  name: {{ include "myriad-node.serviceWebsocketRPCName" . }}
   labels:
     {{- include "myriad-node.labels" . | nindent 4 }}
     part-of: full-node
@@ -79,9 +79,9 @@ spec:
   type: ClusterIP
   ports:
     - name: websocket-rpc
-      targetPort: websocket-rpc
       port: 9944
       protocol: TCP
+      targetPort: websocket-rpc
   selector:
     {{- include "myriad-node.selectorLabels" . | nindent 4 }}
     part-of: full-node

@@ -1,4 +1,4 @@
-{{- range .Values.nodes }}
+{{- range .Values.config.nodes }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -13,18 +13,8 @@ metadata:
     {{- end }}
 spec:
   replicas: 1
-  revisionHistoryLimit: 3
   updateStrategy:
     type: RollingUpdate
-  selector:
-    matchLabels:
-      {{- include "myriad-node.selectorLabels" $ | nindent 6 }}
-      component: {{ .name }}
-      {{- if .validator }}
-      part-of: validator
-      {{- else }}
-      part-of: full-node
-      {{- end }}
   serviceName: {{ include "myriad-node.fullname" $ }}-{{ .name }}
   volumeClaimTemplates:
     - metadata:
@@ -35,6 +25,15 @@ spec:
         resources:
           requests:
             storage: {{ $.Values.volume.dataSize }}
+  selector:
+    matchLabels:
+      {{- include "myriad-node.selectorLabels" $ | nindent 6 }}
+      component: {{ .name }}
+      {{- if .validator }}
+      part-of: validator
+      {{- else }}
+      part-of: full-node
+      {{- end }}
   template:
     metadata:
       {{- with $.Values.podAnnotations }}
@@ -57,10 +56,35 @@ spec:
       serviceAccountName: {{ include "myriad-node.serviceAccountName" $ }}-{{ .name }}
       securityContext:
         {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .keys.private }}
+      volumes:
+        - name: node-key
+          secret:
+            secretName: {{ include "myriad-node.nodeKeySecretName" $ }}-{{ .name }}
+            items:
+              - key: private
+                path: key
+              - key: public
+                path: key.pub
+      {{- end }}
       containers:
         - name: {{ $.Chart.Name }}
           securityContext:
             {{- toYaml $.Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
           image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           command: [ "sh" ]
@@ -92,12 +116,12 @@ spec:
               --no-telemetry
               --enable-offchain-indexing=true
               {{- $name := .name }}
-              {{- range $value := $.Values.nodes }}
+              {{- range $value := $.Values.config.nodes }}
               {{- if and $value.bootnode (ne $value.name $name ) }}
               --bootnodes=/dns/{{ include "myriad-node.name" $ }}-{{ $value.name }}-0.{{ include "myriad-node.name" $ }}-{{ $value.name }}.{{ $.Release.Namespace }}.svc.cluster.local/tcp/30333/p2p/{{ $value.keys.public }}
               {{- end }}
               {{- end }}
-              {{- range $value := $.Values.config.bootnodes }}
+              {{- range $value := $.Values.config.extraBootnodes }}
               --bootnodes={{ $value }}
               {{- end }}
           volumeMounts:
@@ -108,8 +132,6 @@ spec:
               mountPath: /etc/secrets/node-key
               readOnly: true
             {{- end }}
-          resources:
-            {{- toYaml $.Values.resources | nindent 12 }}
           ports:
             - name: p2p
               containerPort: 30333
@@ -123,6 +145,15 @@ spec:
             - name: metrics
               containerPort: 9615
               protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http-rpc
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
           livenessProbe:
             httpGet:
               path: /health
@@ -141,38 +172,6 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 6
             successThreshold: 1
-          startupProbe:
-            httpGet:
-              path: /health
-              port: http-rpc
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 30
-            successThreshold: 1
-      {{- if .keys.private }}
-      volumes:
-        - name: node-key
-          secret:
-            secretName: {{ include "myriad-node.nodeKey" $ }}-{{ .name }}
-            items:
-              - key: private
-                path: key
-              - key: public
-                path: key.pub
-      {{- end }}
-      {{- with $.Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $.Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $.Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
 
 ---
 

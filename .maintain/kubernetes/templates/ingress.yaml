@@ -1,6 +1,7 @@
 {{- if .Values.ingress.httpRPC.enabled -}}
-{{- $httpRPCfullName := printf "%s-%s" (include "myriad-node.fullname" .) "http-rpc" -}}
-{{- $httpRPCsvcPort := .Values.services.httpRPC.port -}}
+{{- $ingressHttpRPCName := include "myriad-node.ingressHttpRPCName" . -}}
+{{- $serviceHttpRPCName := include "myriad-node.serviceHttpRPCName" . -}}
+{{- $serviceHttpRPCPort := .Values.services.httpRPC.port -}}
 {{- if and .Values.ingress.httpRPC.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.httpRPC.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.ingress.httpRPC.annotations "kubernetes.io/ingress.class" .Values.ingress.httpRPC.className}}
@@ -15,7 +16,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $httpRPCfullName }}
+  name: {{ $ingressHttpRPCName }}
   labels:
     {{- include "myriad-node.labels" . | nindent 4 }}
   {{- with .Values.ingress.httpRPC.annotations }}
@@ -49,12 +50,12 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ $httpRPCfullName }}
+                name: {{ $serviceHttpRPCName }}
                 port:
-                  number: {{ $httpRPCsvcPort }}
+                  number: {{ $serviceHttpRPCPort }}
               {{- else }}
-              serviceName: {{ $httpRPCfullName }}
-              servicePort: {{ $httpRPCsvcPort }}
+              serviceName: {{ $serviceHttpRPCName }}
+              servicePort: {{ $serviceHttpRPCPort }}
               {{- end }}
           {{- end }}
     {{- end }}
@@ -65,8 +66,9 @@ spec:
 
 {{- end }}
 {{- if .Values.ingress.websocketRPC.enabled }}
-{{- $websocketRPCfullName := printf "%s-%s" (include "myriad-node.fullname" .) "websocket-rpc" -}}
-{{- $websocketRPCsvcPort := .Values.services.websocketRPC.port -}}
+{{- $ingressWebsocketRPCName := include "myriad-node.ingressWebsocketRPCName" . -}}
+{{- $serviceWebsocketRPCName := include "myriad-node.serviceWebsocketRPCName" . -}}
+{{- $serviceWebsocketRPCPort := .Values.services.websocketRPC.port -}}
 {{- if and .Values.ingress.websocketRPC.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.websocketRPC.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.ingress.websocketRPC.annotations "kubernetes.io/ingress.class" .Values.ingress.websocketRPC.className}}
@@ -81,7 +83,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $websocketRPCfullName }}
+  name: {{ $ingressWebsocketRPCName }}
   labels:
     {{- include "myriad-node.labels" . | nindent 4 }}
   {{- with .Values.ingress.websocketRPC.annotations }}
@@ -115,12 +117,12 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ $websocketRPCfullName }}
+                name: {{ $serviceWebsocketRPCName }}
                 port:
-                  number: {{ $websocketRPCsvcPort }}
+                  number: {{ $serviceWebsocketRPCPort }}
               {{- else }}
-              serviceName: {{ $websocketRPCfullName }}
-              servicePort: {{ $websocketRPCsvcPort }}
+              serviceName: {{ $serviceWebsocketRPCName }}
+              servicePort: {{ $serviceWebsocketRPCPort }}
               {{- end }}
           {{- end }}
     {{- end }}
