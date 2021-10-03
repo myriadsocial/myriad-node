@@ -154,12 +154,14 @@ jobs:
         uses: google-github-actions/get-secretmanager-secrets@main
         with:
           secrets: |-
+            NODE_KEY_PRIVATE_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
+            NODE_KEY_PUBLIC_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
+            NODE_KEY_PRIVATE_2:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
+            NODE_KEY_PUBLIC_2:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
             NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
             NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
-            NODE_KEY_PRIVATE_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
-            NODE_KEY_PUBLIC_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
 
       - name: Install Helm
         run: |
@@ -171,21 +173,48 @@ jobs:
             --install \
             --set-string image.tag=${{ github.event.release.tag_name }} \
             --set-string config.chain=production \
-            --set-string nodes[0].name=validator1 \
+            --set-string nodes[0].name=full1 \
             --set nodes[0].bootnode=true \
-            --set nodes[0].validator=true \
-            --set-string nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
-            --set-string nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
-            --set-string nodes[1].name=validator2 \
+            --set nodes[0].validator=false \
+            --set-string nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
+            --set-string nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
+            --set-string nodes[1].name=full2 \
             --set nodes[1].bootnode=true \
-            --set nodes[1].validator=true \
-            --set-string nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
-            --set-string nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
-            --set-string nodes[2].name=node1 \
-            --set nodes[2].bootnode=false \
-            --set nodes[2].validator=false \
-            --set-string nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
-            --set-string nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
+            --set nodes[1].validator=false \
+            --set-string nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
+            --set-string nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
+            --set-string nodes[2].name=validator1 \
+            --set nodes[2].bootnode=true \
+            --set nodes[2].validator=true \
+            --set-string nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
+            --set-string nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+            --set-string nodes[3].name=validator2 \
+            --set nodes[3].bootnode=true \
+            --set nodes[3].validator=true \
+            --set-string nodes[3].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
+            --set-string nodes[3].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
+            --set services.httpRPC.enabled=true \
+            --set services.websocketRPC.enabled=true \
+            --set ingress.httpRPC.enabled=true \
+            --set-string ingress.httpRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+            --set-string ingress.httpRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+            --set-string ingress.httpRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+            --set-string ingress.httpRPC.hosts[0].host=http-rpc.myriad.systems \
+            --set-string ingress.httpRPC.hosts[0].paths[0].path=/ \
+            --set-string ingress.httpRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+            --set-string ingress.httpRPC.tls[0].secretName=myriad-node-http-rpc-tls \
+            --set-string ingress.httpRPC.tls[0].hosts[0]=http-rpc.myriad.systems \
+            --set ingress.websocketRPC.enabled=true \
+            --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+            --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+            --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+            --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
+            --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
+            --set-string ingress.websocketRPC.hosts[0].host=ws-rpc.myriad.systems \
+            --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
+            --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+            --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
+            --set-string ingress.websocketRPC.tls[0].hosts[0]=ws-rpc.myriad.systems \
             --set-string volume.storageClassName=premium-rwo \
             --set-string volume.dataSize=50Gi
-          kubectl rollout status statefulset/myriad-node-validator1
+          kubectl rollout status statefulset/myriad-node-full1
