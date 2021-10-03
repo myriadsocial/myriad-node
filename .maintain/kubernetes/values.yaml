@@ -71,6 +71,46 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+services:
+  httpRPC:
+    enabled: false
+    type: ClusterIP
+    port: 9933
+  websocketRPC:
+    enabled: false
+    type: ClusterIP
+    port: 9944
+
+ingress:
+  httpRPC:
+    enabled: false
+    className: ""
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+    hosts: []
+      # - host: http-rpc.example.com
+      #   paths:
+      #     - path: /
+      #       pathType: ImplementationSpecific
+    tls: []
+    #  - secretName: http-rpc-example-tls
+    #    hosts:
+    #      - http-rpc.example.com
+  websocketRPC:
+    enabled: false
+    className: ""
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+    hosts: []
+      # - host: ws-rpc.example.com
+      #   paths:
+      #     - path: /
+      #       pathType: ImplementationSpecific
+    tls: []
+    #  - secretName: websocket-rpc-example-tls
+    #    hosts:
+    #      - ws-rpc.example.com
+
 podAnnotations: {}
 
 podSecurityContext:
