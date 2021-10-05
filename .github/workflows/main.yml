@@ -29,10 +29,47 @@ jobs:
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=date::$(date +'%Y%m%d')"
 
-  build-and-publish-docker-image:
+  build-and-upload-artifacts:
     runs-on: ubuntu-latest
 
     needs: compute-build-info
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly-2021-06-29
+          components: clippy, rustfmt
+          target: wasm32-unknown-unknown
+          override: true
+          default: true
+
+      - name: Cache rust or cargo project
+        uses: Swatinem/rust-cache@v1
+        with:
+          sharedKey: ${{ runner.os }}-rust-cache
+
+      - name: Cargo build
+        run: cargo build --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: main
+          path: |
+            ./target/release/wbuild/myriad-runtime/myriad_runtime.wasm
+            ./target/release/myriad
+
+  build-and-publish-docker-image:
+    runs-on: ubuntu-latest
+
+    needs: [compute-build-info, build-and-upload-artifacts]
 
     steps:
       - name: Checkout code
