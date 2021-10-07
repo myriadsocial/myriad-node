@@ -22,6 +22,10 @@ benchmarks! {
 	update_balance {
 		let s in 1 .. 100;
 		let caller: T::AccountId = whitelisted_caller();
+		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
+
+		let _add_currency = Currency::<T>::add_currency(caller_origin.clone(), vec![b'X';256], 18, vec![b'X';256], true);
+
 		let recipient: T::AccountId = account("recepient", 0, SEED);
 	}: update_balance(
 		RawOrigin::Signed(caller),
@@ -33,6 +37,11 @@ benchmarks! {
 	transfer {
 		let s in 1 .. 100;
 		let caller: T::AccountId = whitelisted_caller();
+		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
+
+		let _add_currency = Currency::<T>::add_currency(caller_origin.clone(), vec![b'X';256], 18, vec![b'X';256], true);
+		let _insert_balance = Currency::<T>::update_balance(caller_origin.clone(), caller.clone(), vec![b'X';256], 10000u128.into());
+
 		let recipient: T::AccountId = account("recepient", 0, SEED);
 	}: transfer(
 		RawOrigin::Signed(caller),
