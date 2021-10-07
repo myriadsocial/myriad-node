@@ -26,6 +26,7 @@ frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch =
 # Local Dependencies
 pallet-platform = { path = '../platform', default-features = false }
 pallet-currency = { path = '../currency', default-features = false }
+pallet-reward = { path = '../reward', default-features = false }
 
 [dev-dependencies]
 # External Dependencies
@@ -51,6 +52,7 @@ std = [
 
 	'pallet-platform/std',
 	'pallet-currency/std',
+	'pallet-reward/std',
 ]
 runtime-benchmarks = [
 	'frame-benchmarking'
