@@ -4,6 +4,7 @@ use super::*;
 use crate::Pallet as Currency;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
+use sp_std::vec;
 
 const SEED: u32 = 0;
 
@@ -12,9 +13,9 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 	}: add_currency(
 		RawOrigin::Signed(caller),
-		String::from("MYRIA").into_bytes(),
+		vec![b'X';256],
 		18,
-		String::from("wss://rpc.myriad.systems").into_bytes(),
+		vec![b'X';256],
 		true
 	)
 
@@ -25,7 +26,7 @@ benchmarks! {
 	}: update_balance(
 		RawOrigin::Signed(caller),
 		recipient,
-		String::from("MYRIA").into_bytes(),
+		vec![b'X';256],
 		s.into()
 	)
 
@@ -36,7 +37,7 @@ benchmarks! {
 	}: transfer(
 		RawOrigin::Signed(caller),
 		recipient,
-		String::from("MYRIA").into_bytes(),
+		vec![b'X';256],
 		s.into()
 	)
 }

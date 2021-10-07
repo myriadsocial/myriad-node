@@ -2,15 +2,17 @@ use super::*;
 
 #[allow(unused)]
 use crate::Pallet as Platform;
+use frame_benchmarking::vec;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
+use sp_std::vec::Vec;
 
 benchmarks! {
 	add_platform {
 		let s in 0 .. 100;
-		let t = format!("{}{}", "twitter", s);
+		let t: Vec<u8> = vec![s as u8];
 		let caller: T::AccountId = whitelisted_caller();
-	}: add_platform(RawOrigin::Signed(caller), t.into_bytes())
+	}: add_platform(RawOrigin::Signed(caller), t)
 }
 
 impl_benchmark_test_suite! {Platform, crate::mock::ExternalityBuilder::build(), crate::mock::Test}
