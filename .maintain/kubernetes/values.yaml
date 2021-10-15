@@ -19,24 +19,48 @@ config:
     # - "/dns/myriad-node-0/tcp/30333/p2p/QmRpheLN4JWdAnY7HGJfWFNbfkQCb6tFf4vvA6hgjMZKrR"
 
 nodes: []
-  # - name: validator1
-  #   bootnode: true
-  #   validator: true
-  #   keys:
-  #     private: ""
-  #     public: ""
-  # - name: validator2
-  #   bootnode: true
-  #   validator: true
-  #   keys:
-  #     private: ""
-  #     public: ""
   # - name: node1
   #   bootnode: true
   #   validator: false
   #   keys:
   #     private: ""
   #     public: ""
+  #   sessionInjectionEnabled: false
+  #   sessionKeys: {}
+  # - name: node2
+  #   bootnode: true
+  #   validator: false
+  #   keys:
+  #     private: ""
+  #     public: ""
+  #   sessionInjectionEnabled: false
+  #   sessionKeys: {}
+  # - name: validator1
+  #   bootnode: true
+  #   validator: true
+  #   keys:
+  #     private: ""
+  #     public: ""
+  #   sessionInjectionEnabled: true
+  #   sessionKeys:
+  #     keySeed: ""
+  #     grandpa: ""
+  #     babe: ""
+  #     imonline: ""
+  #     beefy: ""
+  # - name: validator2
+  #   bootnode: true
+  #   validator: true
+  #   keys:
+  #     private: ""
+  #     public: ""
+  #   sessionInjectionEnabled: true
+  #   sessionKeys:
+  #     keySeed: ""
+  #     grandpa: ""
+  #     babe: ""
+  #     imonline: ""
+  #     beefy: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
