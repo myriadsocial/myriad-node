@@ -103,6 +103,25 @@ Create the name of tls secret.
 {{/*
 Create the name of node key secret.
 */}}
-{{- define "myriad-node.nodeKeySecretName" -}}
+{{- define "myriad-node.nodeKey" -}}
 {{- printf "%s-%s" (include "myriad-node.fullname" .) "node-key" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
+
+{{/* Returns the default name to use with session injection related resources */}}
+{{- define "myriad-node.sessionInjectionJobName" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "session-injection-job" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create the name of session key secret.
+*/}}
+{{- define "myriad-node.sessionKey" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "session-key" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+{{/* Returns the default name to use with pod restarter  related resources */}}
+{{- define "myriad-node.podRestarterCronJobName" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "pod-restarter-cron-job" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+*/}}
