@@ -44,9 +44,6 @@ std = [
 	'frame-support/std',
 	'frame-system/std',
 	'frame-benchmarking/std',
-
-	'pallet-platform/std',
-	'pallet-token/std',
 ]
 runtime-benchmarks = [
 	'frame-benchmarking'
