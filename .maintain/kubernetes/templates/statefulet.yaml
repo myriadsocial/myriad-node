@@ -154,7 +154,7 @@ spec:
       volumes:
         - name: node-key
           secret:
-            secretName: {{ include "myriad-node.nodeKeySecretName" $ }}-{{ .name }}
+            secretName: {{ include "myriad-node.nodeKey" $ }}-{{ .name }}
             items:
               - key: private
                 path: key
