@@ -47,11 +47,6 @@ spec:
           configMap:
             defaultMode: 0777
             name: {{ include "myriad-node.sessionInjectionJobName" $ }}
-            # items:
-            #   - key: inject_session_keys.sh
-            #     path: inject_session_keys.sh
-            #   - key: restart_pods.sh
-            #     path: restart_pods.sh
 
 ---
 
