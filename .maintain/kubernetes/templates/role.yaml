@@ -9,11 +9,17 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    resourceNames: [ {{ include "myriad-node.nodeKeySecretName" $ }}-{{ .name }} ]
+    resourceNames: [ {{ include "myriad-node.nodeKey" $ }}-{{ .name }} ]
     verbs: ["get"]
   - apiGroups: [""]
     resources: ["services"]
     verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    verbs: ["get"]
+    resources: ["statefulsets"]
+  - apiGroups: ["apps"]
+    verbs: ["get", "patch"]
+    resources: ["statefulsets/scale"]
 
 ---
 
