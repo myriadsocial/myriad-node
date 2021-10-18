@@ -90,27 +90,22 @@ Create the name of the ingress websocket-rpc
 {{- end }}
 
 {{/*
-Create the name of node key secret.
+Create the name of session injection job.
 */}}
-{{- define "myriad-node.nodeKey" -}}
-{{- printf "%s-%s" (include "myriad-node.fullname" .) "node-key" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- define "myriad-node.sessionInjectionJobName" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "session-injection" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{/* Returns the default name to use with session injection related resources */}}
-{{- define "myriad-node.sessionInjectionJobName" -}}
-{{- printf "%s-%s" (include "myriad-node.fullname" .) "session-injection-job" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{/*
+Create the name of node key secret.
+*/}}
+{{- define "myriad-node.nodeKeySecretName" -}}
+{{- printf "%s-%s" (include "myriad-node.fullname" .) "node-key" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create the name of session key secret.
 */}}
-{{- define "myriad-node.sessionKey" -}}
+{{- define "myriad-node.sessionKeySecretName" -}}
 {{- printf "%s-%s" (include "myriad-node.fullname" .) "session-key" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
-
-{{/*
-{{/* Returns the default name to use with pod restarter  related resources */}}
-{{- define "myriad-node.podRestarterCronJobName" -}}
-{{- printf "%s-%s" (include "myriad-node.fullname" .) "pod-restarter-cron-job" | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{- end }}
-*/}}

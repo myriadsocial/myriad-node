@@ -1,4 +1,4 @@
-{{- range .Values.nodes }}
+{{- range .Values.config.nodes }}
 {{- if .sessionInjectionEnabled }}
 apiVersion: batch/v1
 kind: Job
@@ -27,7 +27,7 @@ spec:
       volumes:
         - name: session-keys
           secret:
-            secretName: {{ include "myriad-node.sessionKey" $ }}-{{ .name }}
+            secretName: {{ include "myriad-node.sessionKeySecretName" $ }}-{{ .name }}
             items:
               - key: grandpa
                 path: grandpa
@@ -39,7 +39,7 @@ spec:
                 path: beefy
         - name: key-seed
           secret:
-            secretName: {{ include "myriad-node.sessionKey" $ }}-{{ .name }}
+            secretName: {{ include "myriad-node.sessionKeySecretName" $ }}-{{ .name }}
             items:
               - key: keySeed
                 path: key-seed
