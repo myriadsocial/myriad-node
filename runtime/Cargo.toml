@@ -2,7 +2,7 @@
 name = 'myriad-runtime'
 version = '1.0.0'
 edition = '2018'
-license = 'Unlicense'
+license = 'GPL-3.0'
 authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
 homepage = 'https://myriad.social'
 repository = 'https://github.com/myriadsocial/myriad-node'
@@ -82,12 +82,7 @@ pallet-ethereum = { git = 'https://github.com/purestake/frontier', branch = 'moo
 ## Octopus Pallet Dependencies
 pallet-octopus-appchain = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
 pallet-octopus-lpos = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-octopus-lpos-reward-curve = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
-
-# Local Pallet
-pallet-platform = { path = '../pallets/platform', default-features = false }
-pallet-currency = { path = '../pallets/currency', default-features = false }
-pallet-escrow = { path = '../pallets/escrow', default-features = false }
+pallet-octopus-upward-messages = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
 
 [features]
 default = ['std']
@@ -137,10 +132,7 @@ std = [
 	'pallet-ethereum/std',
 	'pallet-octopus-appchain/std',
 	'pallet-octopus-lpos/std',
-
-	'pallet-platform/std',
-	'pallet-currency/std',
-	'pallet-escrow/std',
+	'pallet-octopus-upward-messages/std',
 ]
 runtime-benchmarks = [
 	'hex-literal',
@@ -161,8 +153,4 @@ runtime-benchmarks = [
 	'pallet-im-online/runtime-benchmarks',
 	#'pallet-session-benchmarking',
 	'pallet-mmr/runtime-benchmarks',
-
-	'pallet-platform/runtime-benchmarks',
-	'pallet-currency/runtime-benchmarks',
-	'pallet-escrow/runtime-benchmarks',
 ]

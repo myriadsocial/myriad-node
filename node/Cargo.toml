@@ -2,7 +2,7 @@
 name = 'myriad'
 version = '1.0.0'
 edition = '2018'
-license = 'Unlicense'
+license = 'GPL-3.0'
 authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
 homepage = 'https://myriad.social'
 repository = 'https://github.com/myriadsocial/myriad-node'
@@ -89,14 +89,14 @@ beefy-gadget-rpc = { git = 'https://github.com/paritytech/grandpa-bridge-gadget'
 # Frontier Dependencies
 ## Frontier Primitive Dependencies
 fp-rpc = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
-fp-consensus = { git = "https://github.com/purestake/frontier", branch = "moonbeam-polkadot-v0.9.8" }
+fp-consensus = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
 
 ## Frontier Client Dependencies
-fc-db = { git = "https://github.com/purestake/frontier", branch = "moonbeam-polkadot-v0.9.8" }
-fc-consensus = { git = "https://github.com/purestake/frontier", branch = "moonbeam-polkadot-v0.9.8" }
-fc-mapping-sync = { git = "https://github.com/purestake/frontier", branch = "moonbeam-polkadot-v0.9.8" }
-fc-rpc-core = { git = "https://github.com/purestake/frontier", branch = "moonbeam-polkadot-v0.9.8" }
-fc-rpc = { git = "https://github.com/purestake/frontier", branch = "moonbeam-polkadot-v0.9.8" }
+fc-db = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
+fc-consensus = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
+fc-mapping-sync = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
+fc-rpc-core = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
+fc-rpc = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
 
 ## Frontier Pallet Dependencies
 pallet-evm = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8' }
