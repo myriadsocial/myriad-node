@@ -10,7 +10,6 @@ use sc_service::{ChainType, Properties};
 
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_octopus_appchain::AuthorityId as OctopusId;
-use pallet_octopus_lpos::StakerStatus;
 
 use myriad_runtime::{
 	currency::MYRIA, opaque::SessionKeys, AccountId, BabeConfig, Balance, BalancesConfig,
@@ -142,19 +141,17 @@ pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 							.unchecked_into(),
 					),
 				],
-				// Initial nominators
-				vec![],
 				// Pre-funded accounts
-				Some(vec![
+				vec![
 					// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
 					hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"].into(),
-				]),
+				],
 				// Appchain config
 				appchain_config(
 					// Appchain Id
 					"",
 					// Appchain Relay Contract
-					"oct-relay.testnet",
+					"octopus-anchor.testnet",
 					// Appchain Asset Id by Name
 					"usdc.testnet",
 				),
@@ -233,19 +230,17 @@ pub fn development_tesnet_config() -> Result<ChainSpec, String> {
 							.unchecked_into(),
 					),
 				],
-				// Initial nominators
-				vec![],
 				// Pre-funded accounts
-				Some(vec![
+				vec![
 					// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
 					hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"].into(),
-				]),
+				],
 				// Appchain config
 				appchain_config(
 					// Appchain Id
 					"",
 					// Appchain Relay Contract
-					"oct-relay.testnet",
+					"octopus-anchor.testnet",
 					// Appchain Asset Id by Name
 					"usdc.testnet",
 				),
@@ -282,23 +277,21 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Initial PoA authorities
 				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
-				// Initial nominators
-				vec![],
 				// Pre-funded accounts
-				Some(vec![
+				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
 					get_account_id_from_seed::<sr25519::Public>("Dave"),
 					get_account_id_from_seed::<sr25519::Public>("Eve"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-				]),
+				],
 				// Appchain config
 				appchain_config(
 					// Appchain Id
 					"",
 					// Appchain Relay Contract
-					"oct-relay.testnet",
+					"octopus-anchor.testnet",
 					// Appchain Asset Id by Name
 					"usdc.testnet",
 				),
@@ -335,23 +328,21 @@ pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Initial PoA authorities
 				vec![authority_keys_from_seed("Alice")],
-				// Initial nominators
-				vec![],
 				// Pre-funded accounts
-				Some(vec![
+				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
 					get_account_id_from_seed::<sr25519::Public>("Dave"),
 					get_account_id_from_seed::<sr25519::Public>("Eve"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-				]),
+				],
 				// Appchain config
 				appchain_config(
 					// Appchain Id
 					"",
 					// Appchain Relay Contract
-					"oct-relay.testnet",
+					"octopus-anchor.testnet",
 					// Appchain Asset Id by Name
 					"usdc.testnet",
 				),
@@ -375,43 +366,11 @@ fn genesis(
 	wasm_binary: &[u8],
 	root_key: AccountId,
 	initial_authorities: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId, OctopusId)>,
-	initial_nominators: Vec<AccountId>,
-	endowed_accounts: Option<Vec<AccountId>>,
+	endowed_accounts: Vec<AccountId>,
 	appchain_config: (String, String, String),
 ) -> GenesisConfig {
 	const ENDOWMENT: Balance = 1_000_000 * MYRIA;
 	const STASH: Balance = 100 * MYRIA;
-
-	let mut endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_default();
-	// endow all authorities and nominators.
-	initial_authorities
-		.iter()
-		.map(|x| &x.0)
-		.chain(initial_nominators.iter())
-		.for_each(|x| {
-			if !endowed_accounts.contains(x) {
-				endowed_accounts.push(x.clone())
-			}
-		});
-
-	// stakers: all validators and nominators.
-	let mut rng = rand::thread_rng();
-	let stakers = initial_authorities
-		.iter()
-		.map(|x| (x.0.clone(), STASH, StakerStatus::Validator))
-		.chain(initial_nominators.iter().map(|x| {
-			use rand::{seq::SliceRandom, Rng};
-			let limit = (16_usize).min(initial_authorities.len());
-			let count = rng.gen::<usize>() % limit;
-			let nominations = initial_authorities
-				.as_slice()
-				.choose_multiple(&mut rng, count)
-				.into_iter()
-				.map(|choice| choice.0.clone())
-				.collect::<Vec<_>>();
-			(x.clone(), STASH, StakerStatus::Nominator(nominations))
-		}))
-		.collect::<Vec<_>>();
 
 	GenesisConfig {
 		system: SystemConfig {
@@ -452,9 +411,13 @@ fn genesis(
 		evm: Default::default(),
 		octopus_appchain: OctopusAppchainConfig {
 			appchain_id: appchain_config.0,
-			relay_contract: appchain_config.1,
+			anchor_contract: appchain_config.1,
 			asset_id_by_name: vec![(appchain_config.2, 0)],
+			validators: initial_authorities
+				.iter()
+				.map(|x| (x.0.clone(), STASH))
+				.collect::<Vec<_>>(),
 		},
-		octopus_lpos: OctopusLposConfig { stakers, ..Default::default() },
+		octopus_lpos: OctopusLposConfig { era_payout: 1024, ..Default::default() },
 	}
 }

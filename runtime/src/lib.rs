@@ -16,9 +16,7 @@ use sp_core::{
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
-	create_runtime_str,
-	curve::PiecewiseLinear,
-	generic, impl_opaque_keys,
+	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
 		self, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount,
 		Keccak256, NumberFor, OpaqueKeys, SaturatedConversion, StaticLookup, Verify,
@@ -46,8 +44,6 @@ use frame_system::{
 };
 
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_currency;
-pub use pallet_escrow;
 use pallet_evm::{
 	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
 };
@@ -55,8 +51,6 @@ use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-/// Import the template pallet.
-pub use pallet_platform;
 use pallet_session::historical as pallet_session_historical;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
@@ -428,48 +422,8 @@ impl pallet_session::Config for Runtime {
 }
 
 impl pallet_session::historical::Config for Runtime {
-	type FullIdentification = pallet_octopus_lpos::Exposure<AccountId, Balance>;
+	type FullIdentification = u128;
 	type FullIdentificationOf = pallet_octopus_lpos::ExposureOf<Runtime>;
-}
-
-pallet_octopus_lpos_reward_curve::build! {
-	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
-		min_inflation: 0_025_000,
-		max_inflation: 0_100_000,
-		ideal_stake: 0_500_000,
-		falloff: 0_050_000,
-		max_piece_count: 40,
-		test_precision: 0_005_000,
-	);
-}
-
-parameter_types! {
-	// Six sessions in an era (6 hours).
-	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
-	// 28 eras for unbonding (7 days).
-	pub const BondingDuration: pallet_octopus_lpos::EraIndex = 28;
-	// 27 eras in which slashes can be cancelled (slightly less than 7 days).
-	pub const SlashDeferDuration: pallet_octopus_lpos::EraIndex = 27;
-	pub const MaxNominatorRewardedPerValidator: u32 = 256;
-	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
-	pub OffchainRepeat: BlockNumber = 5;
-}
-
-impl pallet_octopus_lpos::Config for Runtime {
-	type Currency = Balances;
-	type UnixTime = Timestamp;
-	type RewardRemainder = ();
-	type Event = Event;
-	type Reward = (); // rewards are minted from the void
-	type SessionsPerEra = SessionsPerEra;
-	type BondingDuration = BondingDuration;
-	type SessionInterface = Self;
-	type EraPayout = pallet_octopus_lpos::ConvertCurve<RewardCurve>;
-	type NextNewSession = Session;
-	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
-	type StakersProvider = OctopusAppchain;
-	type GenesisStakersProvider = Self::StakersProvider;
-	type WeightInfo = pallet_octopus_lpos::weights::SubstrateWeight<Runtime>; // TODO: change this for dynamic fee
 }
 
 impl pallet_beefy::Config for Runtime {
@@ -498,10 +452,38 @@ impl pallet_octopus_appchain::Config for Runtime {
 	type Call = Call;
 	type PalletId = OctopusAppchainPalletId;
 	type LposInterface = OctopusLpos;
+	type UpwardMessagesInterface = OctopusUpwardMessages;
 	type Currency = Balances;
 	type Assets = Assets;
 	type GracePeriod = GracePeriod;
 	type UnsignedPriority = UnsignedPriority;
+}
+
+parameter_types! {
+	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+	pub const BondingDuration: pallet_octopus_lpos::EraIndex = 24 * 28;
+	pub OffchainRepeat: BlockNumber = 5;
+	pub const BlocksPerEra: u32 = EPOCH_DURATION_IN_BLOCKS * 6 / (SECS_PER_BLOCK as u32);
+}
+
+impl pallet_octopus_lpos::Config for Runtime {
+	type Currency = Balances;
+	type UnixTime = Timestamp;
+	type Event = Event;
+	type Reward = (); // rewards are minted from the void
+	type SessionsPerEra = SessionsPerEra;
+	type BlocksPerEra = BlocksPerEra;
+	type BondingDuration = BondingDuration;
+	type SessionInterface = Self;
+	type ValidatorsProvider = OctopusAppchain;
+	type WeightInfo = pallet_octopus_lpos::weights::SubstrateWeight<Runtime>;
+	type UpwardMessagesInterface = OctopusUpwardMessages;
+	type PalletId = OctopusAppchainPalletId;
+}
+
+impl pallet_octopus_upward_messages::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -730,19 +712,6 @@ impl pallet_ethereum::Config for Runtime {
 	type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
 
-/// Configure local pallets
-impl pallet_platform::Config for Runtime {
-	type Event = Event;
-}
-
-impl pallet_currency::Config for Runtime {
-	type Event = Event;
-}
-
-impl pallet_escrow::Config for Runtime {
-	type Event = Event;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -757,7 +726,8 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		OctopusAppchain: pallet_octopus_appchain::{Pallet, Call, Storage, Config<T>, Event<T>, ValidateUnsigned},
-		OctopusLpos: pallet_octopus_lpos::{Pallet, Call, Config<T>, Storage, Event<T>},
+		OctopusLpos: pallet_octopus_lpos::{Pallet, Call, Config, Storage, Event<T>},
+		OctopusUpwardMessages: pallet_octopus_upward_messages::{Pallet, Call, Storage, Event<T>},
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
 		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event, ValidateUnsigned},
 		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
@@ -769,9 +739,6 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
-		Platform: pallet_platform::{Pallet, Storage, Call, Event<T>},
-		Currency: pallet_currency::{Pallet, Storage, Call, Event<T>},
-		Escrow: pallet_escrow::{Pallet, Storage, Call, Event<T>},
 	}
 );
 
@@ -1205,9 +1172,6 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_im_online, ImOnline);
 			// add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_mmr, Mmr);
-			add_benchmark!(params, batches, pallet_platform, Platform);
-			add_benchmark!(params, batches, pallet_currency, Currency);
-			add_benchmark!(params, batches, pallet_escrow, Escrow);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

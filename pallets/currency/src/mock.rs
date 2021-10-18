@@ -57,6 +57,7 @@ impl system::Config for Test {
 
 impl pallet_currency::Config for Test {
 	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub struct ExternalityBuilder;

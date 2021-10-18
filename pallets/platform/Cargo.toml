@@ -2,7 +2,7 @@
 name = 'pallet-platform'
 version = '1.0.0'
 edition = '2018'
-license = 'Unlicense'
+license = 'GPL-3.0'
 authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
 homepage = 'https://myriad.social'
 repository = 'https://github.com/myriadsocial/myriad-node'
