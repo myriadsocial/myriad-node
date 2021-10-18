@@ -1,0 +1,20 @@
+{{- if .Values.serviceAccount.create -}}
+{{- range .Values.config.nodes }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "myriad-node.serviceAccountName" $ }}-{{ .name }}
+  labels:
+    {{- include "myriad-node.labels" $ | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "myriad-node.serviceAccountName" $ }}-{{ .name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "myriad-node.serviceAccountName" $ }}-{{ .name }}
+
+---
+
+{{- end }}
+{{- end }}
