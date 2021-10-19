@@ -85,9 +85,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/
             target/
-          key: ${{ runner.os }}-release-candidate-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-release-candidate-cargo-
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+            ${{ runner.os }}-cargo-
       - name: Cargo build
         run: cargo build --release
       - name: Upload artifact
@@ -118,6 +119,7 @@ jobs:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
+            ${{ runner.os }}-buildx-${{ hashFiles('Cargo.lock') }}
             ${{ runner.os }}-buildx-
       - name: Copy binnary file
         run: cp target/release/myriad .maintain/docker/
@@ -130,9 +132,10 @@ jobs:
         uses: actions/cache@v2
         with:
           path: target/
-          key: ${{ runner.os }}-release-candidate-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-release-candidate-cargo-
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+            ${{ runner.os }}-cargo-
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
