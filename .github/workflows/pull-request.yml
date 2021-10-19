@@ -12,13 +12,11 @@ concurrency:
 jobs:
   test-code:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -28,24 +26,28 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
           default: true
-
       - name: Cache rust or cargo project
-        uses: Swatinem/rust-cache@v1
+        uses: actions/cache@v2
         with:
-          sharedKey: ${{ runner.os }}-rust-cache
-
-      - name: Test Code
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Test code
         run: ./.maintain/test.sh
 
   check-link-markdown:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-
       - name: Check link markdown
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
