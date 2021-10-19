@@ -120,7 +120,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
       - name: Copy binnary file
-        run: cp target/release/myriad .maintain/docker/
+        run: cp target/release/myriad .
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
