@@ -193,7 +193,7 @@ jobs:
             --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
             --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
             --set config.nodes[2].sessionInjectionEnabled=true \
-            --set-string config.nodes[2].sessionKeys.keySeed=${{ steps.secrets.outputs.SESSION_KEY_SEED_VALIDATOR_1 }} \
+            --set-string config.nodes[2].sessionKeys.keySeed="${{ steps.secrets.outputs.SESSION_KEY_SEED_VALIDATOR_1 }}" \
             --set-string config.nodes[2].sessionKeys.grandpa=${{ steps.secrets.outputs.SESSION_KEY_GRANDPA_VALIDATOR_1 }} \
             --set-string config.nodes[2].sessionKeys.babe=${{ steps.secrets.outputs.SESSION_KEY_BABE_VALIDATOR_1 }} \
             --set-string config.nodes[2].sessionKeys.imonline=${{ steps.secrets.outputs.SESSION_KEY_IMONLINE_VALIDATOR_1 }} \
@@ -204,7 +204,7 @@ jobs:
             --set-string config.nodes[3].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
             --set-string config.nodes[3].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
             --set config.nodes[3].sessionInjectionEnabled=true \
-            --set-string config.nodes[3].sessionKeys.keySeed=${{ steps.secrets.outputs.SESSION_KEY_SEED_VALIDATOR_2 }} \
+            --set-string config.nodes[3].sessionKeys.keySeed="${{ steps.secrets.outputs.SESSION_KEY_SEED_VALIDATOR_2 }}" \
             --set-string config.nodes[3].sessionKeys.grandpa=${{ steps.secrets.outputs.SESSION_KEY_GRANDPA_VALIDATOR_2 }} \
             --set-string config.nodes[3].sessionKeys.babe=${{ steps.secrets.outputs.SESSION_KEY_BABE_VALIDATOR_2 }} \
             --set-string config.nodes[3].sessionKeys.imonline=${{ steps.secrets.outputs.SESSION_KEY_IMONLINE_VALIDATOR_2 }} \
