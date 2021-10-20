@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   compute-build-info:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       sha_short: ${{ steps.build-info.outputs.sha_short }}
       date: ${{ steps.build-info.outputs.date }}
@@ -27,7 +27,7 @@ jobs:
           echo "::set-output name=date::$(date +'%Y%m%d')"
 
   build-and-upload-artifacts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: compute-build-info
     steps:
       - name: Checkout code
@@ -67,7 +67,7 @@ jobs:
             ./target/release/myriad
 
   build-and-publish-docker-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-upload-artifacts]
     steps:
       - name: Checkout code
@@ -108,7 +108,7 @@ jobs:
         with:
           context: .
           push: true
-          file: .maintain/docker/Dockerfile
+          file: .maintain/docker/injected-binnary.Dockerfile
           tags: |
             ${{ github.repository }}:${{ github.event.release.tag_name }}
             ${{ github.repository }}:latest
@@ -125,7 +125,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
     steps:
       - name: Checkout code
