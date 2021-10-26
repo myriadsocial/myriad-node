@@ -417,6 +417,7 @@ fn genesis(
 				.iter()
 				.map(|x| (x.0.clone(), STASH))
 				.collect::<Vec<_>>(),
+			premined_amount: 1024,
 		},
 		octopus_lpos: OctopusLposConfig { era_payout: 1024, ..Default::default() },
 	}
