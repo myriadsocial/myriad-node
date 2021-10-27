@@ -36,10 +36,11 @@ impl SubstrateCli for Cli {
 
 	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
 		Ok(match id {
-			"dev" => Box::new(chain_spec::local_development_tesnet_config()?),
-			"" | "local" => Box::new(chain_spec::local_testnet_config()?),
-			"development" => Box::new(chain_spec::development_tesnet_config()?),
-			"staging" => Box::new(chain_spec::staging_tesnet_config()?),
+			"dev" => Box::new(chain_spec::development_config()?),
+			"local" | "" => Box::new(chain_spec::local_config()?),
+			"dev-tesnet" => Box::new(chain_spec::development_tesnet_config()?),
+			"stg-tesnet" => Box::new(chain_spec::staging_tesnet_config()?),
+			"tesnet" => Box::new(chain_spec::tesnet_config()?),
 			path =>
 				Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 		})

@@ -77,8 +77,65 @@ pub fn appchain_config(
 	id: &str,
 	relay_contract: &str,
 	asset_id_by_name: &str,
-) -> (String, String, String) {
-	(id.to_string(), relay_contract.to_string(), asset_id_by_name.to_string())
+	premined_amount: Balance,
+	era_payout: Balance,
+) -> (String, String, String, Balance, Balance) {
+	(
+		id.to_string(),
+		relay_contract.to_string(),
+		asset_id_by_name.to_string(),
+		premined_amount,
+		era_payout,
+	)
+}
+
+pub fn tesnet_config() -> Result<ChainSpec, String> {
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
+	let properties = get_properties("MYRIA", 18, 42);
+
+	Ok(ChainSpec::from_genesis(
+		// Name
+		"Myriad Testnet",
+		// ID
+		"myriad_testnet",
+		ChainType::Live,
+		move || {
+			genesis(
+				// WASM Binary
+				wasm_binary,
+				// Sudo account
+				// 5HdaTtFK9kYGHLgrBMAKMiHQXF92JX16XBohKSXyvDeWxZTs
+				hex!["f63f610d703646c65a1a98fde39e9ee964d555d4d050559189ae791123ffd641"].into(),
+				// Initial PoA authorities
+				vec![],
+				// Pre-funded accounts
+				vec![],
+				// Appchain config
+				appchain_config(
+					// Appchain Id
+					"",
+					// Appchain Relay Contract
+					"octopus-anchor.testnet",
+					// Appchain Asset Id by Name
+					"usdc.testnet",
+					// Premined Amount
+					1024,
+					// Era Payout
+					1024,
+				),
+			)
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		Some("myriad-tesnet"),
+		// Properties
+		Some(properties),
+		// Extensions
+		None,
+	))
 }
 
 pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
@@ -154,6 +211,10 @@ pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 					"octopus-anchor.testnet",
 					// Appchain Asset Id by Name
 					"usdc.testnet",
+					// Premined Amount
+					1024,
+					// Era Payout
+					1024,
 				),
 			)
 		},
@@ -243,6 +304,10 @@ pub fn development_tesnet_config() -> Result<ChainSpec, String> {
 					"octopus-anchor.testnet",
 					// Appchain Asset Id by Name
 					"usdc.testnet",
+					// Premined Amount
+					1024,
+					// Era Payout
+					1024,
 				),
 			)
 		},
@@ -259,15 +324,15 @@ pub fn development_tesnet_config() -> Result<ChainSpec, String> {
 	))
 }
 
-pub fn local_testnet_config() -> Result<ChainSpec, String> {
+pub fn local_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
 	let properties = get_properties("MYRIA", 18, 42);
 
 	Ok(ChainSpec::from_genesis(
 		// Name
-		"Myriad Local Testnet",
+		"Myriad Local",
 		// ID
-		"myriad_local_testnet",
+		"myriad_local",
 		ChainType::Local,
 		move || {
 			genesis(
@@ -294,6 +359,10 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 					"octopus-anchor.testnet",
 					// Appchain Asset Id by Name
 					"usdc.testnet",
+					// Premined Amount
+					1024,
+					// Era Payout
+					1024,
 				),
 			)
 		},
@@ -302,7 +371,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("myriad-local-tesnet"),
+		Some("myriad-local"),
 		// Properties
 		Some(properties),
 		// Extensions
@@ -310,15 +379,15 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	))
 }
 
-pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
+pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
 	let properties = get_properties("MYRIA", 18, 42);
 
 	Ok(ChainSpec::from_genesis(
 		// Name
-		"Myriad Local Development Testnet",
+		"Myriad Development",
 		// ID
-		"myriad_local_development_testnet",
+		"myriad_development",
 		ChainType::Development,
 		move || {
 			genesis(
@@ -345,6 +414,10 @@ pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
 					"octopus-anchor.testnet",
 					// Appchain Asset Id by Name
 					"usdc.testnet",
+					// Premined Amount
+					1024,
+					// Era Payout
+					1024,
 				),
 			)
 		},
@@ -353,7 +426,7 @@ pub fn local_development_tesnet_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("myriad-local-development-tesnet"),
+		Some("myriad-development"),
 		// Properties
 		Some(properties),
 		// Extensions
@@ -367,7 +440,7 @@ fn genesis(
 	root_key: AccountId,
 	initial_authorities: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId, OctopusId)>,
 	endowed_accounts: Vec<AccountId>,
-	appchain_config: (String, String, String),
+	appchain_config: (String, String, String, Balance, Balance),
 ) -> GenesisConfig {
 	const ENDOWMENT: Balance = 1_000_000 * MYRIA;
 	const STASH: Balance = 100 * MYRIA;
@@ -381,10 +454,7 @@ fn genesis(
 		balances: BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|x| (x, ENDOWMENT)).collect(),
 		},
-		sudo: SudoConfig {
-			// Assign network admin rights.
-			key: root_key,
-		},
+		sudo: SudoConfig { key: root_key },
 		babe: BabeConfig { authorities: vec![], epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG) },
 		grandpa: GrandpaConfig { authorities: vec![] },
 		im_online: ImOnlineConfig { keys: vec![] },
@@ -405,20 +475,17 @@ fn genesis(
 						),
 					)
 				})
-				.collect::<Vec<_>>(),
+				.collect(),
 		},
-		ethereum: Default::default(),
-		evm: Default::default(),
 		octopus_appchain: OctopusAppchainConfig {
 			appchain_id: appchain_config.0,
 			anchor_contract: appchain_config.1,
 			asset_id_by_name: vec![(appchain_config.2, 0)],
-			validators: initial_authorities
-				.iter()
-				.map(|x| (x.0.clone(), STASH))
-				.collect::<Vec<_>>(),
-			premined_amount: 1024,
+			premined_amount: appchain_config.3,
+			validators: initial_authorities.iter().map(|x| (x.0.clone(), STASH)).collect(),
 		},
-		octopus_lpos: OctopusLposConfig { era_payout: 1024, ..Default::default() },
+		octopus_lpos: OctopusLposConfig { era_payout: appchain_config.4, ..Default::default() },
+		ethereum: Default::default(),
+		evm: Default::default(),
 	}
 }
