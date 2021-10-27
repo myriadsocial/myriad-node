@@ -26,7 +26,7 @@ jobs:
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=date::$(date +'%Y%m%d')"
 
-  build-and-upload-artifacts:
+  build:
     runs-on: ubuntu-20.04
     needs: compute-build-info
     steps:
@@ -56,19 +56,14 @@ jobs:
             ${{ runner.os }}-cargo-
       - name: Cargo build
         run: cargo build --release
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: main
-          path: |
-            ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.compressed.wasm
-            ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.wasm
-            ./target/release/wbuild/myriad-runtime/myriad_runtime.wasm
-            ./target/release/myriad
+      - name: Generate the chainspec file
+        run: ./target/release/myriad build-spec --disable-default-bootnode --chain dev> myriad-node.json
+      - name: Generate sha256 hash
+        run: sha256sum myriad-node.json> SHA256SUMS
 
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
-    needs: [compute-build-info, build-and-upload-artifacts]
+    needs: [compute-build-info, build]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -111,7 +106,7 @@ jobs:
           file: .maintain/docker/injected-binnary.Dockerfile
           tags: |
             ${{ github.repository }}:${{ needs.compute-build-info.outputs.sha_short }}-${{ needs.compute-build-info.outputs.date }}
-            ${{ github.repository }}:latest-alpha
+            ${{ github.repository }}:latest-pre-alpha
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
       # Temp fix
