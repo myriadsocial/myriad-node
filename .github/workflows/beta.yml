@@ -1,12 +1,12 @@
-name: Release-candidate automation
+name: Beta automation
 
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-beta[0-9]+'
 
 concurrency:
-  group: release-candidate-automation
+  group: beta-automation
 
 jobs:
   compute-build-info:
@@ -99,14 +99,14 @@ jobs:
       - name: Copy binnary file
         run: cp target/release/myriad .
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v2rc
         with:
           context: .
           push: true
           file: .maintain/docker/injected-binnary.Dockerfile
           tags: |
             ${{ github.repository }}:${{ needs.compute-build-info.outputs.latest_tag }}
-            ${{ github.repository }}:latest-rc
+            ${{ github.repository }}:latest-beta
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
       # Temp fix
@@ -130,8 +130,8 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@master
         with:
-          project_id: ${{ secrets.STG_GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.STG_GCP_SA_KEY }}
+          project_id: ${{ secrets.BETA_GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.BETA_GCP_SA_KEY }}
           export_default_credentials: true
       - name: Get the GKE credentials
         uses: google-github-actions/get-gke-credentials@main
@@ -143,24 +143,24 @@ jobs:
         uses: google-github-actions/get-secretmanager-secrets@main
         with:
           secrets: |-
-            NODE_KEY_PRIVATE_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
-            NODE_KEY_PUBLIC_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
-            NODE_KEY_PRIVATE_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
-            NODE_KEY_PUBLIC_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
-            NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
-            NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
-            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
-            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
-            SESSION_KEY_SEED_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_SEED_VALIDATOR_1
-            SESSION_KEY_GRANDPA_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_GRANDPA_VALIDATOR_1
-            SESSION_KEY_BABE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_BABE_VALIDATOR_1
-            SESSION_KEY_IMONLINE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_IMONLINE_VALIDATOR_1
-            SESSION_KEY_BEEFY_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_BEEFY_VALIDATOR_1
-            SESSION_KEY_SEED_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_SEED_VALIDATOR_2
-            SESSION_KEY_GRANDPA_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_GRANDPA_VALIDATOR_2
-            SESSION_KEY_BABE_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_BABE_VALIDATOR_2
-            SESSION_KEY_IMONLINE_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_IMONLINE_VALIDATOR_2
-            SESSION_KEY_BEEFY_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_BEEFY_VALIDATOR_2
+            NODE_KEY_PRIVATE_1:${{ secrets.BETA_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
+            NODE_KEY_PUBLIC_1:${{ secrets.BETA_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
+            NODE_KEY_PRIVATE_2:${{ secrets.BETA_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
+            NODE_KEY_PUBLIC_2:${{ secrets.BETA_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
+            NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.BETA_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
+            NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.BETA_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.BETA_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
+            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.BETA_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
+            SESSION_KEY_SEED_VALIDATOR_1:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_SEED_VALIDATOR_1
+            SESSION_KEY_GRANDPA_VALIDATOR_1:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_GRANDPA_VALIDATOR_1
+            SESSION_KEY_BABE_VALIDATOR_1:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_BABE_VALIDATOR_1
+            SESSION_KEY_IMONLINE_VALIDATOR_1:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_IMONLINE_VALIDATOR_1
+            SESSION_KEY_BEEFY_VALIDATOR_1:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_BEEFY_VALIDATOR_1
+            SESSION_KEY_SEED_VALIDATOR_2:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_SEED_VALIDATOR_2
+            SESSION_KEY_GRANDPA_VALIDATOR_2:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_GRANDPA_VALIDATOR_2
+            SESSION_KEY_BABE_VALIDATOR_2:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_BABE_VALIDATOR_2
+            SESSION_KEY_IMONLINE_VALIDATOR_2:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_IMONLINE_VALIDATOR_2
+            SESSION_KEY_BEEFY_VALIDATOR_2:${{ secrets.BETA_GCP_PROJECT_ID }}/SESSION_KEY_BEEFY_VALIDATOR_2
       - name: Install Helm
         run: |
           curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash

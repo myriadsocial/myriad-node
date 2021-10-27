@@ -1,12 +1,12 @@
-name: Release-candidate automation
+name: Alpha automation
 
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-alpha[0-9]+'
 
 concurrency:
-  group: release-candidate-automation
+  group: alpha-automation
 
 jobs:
   compute-build-info:
@@ -99,14 +99,14 @@ jobs:
       - name: Copy binnary file
         run: cp target/release/myriad .
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v2rc
         with:
           context: .
           push: true
           file: .maintain/docker/injected-binnary.Dockerfile
           tags: |
             ${{ github.repository }}:${{ needs.compute-build-info.outputs.latest_tag }}
-            ${{ github.repository }}:latest-rc
+            ${{ github.repository }}:latest-alpha
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
       # Temp fix

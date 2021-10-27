@@ -1,12 +1,12 @@
-name: Publish draft release
+name: Publish draft release candidate
 
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
 
 concurrency:
-  group: publish-draft-release
+  group: publish-draft-release-candidate
 
 jobs:
   publish-draft-release:
@@ -39,6 +39,7 @@ jobs:
         with:
           body: ${{ steps.build_changelog.outputs.changelog }}
           draft: true
+          prerelease: true
           files: |
             ./target/release/wbuild/myriad-runtime/myriad_runtime.wasm
             ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.wasm
