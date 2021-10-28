@@ -89,7 +89,7 @@ pub fn appchain_config(
 	)
 }
 
-pub fn tesnet_config() -> Result<ChainSpec, String> {
+pub fn testnet_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
 	let properties = get_properties("MYRIA", 18, 42);
 
@@ -130,7 +130,7 @@ pub fn tesnet_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("myriad-tesnet"),
+		Some("myriad-testnet"),
 		// Properties
 		Some(properties),
 		// Extensions
@@ -138,7 +138,7 @@ pub fn tesnet_config() -> Result<ChainSpec, String> {
 	))
 }
 
-pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
+pub fn staging_testnet_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
 	let properties = get_properties("MYRIA", 18, 42);
 
@@ -223,7 +223,7 @@ pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("myriad-staging-tesnet"),
+		Some("myriad-staging-testnet"),
 		// Properties
 		Some(properties),
 		// Extensions
@@ -231,7 +231,7 @@ pub fn staging_tesnet_config() -> Result<ChainSpec, String> {
 	))
 }
 
-pub fn development_tesnet_config() -> Result<ChainSpec, String> {
+pub fn development_testnet_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
 	let properties = get_properties("MYRIA", 18, 42);
 
@@ -316,7 +316,7 @@ pub fn development_tesnet_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("myriad-development-tesnet"),
+		Some("myriad-development-testnet"),
 		// Properties
 		Some(properties),
 		// Extensions
