@@ -57,7 +57,7 @@ jobs:
       - name: Cargo build
         run: cargo build --release
       - name: Generate the chainspec file
-        run: ./target/release/myriad build-spec --disable-default-bootnode --chain dev-testnet > chain-spec.json
+        run: ./target/release/myriad build-spec --disable-default-bootnode --chain devtestnet > chain-spec.json
       - name: Generate sha256 hash
         run: sha256sum chain-spec.json> SHA256SUMS
 
@@ -169,7 +169,7 @@ jobs:
           helm upgrade myriad-node .maintain/kubernetes \
             --install \
             --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }}-${{ needs.compute-build-info.outputs.date }} \
-            --set-string config.chain=dev-testnet \
+            --set-string config.chain=devtestnet \
             --set-string config.nodes[0].name=full1 \
             --set config.nodes[0].bootnode=true \
             --set config.nodes[0].validator=false \
