@@ -12,6 +12,5 @@ cargo build
 ./target/debug/myriad \
 --base-path .local \
 --dev \
---alice \
---enable-offchain-indexing true
+--alice
 ```
