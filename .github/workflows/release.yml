@@ -169,7 +169,7 @@ jobs:
           helm upgrade myriad-node .maintain/kubernetes \
             --install \
             --set-string image.tag=${{ github.event.release.tag_name }} \
-            --set-string config.chain=production \
+            --set-string config.chain=myriad \
             --set-string config.nodes[0].name=full1 \
             --set config.nodes[0].bootnode=true \
             --set config.nodes[0].validator=false \
