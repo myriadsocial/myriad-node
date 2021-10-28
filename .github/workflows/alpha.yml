@@ -169,7 +169,7 @@ jobs:
           helm upgrade myriad-node .maintain/kubernetes \
             --install \
             --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
-            --set-string config.chain="stg-testnet" \
+            --set-string config.chain=stg-testnet \
             --set-string config.nodes[0].name=full1 \
             --set config.nodes[0].bootnode=true \
             --set config.nodes[0].validator=false \
