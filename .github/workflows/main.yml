@@ -57,9 +57,9 @@ jobs:
       - name: Cargo build
         run: cargo build --release
       - name: Generate the chainspec file
-        run: ./target/release/myriad build-spec --disable-default-bootnode --chain dev> myriad-node.json
+        run: ./target/release/myriad build-spec --disable-default-bootnode --chain dev-testnet > chain-spec.json
       - name: Generate sha256 hash
-        run: sha256sum myriad-node.json> SHA256SUMS
+        run: sha256sum chain-spec.json> SHA256SUMS
 
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
