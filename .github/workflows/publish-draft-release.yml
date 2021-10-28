@@ -43,6 +43,6 @@ jobs:
             ./target/release/wbuild/myriad-runtime/myriad_runtime.wasm
             ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.wasm
             ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.compressed.wasm
-            ./myriad-node.json
-            ./SHA256SUMS
             ./target/release/myriad
+            ./chain-spec.json
+            ./SHA256SUMS   
