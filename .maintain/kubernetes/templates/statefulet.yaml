@@ -114,7 +114,6 @@ spec:
               --prometheus-port=9615
               --prometheus-external
               --no-telemetry
-              --enable-offchain-indexing=true
               {{- $name := .name }}
               {{- range $value := $.Values.config.nodes }}
               {{- if and $value.bootnode (ne $value.name $name ) }}
