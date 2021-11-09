@@ -38,7 +38,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2021-06-29
+          toolchain: nightly
           components: clippy, rustfmt
           target: wasm32-unknown-unknown
           override: true
@@ -173,7 +173,7 @@ jobs:
             helm upgrade myriad-node myriad/myriad-node \
               --install \
               --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
-              --set-string config.chain=myriad \
+              --set-string config.chain=mainnet \
               --set-string config.nodes[0].name=full1 \
               --set config.nodes[0].bootnode=true \
               --set config.nodes[0].validator=false \

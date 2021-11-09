@@ -2,7 +2,7 @@
 name = 'myriad-runtime'
 version = '1.0.0'
 edition = '2018'
-license = 'GPL-3.0'
+license = 'AGPL-3.0'
 authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
 homepage = 'https://myriad.social'
 repository = 'https://github.com/myriadsocial/myriad-node'
@@ -11,146 +11,137 @@ repository = 'https://github.com/myriadsocial/myriad-node'
 targets = ['x86_64-unknown-linux-gnu']
 
 [build-dependencies]
-substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8' }
+substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12' }
 
 [dependencies]
 # External Dependencies
 codec = { package = 'parity-scale-codec', version = '2.0.0', default-features = false, features = ['derive'] }
-log = { version = '0.4.14', default-features = false }
 hex-literal = { version = '0.3.3', optional = true }
+log = { version = '0.4.14', default-features = false }
+scale-info = { version = '1.0', default-features = false, features = ['derive'] }
 
 # Substrate Dependencies
 ## Substrate Primitive Dependencies
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-core = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-io = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-version = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-api = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-block-builder = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-inherents = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-transaction-pool = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-offchain = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-consensus-babe = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-session = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-sp-staking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
+beefy-primitives = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-block-builder = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-consensus-babe = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-inherents = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-offchain = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-session = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-staking = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-transaction-pool = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+sp-version = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
 
 ## Substrate Frame Dependencies
-frame-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-frame-system = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-frame-system-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false, optional = true }
-frame-system-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-frame-executive = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-frame-election-provider-support = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false, optional = true }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false, optional = true }
+frame-executive = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+frame-system-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false, optional = true }
+frame-system-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
 
 ## Substrate Pallet Dependencies
-pallet-randomness-collective-flip = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-assets = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-sudo = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-babe = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-grandpa = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-im-online = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-authorship = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-session = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false, features = ['historical'] }
-pallet-session-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false, optional = true }
-pallet-mmr = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.8', default-features = false }
-
-# Grandpa Bridge Dependencies
-## Grandpa Bridge Primitive Dependencies
-beefy-primitives = { git = 'https://github.com/paritytech/grandpa-bridge-gadget', branch = 'polkadot-v0.9.8', default-features = false }
-
-## Grandpa Bridge Pallet Dependencies
-pallet-beefy = { git = 'https://github.com/paritytech/grandpa-bridge-gadget', branch = 'polkadot-v0.9.8', default-features = false }
-
-# Frontier Dependencies
-## Frontier Primitive Dependencies
-fp-rpc = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
-
-## Frontier Pallet Dependencies
-pallet-evm = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
-pallet-evm-precompile-simple = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
-pallet-evm-precompile-modexp = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
-pallet-evm-precompile-sha3fips = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
-pallet-ethereum = { git = 'https://github.com/purestake/frontier', branch = 'moonbeam-polkadot-v0.9.8', default-features = false }
+pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-authorship = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-babe = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-beefy = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-beefy-mmr = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-grandpa = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-im-online = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-mmr = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-mmr-primitives = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-randomness-collective-flip = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-session = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false, features = ['historical'] }
+pallet-sudo = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
 
 # Octopus Dependencies
 ## Octopus Pallet Dependencies
-pallet-octopus-appchain = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-octopus-lpos = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
-pallet-octopus-upward-messages = { git = 'https://github.com/blocksphereid/octopus-pallets.git', branch = 'polkadot-v0.9.8', default-features = false }
+pallet-octopus-appchain = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.12', default-features = false }
+pallet-octopus-lpos = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.12', default-features = false }
+pallet-octopus-upward-messages = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.12', default-features = false }
 
 [features]
 default = ['std']
 std = [
-    'codec/std',
+	# External Dependencies
+	'codec/std',
 	'log/std',
+	'scale-info/std',
 
-	'sp-std/std',
-	'sp-core/std',
-	'sp-io/std',
-	'sp-runtime/std',
-	'sp-version/std',
-	'sp-api/std',
-    'sp-block-builder/std',
-    'sp-inherents/std',
-	'sp-transaction-pool/std',
-    'sp-offchain/std',
-    'sp-session/std',
-	'sp-consensus-babe/std',
-	'sp-staking/std',
+	# Substrate Dependencies
+	## Substrate Primitive Dependencies
 	'beefy-primitives/std',
-	'fp-rpc/std',
+    'sp-api/std',
+    'sp-block-builder/std',
+    'sp-consensus-babe/std',
+    'sp-core/std',
+    'sp-inherents/std',
+    'sp-offchain/std',
+    'sp-runtime/std',
+    'sp-session/std',
+    'sp-staking/std',
+    'sp-std/std',
+    'sp-transaction-pool/std',
+    'sp-version/std',
 
-    'frame-support/std',
-    'frame-system/std',
-	'frame-system-rpc-runtime-api/std',
+	## Substrate Frame Dependencies
 	'frame-executive/std',
-	'frame-election-provider-support/std',
+    'frame-support/std',
+    'frame-system-rpc-runtime-api/std',
+    'frame-system/std',
 
+	## Substrate Pallet Dependencies
+    'pallet-assets/std',
+    'pallet-authorship/std',
+    'pallet-babe/std',
+    'pallet-balances/std',
+    'pallet-beefy-mmr/std',
+    'pallet-beefy/std',
+    'pallet-grandpa/std',
+    'pallet-im-online/std',
+    'pallet-mmr-primitives/std',
+    'pallet-mmr/std',
     'pallet-randomness-collective-flip/std',
-	'pallet-timestamp/std',
-	'pallet-balances/std',
-	'pallet-assets/std',
-	'pallet-transaction-payment/std',
-	'pallet-transaction-payment-rpc-runtime-api/std',
+    'pallet-session/std',
     'pallet-sudo/std',
-	'pallet-babe/std',
-	'pallet-grandpa/std',
-	'pallet-im-online/std',
-	'pallet-beefy/std',
-	'pallet-authorship/std',
-	'pallet-mmr/std',
-	'pallet-evm/std',
-	'pallet-evm-precompile-simple/std',
-	'pallet-evm-precompile-modexp/std',
-	'pallet-evm-precompile-sha3fips/std',
-	'pallet-ethereum/std',
+    'pallet-timestamp/std',
+    'pallet-transaction-payment-rpc-runtime-api/std',
+    'pallet-transaction-payment/std',
+
+	# Octopus Dependencies
+	## Octopus Pallet Dependencies
 	'pallet-octopus-appchain/std',
-	'pallet-octopus-lpos/std',
-	'pallet-octopus-upward-messages/std',
+    'pallet-octopus-lpos/std',
+    'pallet-octopus-upward-messages/std',
 ]
 runtime-benchmarks = [
+	# External Dependencies
 	'hex-literal',
 
+	# Substrate Dependencies
+	## Substrate Primitive Dependencies
 	'sp-runtime/runtime-benchmarks',
 
-    'frame-support/runtime-benchmarks',
-	'frame-system/runtime-benchmarks',
-    'frame-system-benchmarking',
-	'frame-election-provider-support/runtime-benchmarks',
+	## Substrate Frame Dependencies
 	'frame-benchmarking',
+    'frame-support/runtime-benchmarks',
+    'frame-system-benchmarking',
+    'frame-system/runtime-benchmarks',
 
-	'pallet-timestamp/runtime-benchmarks',
-    'pallet-balances/runtime-benchmarks',
+	## Substrate Pallet Dependencies
 	'pallet-assets/runtime-benchmarks',
 	'pallet-babe/runtime-benchmarks',
 	'pallet-grandpa/runtime-benchmarks',
 	'pallet-im-online/runtime-benchmarks',
-	#'pallet-session-benchmarking',
 	'pallet-mmr/runtime-benchmarks',
+    'pallet-balances/runtime-benchmarks',
+    'pallet-timestamp/runtime-benchmarks',
 ]
