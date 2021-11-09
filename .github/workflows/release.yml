@@ -97,7 +97,20 @@ jobs:
             ${{ runner.os }}-cargo-
       - name: Copy binnary file
         run: cp target/release/myriad .
-      - name: Build and push
+      - name: Build and push pre-release
+        if: "github.event.release.prerelease && !contains(needs.compute-build-info.outputs.latest_tag, 'alpha') && !contains(needs.compute-build-info.outputs.latest_tag, 'beta')"
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: .maintain/docker/injected-binnary.Dockerfile
+          tags: |
+            ${{ github.repository }}:${{ github.event.release.tag_name }}
+            ${{ github.repository }}:latest-rc
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Build and push release
+        if: "!github.event.release.prerelease"
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -188,10 +201,7 @@ jobs:
               --set config.nodes[1].sessionInjectionEnabled=false \
               --set-string config.nodes[2].name=validator1 \
               --set config.nodes[2].bootnode=true \
-              --set config.nodes[2].validator=true \
-              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
-              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
-              --set config.nodes[2].sessionInjectionEnabled=true \
+              --set config.nodes[2].validator=trif: "!github.event.release.prerelease"tionEnabled=true \
               --set-string config.nodes[2].sessionKeys.keySeed="${{ steps.secrets.outputs.SESSION_KEY_SEED_VALIDATOR_1 }}" \
               --set-string config.nodes[2].sessionKeys.grandpa=${{ steps.secrets.outputs.SESSION_KEY_GRANDPA_VALIDATOR_1 }} \
               --set-string config.nodes[2].sessionKeys.babe=${{ steps.secrets.outputs.SESSION_KEY_BABE_VALIDATOR_1 }} \
