@@ -120,6 +120,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
   deploy:
+    if: ${{ secrets.DEV_DEPLOY }} == "true"
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
     steps:
