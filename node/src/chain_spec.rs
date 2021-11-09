@@ -126,7 +126,7 @@ pub fn mainnet_config() -> Result<ChainSpec, String> {
 				// Appchain config
 				appchain_config(
 					// Relay Contract
-					"octopus-anchor.testnet",
+					"",
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
@@ -173,7 +173,7 @@ pub fn testnet_config() -> Result<ChainSpec, String> {
 				// Appchain config
 				appchain_config(
 					// Relay Contract
-					"octopus-anchor.testnet",
+					"",
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
@@ -286,7 +286,7 @@ pub fn staging_testnet_config() -> Result<ChainSpec, String> {
 				// Appchain config
 				appchain_config(
 					// Relay Contract
-					"octopus-anchor.testnet",
+					"",
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
@@ -400,7 +400,7 @@ pub fn development_testnet_config() -> Result<ChainSpec, String> {
 				// Appchain config
 				appchain_config(
 					// Relay Contract
-					"octopus-anchor.testnet",
+					"",
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
@@ -465,7 +465,7 @@ pub fn local_config() -> Result<ChainSpec, String> {
 				// Appchain config
 				appchain_config(
 					// Relay Contract
-					"octopus-anchor.testnet",
+					"",
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
@@ -520,7 +520,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 				// Appchain config
 				appchain_config(
 					// Relay Contract
-					"octopus-anchor.testnet",
+					"",
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
