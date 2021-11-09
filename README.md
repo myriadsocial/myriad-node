@@ -23,7 +23,7 @@ Follow these steps to get started with the Node
 
 ### Rust Setup
 
-First, complete the [basic Rust setup instructions](./doc/rust-setup.md).
+First, complete the [basic Rust setup instructions](./docs/rust-setup.md).
 
 ### Single-Node Development Chain
 
