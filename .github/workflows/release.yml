@@ -13,6 +13,7 @@ jobs:
     outputs:
       sha_short: ${{ steps.build-info.outputs.sha_short }}
       date: ${{ steps.build-info.outputs.date }}
+      deploy: ${{ steps.build-info.outputs.deploy }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -20,10 +21,15 @@ jobs:
           fetch-depth: 0
       - name: Compute build info
         id: build-info
+        env:
+          PREPROD_DEPLOY: ${{ secrets.PREPROD_DEPLOY }}
         shell: bash
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=date::$(date +'%Y%m%d')"
+
+          echo "deploy: ${{ env.PREPROD_DEPLOY != '' }}"
+          echo "::set-output name=deploy::${{ env.PREPROD_DEPLOY != '' }}"
 
   build:
     runs-on: ubuntu-20.04
@@ -63,6 +69,7 @@ jobs:
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build]
+    if: needs.compute-build-info.outputs.deploy == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -134,7 +141,7 @@ jobs:
   deploy-pre-release:
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
-    if: "github.event.release.prerelease && !contains(needs.compute-build-info.outputs.latest_tag, 'alpha') && !contains(needs.compute-build-info.outputs.latest_tag, 'beta') && ${{ secrets.PROD_DEPLOY }} == "true""
+    if: "github.event.release.prerelease && !contains(needs.compute-build-info.outputs.latest_tag, 'alpha') && !contains(needs.compute-build-info.outputs.latest_tag, 'beta') && needs.compute-build-info.outputs.deploy == 'true'"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -245,7 +252,7 @@ jobs:
             kubectl rollout status statefulset/myriad-node-full1
 
   deploy-release:
-    if: "!github.event.release.prerelease && ${{ secrets.PROD_DEPLOY }} == "true""
+    if: "!github.event.release.prerelease && needs.compute-build-info.outputs.deploy == 'true'"
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
     steps:
