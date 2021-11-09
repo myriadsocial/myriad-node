@@ -146,7 +146,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
   deploy:
-    if: ${{ secrets.BETA_DEPLOY }} == "true"
+    if: ${{ secrets.PREPROD_DEPLOY }} == "true"
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
     steps:
