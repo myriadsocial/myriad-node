@@ -52,6 +52,11 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
+	fn force_unreserve() -> Weight {
+		(213_000_000_u64)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
 	fn transfer_all() -> Weight {
 		(198_000_000_u64)
 			.saturating_add(T::DbWeight::get().reads(1_u64))

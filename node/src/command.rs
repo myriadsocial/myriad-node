@@ -3,11 +3,10 @@ use crate::{
 	cli::{Cli, Subcommand},
 	service,
 };
-
+use myriad_runtime::Block;
 use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
-
-use myriad_runtime::Block;
+use std::path::PathBuf;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -41,8 +40,8 @@ impl SubstrateCli for Cli {
 			"dev-testnet" => Box::new(chain_spec::development_testnet_config()?),
 			"stg-testnet" => Box::new(chain_spec::staging_testnet_config()?),
 			"testnet" => Box::new(chain_spec::testnet_config()?),
-			path =>
-				Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
+			"mainnet" => Box::new(chain_spec::mainnet_config()?),
+			path => Box::new(chain_spec::ChainSpec::from_json_file(PathBuf::from(path))?),
 		})
 	}
 
@@ -107,18 +106,18 @@ pub fn run() -> sc_cli::Result<()> {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
 
-				runner.sync_run(|config| cmd.run::<Block, service::Executor>(config))
+				runner.sync_run(|config| cmd.run::<Block, service::ExecutorDispatch>(config))
 			} else {
-				Err("Benchmarking wasn't enabled when building the node. \
-				You can enable it with `--features runtime-benchmarks`."
+				Err("Benchmarking wasn't enabled when building the node. You can enable it with \
+				     `--features runtime-benchmarks`."
 					.into())
 			},
 		None => {
-			let runner = cli.create_runner(&cli.run.base)?;
+			let runner = cli.create_runner(&cli.run)?;
 			runner.run_node_until_exit(|config| async move {
 				match config.role {
 					Role::Light => service::new_light(config),
-					_ => service::new_full(config, &cli),
+					_ => service::new_full(config),
 				}
 				.map_err(sc_cli::Error::Service)
 			})

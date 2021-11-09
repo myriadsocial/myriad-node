@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-rc*'
 
 concurrency:
   group: publish-draft-release
@@ -45,4 +46,4 @@ jobs:
             ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.compressed.wasm
             ./target/release/myriad
             ./chain-spec.json
-            ./SHA256SUMS   
+            ./SHA256SUMS
