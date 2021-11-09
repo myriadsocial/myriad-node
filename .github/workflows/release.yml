@@ -134,7 +134,7 @@ jobs:
   deploy-pre-release:
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
-    if: "github.event.release.prerelease && !contains(needs.compute-build-info.outputs.latest_tag, 'alpha') && !contains(needs.compute-build-info.outputs.latest_tag, 'beta')"
+    if: "github.event.release.prerelease && !contains(needs.compute-build-info.outputs.latest_tag, 'alpha') && !contains(needs.compute-build-info.outputs.latest_tag, 'beta') && ${{ secrets.RELEASE_DEPLOY }} == "true""
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -245,7 +245,7 @@ jobs:
             kubectl rollout status statefulset/myriad-node-full1
 
   deploy-release:
-    if: "!github.event.release.prerelease"
+    if: "!github.event.release.prerelease && ${{ secrets.RELEASE_DEPLOY }} == "true""
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
     steps:
