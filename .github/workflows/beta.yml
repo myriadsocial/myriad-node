@@ -61,9 +61,35 @@ jobs:
       - name: Generate sha256 hash
         run: sha256sum chain-spec.json> SHA256SUMS
 
+  publish-draft-beta-release:
+    runs-on: ubuntu-20.04
+
+    needs: [build]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Build changelog
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          configuration: '.github/workflows/rcb_config.json'
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ steps.build_changelog.outputs.changelog }}
+          draft: true
+          prerelease: true
+
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
-    needs: [compute-build-info, build]
+    needs: [compute-build-info, build, publish-draft-beta-release]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
