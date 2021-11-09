@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       latest_tag: ${{ steps.build-info.outputs.latest_tag }}
-      deploy: ${{ steps.build-info.outputs.deploy }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -21,20 +20,35 @@ jobs:
           fetch-depth: 0
       - name: Compute build info
         id: build-info
-        env:
-          PREPROD_DEPLOY: ${{ secrets.PREPROD_DEPLOY }}
         shell: bash
         run: |
           version=${GITHUB_REF#refs/*/}
           echo $version
           echo "::set-output name=latest_tag::$version"
 
-          echo "deploy: ${{ env.PREPROD_DEPLOY != '' }}"
-          echo "::set-output name=deploy::${{ env.PREPROD_DEPLOY != '' }}"
+  deployment-info:
+    runs-on: ubuntu-20.04
+
+    outputs:
+      deploy: ${{ steps.deployment-info.outputs.deploy }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      ## if DEV_DEPLOY exist (number) == true
+      - name: Get Status Deploy
+        id: deployment-info
+        env:
+          DEPLOY: ${{ secrets.DEV_DEPLOY }}
+        shell: bash
+        run: |
+          echo "deploy: ${{ env.DEPLOY != '' }}"
+          echo "::set-output name=deploy::${{ env.DEPLOY != '' }}"
 
   build:
     runs-on: ubuntu-20.04
-    needs: compute-build-info
+    needs: [compute-build-info, deployment-info]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -70,7 +84,7 @@ jobs:
   publish-draft-beta-release:
     runs-on: ubuntu-20.04
 
-    needs: [build]
+    needs: build
 
     steps:
       - name: Checkout code
@@ -96,7 +110,6 @@ jobs:
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build, publish-draft-beta-release]
-    if: needs.compute-build-info.outputs.deploy == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -154,8 +167,8 @@ jobs:
 
   deploy:
     runs-on: ubuntu-20.04
-    needs: [compute-build-info, build-and-publish-docker-image]
-    if: needs.compute-build-info.outputs.deploy == 'true'
+    needs: [compute-build-info, build-and-publish-docker-image, deployment-info]
+    if: needs.deployment-info.outputs.deploy == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
