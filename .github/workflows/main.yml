@@ -14,6 +14,7 @@ jobs:
     outputs:
       sha_short: ${{ steps.build-info.outputs.sha_short }}
       date: ${{ steps.build-info.outputs.date }}
+      deploy: ${{ steps.build-info.outputs.deploy }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -21,10 +22,15 @@ jobs:
           fetch-depth: 0
       - name: Compute build info
         id: build-info
+        env:
+          DEV_DEPLOY: ${{ secrets.DEV_DEPLOY }}
         shell: bash
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=date::$(date +'%Y%m%d')"
+
+          echo "deploy: ${{ env.DEV_DEPLOY != '' }}"
+          echo "::set-output name=deploy::${{ env.DEV_DEPLOY != '' }}"
 
   build:
     runs-on: ubuntu-20.04
@@ -64,6 +70,7 @@ jobs:
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build]
+    if: needs.compute-build-info.outputs.deploy == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -120,9 +127,9 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
   deploy:
-    if: ${{ secrets.DEV_DEPLOY }} == "true"
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
+    if: needs.compute-build-info.outputs.deploy == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

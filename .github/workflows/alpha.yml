@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       latest_tag: ${{ steps.build-info.outputs.latest_tag }}
+      deploy: ${{ steps.build-info.outputs.deploy }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -20,11 +21,16 @@ jobs:
           fetch-depth: 0
       - name: Compute build info
         id: build-info
+        env:
+          STG_DEPLOY: ${{ secrets.STG_DEPLOY }}
         shell: bash
         run: |
           version=${GITHUB_REF#refs/*/}
           echo $version
           echo "::set-output name=latest_tag::$version"
+
+          echo "deploy: ${{ env.STG_DEPLOY != '' }}"
+          echo "::set-output name=deploy::${{ env.STG_DEPLOY != '' }}"
 
   build:
     runs-on: ubuntu-20.04
@@ -90,6 +96,7 @@ jobs:
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build, publish-draft-alpha-release]
+    if: needs.compute-build-info.outputs.deploy == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -149,6 +156,7 @@ jobs:
     if: ${{ secrets.STG_DEPLOY }} == "true"
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
+    if: needs.compute-build-info.outputs.deploy == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
