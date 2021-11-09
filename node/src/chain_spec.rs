@@ -264,18 +264,21 @@ pub fn staging_testnet_config() -> Result<ChainSpec, String> {
 				vec![
 					(
 						// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
-						hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"].into(),
+						hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"]
+							.into(),
 						249_998_000 * MYRIA,
 					),
 					(
 						// 5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
-						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"].into(),
+						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"]
+							.into(),
 						// Balance amount
 						1_000 * MYRIA,
 					),
 					(
 						// 5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
-						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"].into(),
+						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"]
+							.into(),
 						// Balance amount
 						1_000 * MYRIA,
 					),
@@ -374,19 +377,22 @@ pub fn development_testnet_config() -> Result<ChainSpec, String> {
 				vec![
 					(
 						// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
-						hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"].into(),
+						hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"]
+							.into(),
 						// Balance amount
 						249_998_000 * MYRIA,
 					),
 					(
 						// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
-						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"].into(),
+						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
+							.into(),
 						// Balance amount
 						1_000 * MYRIA,
 					),
 					(
 						// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
-						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"].into(),
+						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
+							.into(),
 						// Balance amount
 						1_000 * MYRIA,
 					),
@@ -505,14 +511,12 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					authority_keys_from_seed("Alice", 100 * MYRIA),
 				],
 				// Pre-funded accounts
-				vec![
-					(
-						// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						// Balance amount
-						250_000_000 * MYRIA,
-					),
-				],
+				vec![(
+					// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					// Balance amount
+					250_000_000 * MYRIA,
+				)],
 				// Appchain config
 				appchain_config(
 					// Relay Contract
@@ -543,7 +547,15 @@ pub fn development_config() -> Result<ChainSpec, String> {
 fn genesis(
 	wasm_binary: &[u8],
 	root_key: AccountId,
-	initial_authorities: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId, BeefyId, OctopusId, Balance)>,
+	initial_authorities: Vec<(
+		AccountId,
+		BabeId,
+		GrandpaId,
+		ImOnlineId,
+		BeefyId,
+		OctopusId,
+		Balance,
+	)>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
 	appchain_config: (String, String, Balance, Balance),
 ) -> GenesisConfig {
@@ -562,7 +574,7 @@ fn genesis(
 		beefy: Default::default(),
 		assets: Default::default(),
 		balances: BalancesConfig {
-			balances: endowed_accounts.iter().map(|x| (x.0.clone(), x.1.clone())).collect(),
+			balances: endowed_accounts.iter().map(|x| (x.0.clone(), x.1)).collect(),
 		},
 		session: SessionConfig {
 			keys: initial_authorities
@@ -586,7 +598,7 @@ fn genesis(
 			anchor_contract: appchain_config.0,
 			asset_id_by_name: vec![(appchain_config.1, 0)],
 			premined_amount: appchain_config.2,
-			validators: initial_authorities.iter().map(|x| (x.0.clone(), x.6.clone())).collect(),
+			validators: initial_authorities.iter().map(|x| (x.0.clone(), x.6)).collect(),
 		},
 		octopus_lpos: OctopusLposConfig { era_payout: appchain_config.3, ..Default::default() },
 	}
