@@ -130,9 +130,9 @@ pub fn mainnet_config() -> Result<ChainSpec, String> {
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
-					750_000_000 * MYRIA,
+					875_000_000 * MYRIA,
 					// Era Payout
-					13_699 * MYRIA,
+					68_493 * MYRIA,
 				),
 			)
 		},
@@ -177,9 +177,9 @@ pub fn testnet_config() -> Result<ChainSpec, String> {
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
-					750_000_000 * MYRIA,
+					875_000_000 * MYRIA,
 					// Era Payout
-					13_699 * MYRIA,
+					68_493 * MYRIA,
 				),
 			)
 		},
@@ -266,7 +266,7 @@ pub fn staging_testnet_config() -> Result<ChainSpec, String> {
 						// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
 						hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"]
 							.into(),
-						249_998_000 * MYRIA,
+						124_998_000 * MYRIA,
 					),
 					(
 						// 5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
@@ -290,9 +290,9 @@ pub fn staging_testnet_config() -> Result<ChainSpec, String> {
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
-					750_000_000 * MYRIA,
+					875_000_000 * MYRIA,
 					// Era Payout
-					13_699 * MYRIA,
+					68_493 * MYRIA,
 				),
 			)
 		},
@@ -380,7 +380,7 @@ pub fn development_testnet_config() -> Result<ChainSpec, String> {
 						hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"]
 							.into(),
 						// Balance amount
-						249_998_000 * MYRIA,
+						124_998_000 * MYRIA,
 					),
 					(
 						// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
@@ -404,9 +404,9 @@ pub fn development_testnet_config() -> Result<ChainSpec, String> {
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
-					750_000_000 * MYRIA,
+					875_000_000 * MYRIA,
 					// Era Payout
-					13_699 * MYRIA,
+					68_493 * MYRIA,
 				),
 			)
 		},
@@ -453,7 +453,7 @@ pub fn local_config() -> Result<ChainSpec, String> {
 						// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
 						// Balance amount
-						249_999_000 * MYRIA,
+						124_999_000 * MYRIA,
 					),
 					(
 						// 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
@@ -469,9 +469,9 @@ pub fn local_config() -> Result<ChainSpec, String> {
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
-					750_000_000 * MYRIA,
+					875_000_000 * MYRIA,
 					// Era Payout
-					13_699 * MYRIA,
+					68_493 * MYRIA,
 				),
 			)
 		},
@@ -515,7 +515,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					// Balance amount
-					250_000_000 * MYRIA,
+					125_000_000 * MYRIA,
 				)],
 				// Appchain config
 				appchain_config(
@@ -524,9 +524,9 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					// Asset Id by Name
 					"usdc.testnet",
 					// Premined Amount
-					750_000_000 * MYRIA,
+					875_000_000 * MYRIA,
 					// Era Payout
-					13_699 * MYRIA,
+					68_493 * MYRIA,
 				),
 			)
 		},
