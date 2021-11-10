@@ -81,35 +81,9 @@ jobs:
       - name: Generate sha256 hash
         run: sha256sum chain-spec.json > SHA256SUMS
 
-  publish-draft-alpha-release:
-    runs-on: ubuntu-20.04
-
-    needs: [compute-build-info, build]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Build changelog
-        id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          configuration: '.github/workflows/rcb_config.json'
-
-      - name: Create draft release
-        uses: softprops/action-gh-release@v1
-        with:
-          body: ${{ steps.build_changelog.outputs.changelog }}
-          draft: true
-          prerelease: true
-
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
-    needs: [compute-build-info, publish-draft-alpha-release]
+    needs: [compute-build-info, build]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -164,6 +138,49 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+
+  publish-draft-alpha-release:
+    runs-on: ubuntu-20.04
+
+    needs: [compute-build-info, build-and-publish-docker-image]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Build changelog
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          configuration: '.github/workflows/rcb_config.json'
+      - name: Re-use cache rust or cargo project
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Create draft release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ steps.build_changelog.outputs.changelog }}
+          draft: true
+          prerelease: true
+          files: |
+            ./target/release/wbuild/myriad-runtime/myriad_runtime.wasm
+            ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.wasm
+            ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.compressed.wasm
+            ./target/release/myriad
+            ./chain-spec.json
+            ./SHA256SUMS
 
   deploy:
     runs-on: ubuntu-20.04
