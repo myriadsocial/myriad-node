@@ -109,7 +109,7 @@ jobs:
 
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
-    needs: [compute-build-info, build, publish-draft-alpha-release]
+    needs: [compute-build-info, publish-draft-alpha-release]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -166,7 +166,6 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
   deploy:
-    if: ${{ secrets.STG_DEPLOY }} == "true"
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image, deployment-info]
     if: needs.deployment-info.outputs.deploy == 'true'
