@@ -83,7 +83,7 @@ jobs:
 
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
-    needs: build
+    needs: [compute-build-info, build]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
