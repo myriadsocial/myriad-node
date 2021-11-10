@@ -35,11 +35,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      ## if DEV_DEPLOY exist (number) == true
+      ## if PROD_DEPLOY exist (number) == true
       - name: Get Status Deploy
         id: deployment-info
         env:
-          DEPLOY: ${{ secrets.DEV_DEPLOY }}
+          DEPLOY: ${{ secrets.PROD_DEPLOY }}
         shell: bash
         run: |
           echo "deploy: ${{ env.DEPLOY != '' }}"

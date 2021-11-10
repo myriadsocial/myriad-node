@@ -36,11 +36,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      ## if DEV_DEPLOY exist (number) == true
+      ## if PREPROD_DEPLOY exist (number) == true
       - name: Get Status Deploy
         id: deployment-info
         env:
-          DEPLOY: ${{ secrets.DEV_DEPLOY }}
+          DEPLOY: ${{ secrets.PREPROD_DEPLOY }}
         shell: bash
         run: |
           echo "deploy: ${{ env.DEPLOY != '' }}"
@@ -77,9 +77,9 @@ jobs:
       - name: Cargo build
         run: cargo build --release
       - name: Generate the chainspec file
-        run: ./target/release/myriad build-spec --disable-default-bootnode --chain testnet > chain-spec.json
+        run: ./target/release/myriad build-spec --disable-default-bootnode --chain testnet > ./target/chain-spec.json
       - name: Generate sha256 hash
-        run: sha256sum chain-spec.json > SHA256SUMS
+        run: sha256sum ./target/chain-spec.json > ./target/SHA256SUMS
 
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
@@ -175,12 +175,10 @@ jobs:
           draft: true
           prerelease: true
           files: |
-            ./target/release/wbuild/myriad-runtime/myriad_runtime.wasm
-            ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.wasm
             ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.compressed.wasm
             ./target/release/myriad
-            ./chain-spec.json
-            ./SHA256SUMS
+            ./target/chain-spec.json
+            ./target/SHA256SUMS
 
   deploy:
     runs-on: ubuntu-20.04
