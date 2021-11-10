@@ -84,7 +84,7 @@ jobs:
   publish-draft-beta-release:
     runs-on: ubuntu-20.04
 
-    needs: build
+    needs: [compute-build-info, build]
 
     steps:
       - name: Checkout code
