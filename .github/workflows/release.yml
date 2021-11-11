@@ -25,29 +25,9 @@ jobs:
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=date::$(date +'%Y%m%d')"
 
-  deployment-info:
-    runs-on: ubuntu-20.04
-
-    outputs:
-      deploy: ${{ steps.deployment-info.outputs.deploy }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      ## if PROD_DEPLOY exist (number) == true
-      - name: Get Status Deploy
-        id: deployment-info
-        env:
-          DEPLOY: ${{ secrets.PROD_DEPLOY }}
-        shell: bash
-        run: |
-          echo "deploy: ${{ env.DEPLOY != '' }}"
-          echo "::set-output name=deploy::${{ env.DEPLOY != '' }}"
-
   build:
     runs-on: ubuntu-20.04
-    needs: [compute-build-info, deployment-info]
+    needs: compute-build-info
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -153,20 +133,25 @@ jobs:
 
   deploy-pre-release:
     runs-on: ubuntu-20.04
-    needs: [compute-build-info, build-and-publish-docker-image, deployment-info]
-    if: "github.event.release.prerelease && !contains(needs.compute-build-info.outputs.latest_tag, 'alpha') && !contains(needs.compute-build-info.outputs.latest_tag, 'beta') && needs.deployment-info.outputs.deploy == 'true'"
+    needs: [compute-build-info, build-and-publish-docker-image]
+    env:
+      DEPLOY: ${{ secrets.PROD_DEPLOY }}
+    if: "github.event.release.prerelease && !contains(needs.compute-build-info.outputs.latest_tag, 'alpha') && !contains(needs.compute-build-info.outputs.latest_tag, 'beta')"
     steps:
       - name: Checkout code
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       - name: Set up Cloud SDK
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: google-github-actions/setup-gcloud@master
         with:
           project_id: ${{ secrets.PROD_GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.PROD_GCP_SA_KEY }}
           export_default_credentials: true
       - name: Get secrets
+        if: "${{ env.DEPLOY == 'true' }}"
         id: secrets
         uses: google-github-actions/get-secretmanager-secrets@main
         with:
@@ -194,6 +179,7 @@ jobs:
             SSH_KEY:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_KEY
             SSH_PORT:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_PORT
       - name: Deploy
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: appleboy/ssh-action@master
         with:
           host: ${{ steps.secrets.outputs.SSH_HOST }}
@@ -265,21 +251,26 @@ jobs:
             kubectl rollout status statefulset/myriad-node-full1
 
   deploy-release:
-    if: "!github.event.release.prerelease && needs.deployment-info.outputs.deploy == 'true'"
+    if: "!github.event.release.prerelease"
     runs-on: ubuntu-20.04
     needs: [compute-build-info, build-and-publish-docker-image]
+    env:
+      DEPLOY: ${{ secrets.PROD_DEPLOY }}
     steps:
       - name: Checkout code
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       - name: Set up Cloud SDK
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: google-github-actions/setup-gcloud@master
         with:
           project_id: ${{ secrets.PROD_GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.PROD_GCP_SA_KEY }}
           export_default_credentials: true
       - name: Get secrets
+        if: "${{ env.DEPLOY == 'true' }}"
         id: secrets
         uses: google-github-actions/get-secretmanager-secrets@main
         with:
@@ -307,6 +298,7 @@ jobs:
             SSH_KEY:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_KEY
             SSH_PORT:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_PORT
       - name: Deploy
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: appleboy/ssh-action@master
         with:
           host: ${{ steps.secrets.outputs.SSH_HOST }}
