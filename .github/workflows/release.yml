@@ -9,10 +9,9 @@ concurrency:
 
 jobs:
   compute-build-info:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
-      sha_short: ${{ steps.build-info.outputs.sha_short }}
-      date: ${{ steps.build-info.outputs.date }}
+      latest_tag: ${{ steps.build-info.outputs.latest_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -22,8 +21,9 @@ jobs:
         id: build-info
         shell: bash
         run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=date::$(date +'%Y%m%d')"
+          version=${GITHUB_REF#refs/*/}
+          echo $version
+          echo "::set-output name=latest_tag::$version"
 
   build:
     runs-on: ubuntu-20.04
@@ -56,9 +56,9 @@ jobs:
       - name: Cargo build
         run: cargo build --release
       - name: Generate the chainspec file
-        run: ./target/release/myriad build-spec --disable-default-bootnode --chain myriad > chain-spec.json
+        run: ./target/release/myriad build-spec --disable-default-bootnode --chain myriad > ./release/chain-spec.json
       - name: Generate sha256 hash
-        run: sha256sum chain-spec.json > SHA256SUMS
+        run: sha256sum ./release/chain-spec.json > ./release/SHA256SUMS
 
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
@@ -105,7 +105,7 @@ jobs:
           push: true
           file: .maintain/docker/injected-binnary.Dockerfile
           tags: |
-            ${{ github.repository }}:${{ github.event.release.tag_name }}
+            ${{ github.repository }}:${{ needs.compute-build-info.outputs.latest_tag }}
             ${{ github.repository }}:latest-rc
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
@@ -117,7 +117,7 @@ jobs:
           push: true
           file: .maintain/docker/injected-binnary.Dockerfile
           tags: |
-            ${{ github.repository }}:${{ github.event.release.tag_name }}
+            ${{ github.repository }}:${{ needs.compute-build-info.outputs.latest_tag }}
             ${{ github.repository }}:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
@@ -191,7 +191,7 @@ jobs:
             helm repo update
             helm upgrade myriad-node myriad/myriad-node \
               --install \
-              --set-string image.tag=${{ github.event.release.tag_name }} \
+              --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
               --set-string config.chain=mainnet \
               --set-string config.nodes[0].name=full1 \
               --set config.nodes[0].bootnode=true \
@@ -310,7 +310,7 @@ jobs:
             helm repo update
             helm upgrade myriad-node myriad/myriad-node \
               --install \
-              --set-string image.tag=${{ github.event.release.tag_name }} \
+              --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
               --set-string config.chain=mainnet \
               --set-string config.nodes[0].name=full1 \
               --set config.nodes[0].bootnode=true \
