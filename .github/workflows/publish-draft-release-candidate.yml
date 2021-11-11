@@ -31,6 +31,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/
             target/
+            resource/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -43,5 +44,5 @@ jobs:
           files: |
             ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.compressed.wasm
             ./target/release/myriad
-            ./target/chain-spec.json
-            ./target/SHA256SUMS
+            ./resource/chain-spec.json
+            ./resource/SHA256SUMS

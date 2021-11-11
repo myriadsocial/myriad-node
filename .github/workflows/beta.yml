@@ -51,15 +51,18 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/
             target/
+            resource/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Cargo build
         run: cargo build --release
       - name: Generate the chainspec file
-        run: ./target/release/myriad build-spec --disable-default-bootnode --chain testnet > ./target/chain-spec.json
+        run: ./target/release/myriad build-spec --disable-default-bootnode --chain testnet > chain-spec.json
       - name: Generate sha256 hash
-        run: sha256sum ./target/chain-spec.json > ./target/SHA256SUMS
+        run: sha256sum chain-spec.json > SHA256SUMS
+      - name: Copy chain-spec.json & SHA256SUMS to resource
+        run: mkdir resource && cp ./chain-spec.json ./resource && cp ./SHA256SUMS ./resource
 
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
@@ -93,6 +96,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/
             target/
+            resource/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -145,6 +149,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/
             target/
+            resource/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -157,8 +162,8 @@ jobs:
           files: |
             ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.compressed.wasm
             ./target/release/myriad
-            ./target/chain-spec.json
-            ./target/SHA256SUMS
+            ./resource/chain-spec.json
+            ./resource/SHA256SUMS
 
   deploy:
     runs-on: ubuntu-20.04
