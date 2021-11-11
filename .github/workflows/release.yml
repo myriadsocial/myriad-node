@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   compute-build-info:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       latest_tag: ${{ steps.build-info.outputs.latest_tag }}
     steps:
