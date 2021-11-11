@@ -26,29 +26,9 @@ jobs:
           echo $version
           echo "::set-output name=latest_tag::$version"
 
-  deployment-info:
-    runs-on: ubuntu-20.04
-
-    outputs:
-      deploy: ${{ steps.deployment-info.outputs.deploy }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      ## if STG_DEPLOY exist (number) == true
-      - name: Get Status Deploy
-        id: deployment-info
-        env:
-          DEPLOY: ${{ secrets.STG_DEPLOY }}
-        shell: bash
-        run: |
-          echo "deploy: ${{ env.DEPLOY != '' }}"
-          echo "::set-output name=deploy::${{ env.DEPLOY != '' }}"
-
   build:
     runs-on: ubuntu-20.04
-    needs: [compute-build-info, deployment-info]
+    needs: compute-build-info
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -182,20 +162,24 @@ jobs:
 
   deploy:
     runs-on: ubuntu-20.04
-    needs: [compute-build-info, build-and-publish-docker-image, deployment-info]
-    if: needs.deployment-info.outputs.deploy == 'true'
+    needs: [compute-build-info, build-and-publish-docker-image]
+    env:
+      DEPLOY: ${{ secrets.STG_DEPLOY }}
     steps:
       - name: Checkout code
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       - name: Set up Cloud SDK
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: google-github-actions/setup-gcloud@master
         with:
           project_id: ${{ secrets.STG_GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.STG_GCP_SA_KEY }}
           export_default_credentials: true
       - name: Get secrets
+        if: "${{ env.DEPLOY == 'true' }}"
         id: secrets
         uses: google-github-actions/get-secretmanager-secrets@main
         with:
@@ -223,6 +207,7 @@ jobs:
             SSH_KEY:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_KEY
             SSH_PORT:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_PORT
       - name: Deploy
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: appleboy/ssh-action@master
         with:
           host: ${{ steps.secrets.outputs.SSH_HOST }}
