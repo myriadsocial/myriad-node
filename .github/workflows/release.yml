@@ -50,18 +50,17 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/
             target/
-            resource/
+            ./chain-spec.json
+            ./SHA256SUMS
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
       - name: Cargo build
         run: cargo build --release
       - name: Generate the chainspec file
-        run: ./target/release/myriad build-spec --disable-default-bootnode --chain myriad > ./target/chain-spec.json
+        run: ./target/release/myriad build-spec --disable-default-bootnode --chain myriad > chain-spec.json
       - name: Generate sha256 hash
-        run: sha256sum ./target/chain-spec.json > ./target/SHA256SUMS
-      - name: Copy chain-spec.json & SHA256SUMS to resource
-        run: rm -rf resource && mkdir resource && cp ./target/chain-spec.json ./resource && cp ./target/SHA256SUMS ./resource
+        run: sha256sum chain-spec.json > SHA256SUMS
 
   build-and-publish-docker-image:
     runs-on: ubuntu-20.04
@@ -95,6 +94,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/
             target/
+            ./chain-spec.json
+            ./SHA256SUMS
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
