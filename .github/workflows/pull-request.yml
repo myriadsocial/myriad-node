@@ -34,7 +34,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/
             target/
-            resource/
+            ./chain-spec.json
+            ./SHA256SUMS
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
