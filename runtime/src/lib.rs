@@ -6,7 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use beefy_primitives::crypto::AuthorityId as BeefyId;
+use beefy_primitives::{crypto::AuthorityId as BeefyId, mmr::MmrLeafVersion};
 use sp_api::impl_runtime_apis;
 use sp_consensus_babe::{
 	AllowedSlots::PrimaryAndSecondaryVRFSlots, BabeEpochConfiguration, BabeGenesisConfiguration,
@@ -496,7 +496,7 @@ impl pallet_mmr::Config for Runtime {
 	const INDEXING_PREFIX: &'static [u8] = b"mmr";
 	type Hash = <Keccak256 as traits::Hash>::Output;
 	type Hashing = Keccak256;
-	type LeafData = frame_system::Pallet<Self>;
+	type LeafData = pallet_beefy_mmr::Pallet<Runtime>;
 	type OnNewRoot = pallet_beefy_mmr::DepositBeefyDigest<Runtime>;
 	type WeightInfo = ();
 }
@@ -529,6 +529,29 @@ impl pallet_beefy::Config for Runtime {
 	type BeefyId = BeefyId;
 }
 
+parameter_types! {
+	/// Version of the produced MMR leaf.
+	///
+	/// The version consists of two parts;
+	/// - `major` (3 bits)
+	/// - `minor` (5 bits)
+	///
+	/// `major` should be updated only if decoding the previous MMR Leaf format from the payload
+	/// is not possible (i.e. backward incompatible change).
+	/// `minor` should be updated if fields are added to the previous MMR Leaf, which given SCALE
+	/// encoding does not prevent old leafs from being decoded.
+	///
+	/// Hence we expect `major` to be changed really rarely (think never).
+	/// See [`MmrLeafVersion`] type documentation for more details.
+	pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
+}
+
+impl pallet_beefy_mmr::Config for Runtime {
+	type LeafVersion = LeafVersion;
+	type BeefyAuthorityToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
+	type ParachainHeads = ();
+}
+
 pub struct OctopusAppCrypto;
 
 impl offchain::AppCrypto<<Signature as Verify>::Signer, Signature> for OctopusAppCrypto {
@@ -538,10 +561,10 @@ impl offchain::AppCrypto<<Signature as Verify>::Signer, Signature> for OctopusAp
 }
 
 parameter_types! {
-	pub const GracePeriod: u32 = 5;
+	pub const GracePeriod: u32 = 10;
 	pub const OctopusAppchainPalletId: PalletId = PalletId(*b"py/octps");
 	pub const RequestEventLimit: u32 = 10;
-	pub const UnsignedPriority: u64 = 1 << 20;
+	pub const UnsignedPriority: u64 = 1 << 21;
 }
 
 impl pallet_octopus_appchain::Config for Runtime {
@@ -565,6 +588,7 @@ parameter_types! {
 }
 
 impl pallet_octopus_lpos::Config for Runtime {
+	type AppchainInterface = OctopusAppchain;
 	type BlocksPerEra = BlocksPerEra;
 	type BondingDuration = BondingDuration;
 	type Currency = Balances;
@@ -579,9 +603,14 @@ impl pallet_octopus_lpos::Config for Runtime {
 	type WeightInfo = pallet_octopus_lpos::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const UpwardMessagesLimit: u32 = 10;
+}
+
 impl pallet_octopus_upward_messages::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
+	type UpwardMessagesLimit = UpwardMessagesLimit;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -613,6 +642,7 @@ construct_runtime!(
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Mmr: pallet_mmr::{Pallet, Storage},
 		Beefy: pallet_beefy::{Pallet, Config<T>, Storage},
+		MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 	}
 );
