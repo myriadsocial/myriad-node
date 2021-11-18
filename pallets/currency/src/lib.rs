@@ -1,18 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
-
 #[cfg(test)]
 mod mock;
-
 #[cfg(test)]
 mod tests;
-
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 pub mod weights;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
+pub use scale_info::TypeInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -25,14 +23,14 @@ pub mod pallet {
 	pub type Amount = u128;
 	pub type CurrencyId = Vec<u8>;
 
-	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 	pub struct CurrencyInfo {
 		pub decimal: u16,
 		pub rpc_url: Vec<u8>,
 		pub native: bool,
 	}
 
-	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 	pub struct CurrencyBalance {
 		pub free: u128,
 	}
@@ -69,7 +67,6 @@ pub mod pallet {
 	pub(super) type Currencies<T: Config> = StorageValue<_, Vec<Vec<u8>>>;
 
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Currency add success. [currency_id, who]

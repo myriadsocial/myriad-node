@@ -1,18 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
-
 #[cfg(test)]
 mod mock;
-
 #[cfg(test)]
 mod tests;
-
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 pub mod weights;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
+pub use scale_info::TypeInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -35,7 +33,7 @@ pub mod pallet {
 
 	const PALLET_ID: PalletId = PalletId(*b"Tipping!");
 
-	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 	pub struct Post {
 		pub post_id: Vec<u8>,
 		pub people_id: Vec<u8>,
@@ -43,11 +41,8 @@ pub mod pallet {
 	}
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + pallet_currency::Config + pallet_platform::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-
-		type Currency: WeightInfo;
-		type Platform: WeightInfo;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -85,7 +80,6 @@ pub mod pallet {
 	>;
 
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Currency tip success. [currency_id, amount, pot_balance, pot, who]
@@ -104,7 +98,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(T::WeightInfo::send_tip(currency_id.len() as u32))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::send_tip(currency_id.len() as u32))]
 		pub fn send_tip(
 			origin: OriginFor<T>,
 			post: Post,
