@@ -618,6 +618,22 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
+// Local pallets
+impl pallet_platform::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = ();
+}
+
+impl pallet_currency::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = ();
+}
+
+impl pallet_escrow::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -644,6 +660,10 @@ construct_runtime!(
 		Beefy: pallet_beefy::{Pallet, Config<T>, Storage},
 		MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+		// Local pallets
+		Platform: pallet_platform::{Pallet, Storage, Call, Event<T>},
+		Currency: pallet_currency::{Pallet, Storage, Call, Event<T>},
+		Escrow: pallet_escrow::{Pallet, Storage, Call, Event<T>},
 	}
 );
 
@@ -882,6 +902,10 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_grandpa, Grandpa);
 			list_benchmark!(list, extra, pallet_im_online, ImOnline);
 			list_benchmark!(list, extra, pallet_mmr, Mmr);
+			// Local Pallets
+			list_benchmark!(list, extra, pallet_platform, Platform);
+			list_benchmark!(list, extra, pallet_currency, Currency);
+			list_benchmark!(list, extra, pallet_escrow, Escrow);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -920,6 +944,10 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_grandpa, Grandpa);
 			add_benchmark!(params, batches, pallet_im_online, ImOnline);
 			add_benchmark!(params, batches, pallet_mmr, Mmr);
+			// Local Pallets
+			add_benchmark!(params, batches, pallet_platform, Platform);
+			add_benchmark!(params, batches, pallet_currency, Currency);
+			add_benchmark!(params, batches, pallet_escrow, Escrow);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
