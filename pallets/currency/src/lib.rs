@@ -1,16 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
 pub mod weights;
 
 pub use pallet::*;
-pub use weights::WeightInfo;
 pub use scale_info::TypeInfo;
+pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
