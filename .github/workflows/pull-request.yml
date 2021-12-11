@@ -26,19 +26,8 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
           default: true
-      - name: Cache rust or cargo project
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/
-            target/
-            ./chain-spec.json
-            ./SHA256SUMS
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
       - name: Test code
         run: ./.maintain/test.sh
 
