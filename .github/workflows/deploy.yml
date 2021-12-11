@@ -1,0 +1,562 @@
+name: Deploy automation
+
+on:
+  release:
+    types: [published]
+  workflow_run:
+    workflows: ["Main automation"]
+    branches: [main]
+    types: 
+      - completed
+
+concurrency:
+  group: deploy-automation
+
+jobs:
+  compute-build-info:
+    runs-on: ubuntu-20.04
+    outputs:
+      sha_short: ${{ steps.build-info.outputs.sha_short }}
+      date: ${{ steps.build-info.outputs.date }}
+      latest_tag: ${{ steps.build-info.outputs.latest_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Compute build info
+        id: build-info
+        shell: bash
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=date::$(date +'%Y%m%d')"
+
+          version=${GITHUB_REF#refs/*/}
+          echo $version
+          echo "::set-output name=latest_tag::$version"
+
+  deploy-dev:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-20.04
+    needs: [compute-build-info]
+    env:
+      DEPLOY: ${{ secrets.DEV_DEPLOY }}
+    steps:
+      - name: Checkout code
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Cloud SDK
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.DEV_GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.DEV_GCP_SA_KEY }}
+          export_default_credentials: true
+      - name: Get secrets
+        if: "${{ env.DEPLOY == 'true' }}"
+        id: secrets
+        uses: google-github-actions/get-secretmanager-secrets@main
+        with:
+          secrets: |-
+            NODE_KEY_PRIVATE_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
+            NODE_KEY_PUBLIC_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
+            NODE_KEY_PRIVATE_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
+            NODE_KEY_PUBLIC_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
+            NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
+            NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
+            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
+            SESSION_KEY_SEED_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_SEED_VALIDATOR_1
+            SESSION_KEY_GRANDPA_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_GRANDPA_VALIDATOR_1
+            SESSION_KEY_BABE_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_BABE_VALIDATOR_1
+            SESSION_KEY_IMONLINE_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_IMONLINE_VALIDATOR_1
+            SESSION_KEY_BEEFY_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_BEEFY_VALIDATOR_1
+            SESSION_KEY_SEED_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_SEED_VALIDATOR_2
+            SESSION_KEY_GRANDPA_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_GRANDPA_VALIDATOR_2
+            SESSION_KEY_BABE_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_BABE_VALIDATOR_2
+            SESSION_KEY_IMONLINE_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_IMONLINE_VALIDATOR_2
+            SESSION_KEY_BEEFY_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/SESSION_KEY_BEEFY_VALIDATOR_2
+            SSH_HOST:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_HOST
+            SSH_USERNAME:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_USERNAME
+            SSH_KEY:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_KEY
+            SSH_PORT:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_PORT
+      - name: Deploy
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.secrets.outputs.SSH_HOST }}
+          username: ${{ steps.secrets.outputs.SSH_USERNAME }}
+          key: ${{ steps.secrets.outputs.SSH_KEY }}
+          port: ${{ steps.secrets.outputs.SSH_PORT }}
+          script: |
+            helm repo add myriad https://charts.myriad.systems
+            helm repo update
+            helm upgrade myriad-node myriad/myriad-node \
+              --install \
+              --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }}-${{ needs.compute-build-info.outputs.date }} \
+              --set-string config.chain=dev-testnet \
+              --set-string config.nodes[0].name=full1 \
+              --set config.nodes[0].bootnode=true \
+              --set config.nodes[0].validator=false \
+              --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
+              --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
+              --set config.nodes[0].sessionInjectionEnabled=false \
+              --set-string config.nodes[1].name=full2 \
+              --set config.nodes[1].bootnode=true \
+              --set config.nodes[1].validator=false \
+              --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
+              --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
+              --set config.nodes[1].sessionInjectionEnabled=false \
+              --set-string config.nodes[2].name=validator1 \
+              --set config.nodes[2].bootnode=true \
+              --set config.nodes[2].validator=true \
+              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
+              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+              --set config.nodes[2].sessionInjectionEnabled=true \
+              --set-string config.nodes[2].sessionKeys.keySeed="${{ steps.secrets.outputs.SESSION_KEY_SEED_VALIDATOR_1 }}" \
+              --set-string config.nodes[2].sessionKeys.grandpa=${{ steps.secrets.outputs.SESSION_KEY_GRANDPA_VALIDATOR_1 }} \
+              --set-string config.nodes[2].sessionKeys.babe=${{ steps.secrets.outputs.SESSION_KEY_BABE_VALIDATOR_1 }} \
+              --set-string config.nodes[2].sessionKeys.imonline=${{ steps.secrets.outputs.SESSION_KEY_IMONLINE_VALIDATOR_1 }} \
+              --set-string config.nodes[2].sessionKeys.beefy=${{ steps.secrets.outputs.SESSION_KEY_BEEFY_VALIDATOR_1 }} \
+              --set-string config.nodes[3].name=validator2 \
+              --set config.nodes[3].bootnode=true \
+              --set config.nodes[3].validator=true \
+              --set-string config.nodes[3].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
+              --set config.nodes[3].sessionInjectionEnabled=true \
+              --set-string config.nodes[3].sessionKeys.keySeed="${{ steps.secrets.outputs.SESSION_KEY_SEED_VALIDATOR_2 }}" \
+              --set-string config.nodes[3].sessionKeys.grandpa=${{ steps.secrets.outputs.SESSION_KEY_GRANDPA_VALIDATOR_2 }} \
+              --set-string config.nodes[3].sessionKeys.babe=${{ steps.secrets.outputs.SESSION_KEY_BABE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].sessionKeys.imonline=${{ steps.secrets.outputs.SESSION_KEY_IMONLINE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].sessionKeys.beefy=${{ steps.secrets.outputs.SESSION_KEY_BEEFY_VALIDATOR_2 }} \
+              --set services.httpRPC.enabled=true \
+              --set services.websocketRPC.enabled=true \
+              --set ingress.httpRPC.enabled=true \
+              --set-string ingress.httpRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.httpRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.httpRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.httpRPC.hosts[0].host=http-rpc.dev.myriad.systems \
+              --set-string ingress.httpRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.httpRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.httpRPC.tls[0].secretName=myriad-node-http-rpc-tls \
+              --set-string ingress.httpRPC.tls[0].hosts[0]=http-rpc.dev.myriad.systems \
+              --set ingress.websocketRPC.enabled=true \
+              --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
+              --set-string ingress.websocketRPC.hosts[0].host=ws-rpc.dev.myriad.systems \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=ws-rpc.dev.myriad.systems \
+              --set-string volume.storageClassName=premium-rwo \
+              --set-string volume.dataSize=50Gi
+            kubectl rollout status statefulset/myriad-node-full1
+
+  deploy-alpha-release:
+    runs-on: ubuntu-20.04
+    needs: [compute-build-info]
+    env:
+      DEPLOY: ${{ secrets.STG_DEPLOY }}
+    if: "github.event.release.prerelease && contains(needs.compute-build-info.outputs.latest_tag, 'alpha')"
+    steps:
+      - name: Checkout code
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Cloud SDK
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.STG_GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.STG_GCP_SA_KEY }}
+          export_default_credentials: true
+      - name: Get secrets
+        if: "${{ env.DEPLOY == 'true' }}"
+        id: secrets
+        uses: google-github-actions/get-secretmanager-secrets@main
+        with:
+          secrets: |-
+            NODE_KEY_PRIVATE_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
+            NODE_KEY_PUBLIC_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
+            NODE_KEY_PRIVATE_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
+            NODE_KEY_PUBLIC_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
+            NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
+            NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
+            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
+            SESSION_KEY_SEED_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_SEED_VALIDATOR_1
+            SESSION_KEY_GRANDPA_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_GRANDPA_VALIDATOR_1
+            SESSION_KEY_BABE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_BABE_VALIDATOR_1
+            SESSION_KEY_IMONLINE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_IMONLINE_VALIDATOR_1
+            SESSION_KEY_BEEFY_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_BEEFY_VALIDATOR_1
+            SESSION_KEY_SEED_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_SEED_VALIDATOR_2
+            SESSION_KEY_GRANDPA_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_GRANDPA_VALIDATOR_2
+            SESSION_KEY_BABE_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_BABE_VALIDATOR_2
+            SESSION_KEY_IMONLINE_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_IMONLINE_VALIDATOR_2
+            SESSION_KEY_BEEFY_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/SESSION_KEY_BEEFY_VALIDATOR_2
+            SSH_HOST:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_HOST
+            SSH_USERNAME:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_USERNAME
+            SSH_KEY:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_KEY
+            SSH_PORT:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_PORT
+      - name: Deploy
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.secrets.outputs.SSH_HOST }}
+          username: ${{ steps.secrets.outputs.SSH_USERNAME }}
+          key: ${{ steps.secrets.outputs.SSH_KEY }}
+          port: ${{ steps.secrets.outputs.SSH_PORT }}
+          script: |
+            helm repo add myriad https://charts.myriad.systems
+            helm repo update
+            helm upgrade myriad-node myriad/myriad-node \
+              --install \
+              --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
+              --set-string config.chain=stg-testnet \
+              --set-string config.nodes[0].name=full1 \
+              --set config.nodes[0].bootnode=true \
+              --set config.nodes[0].validator=false \
+              --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
+              --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
+              --set config.nodes[0].sessionInjectionEnabled=false \
+              --set-string config.nodes[1].name=full2 \
+              --set config.nodes[1].bootnode=true \
+              --set config.nodes[1].validator=false \
+              --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
+              --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
+              --set config.nodes[1].sessionInjectionEnabled=false \
+              --set-string config.nodes[2].name=validator1 \
+              --set config.nodes[2].bootnode=true \
+              --set config.nodes[2].validator=true \
+              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
+              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+              --set config.nodes[2].sessionInjectionEnabled=true \
+              --set-string config.nodes[2].sessionKeys.keySeed="${{ steps.secrets.outputs.SESSION_KEY_SEED_VALIDATOR_1 }}" \
+              --set-string config.nodes[2].sessionKeys.grandpa=${{ steps.secrets.outputs.SESSION_KEY_GRANDPA_VALIDATOR_1 }} \
+              --set-string config.nodes[2].sessionKeys.babe=${{ steps.secrets.outputs.SESSION_KEY_BABE_VALIDATOR_1 }} \
+              --set-string config.nodes[2].sessionKeys.imonline=${{ steps.secrets.outputs.SESSION_KEY_IMONLINE_VALIDATOR_1 }} \
+              --set-string config.nodes[2].sessionKeys.beefy=${{ steps.secrets.outputs.SESSION_KEY_BEEFY_VALIDATOR_1 }} \
+              --set-string config.nodes[3].name=validator2 \
+              --set config.nodes[3].bootnode=true \
+              --set config.nodes[3].validator=true \
+              --set-string config.nodes[3].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
+              --set config.nodes[3].sessionInjectionEnabled=true \
+              --set-string config.nodes[3].sessionKeys.keySeed="${{ steps.secrets.outputs.SESSION_KEY_SEED_VALIDATOR_2 }}" \
+              --set-string config.nodes[3].sessionKeys.grandpa=${{ steps.secrets.outputs.SESSION_KEY_GRANDPA_VALIDATOR_2 }} \
+              --set-string config.nodes[3].sessionKeys.babe=${{ steps.secrets.outputs.SESSION_KEY_BABE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].sessionKeys.imonline=${{ steps.secrets.outputs.SESSION_KEY_IMONLINE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].sessionKeys.beefy=${{ steps.secrets.outputs.SESSION_KEY_BEEFY_VALIDATOR_2 }} \
+              --set services.httpRPC.enabled=true \
+              --set services.websocketRPC.enabled=true \
+              --set ingress.httpRPC.enabled=true \
+              --set-string ingress.httpRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.httpRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.httpRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.httpRPC.hosts[0].host=http-rpc.stg.myriad.systems \
+              --set-string ingress.httpRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.httpRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.httpRPC.tls[0].secretName=myriad-node-http-rpc-tls \
+              --set-string ingress.httpRPC.tls[0].hosts[0]=http-rpc.stg.myriad.systems \
+              --set ingress.websocketRPC.enabled=true \
+              --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
+              --set-string ingress.websocketRPC.hosts[0].host=ws-rpc.stg.myriad.systems \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=ws-rpc.stg.myriad.systems \
+              --set-string volume.storageClassName=premium-rwo \
+              --set-string volume.dataSize=50Gi
+            kubectl rollout status statefulset/myriad-node-full1
+
+  deploy-beta-release:
+    runs-on: ubuntu-20.04
+    needs: [compute-build-info]
+    env:
+      DEPLOY: ${{ secrets.TESTNET_DEPLOY }}
+    if: "github.event.release.prerelease && contains(needs.compute-build-info.outputs.latest_tag, 'beta')"
+    steps:
+      - name: Checkout code
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Cloud SDK
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.TESTNET_GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.TESTNET_GCP_SA_KEY }}
+          export_default_credentials: true
+      - name: Get secrets
+        if: "${{ env.DEPLOY == 'true' }}"
+        id: secrets
+        uses: google-github-actions/get-secretmanager-secrets@main
+        with:
+          secrets: |-
+            NODE_KEY_PRIVATE_1:${{ secrets.PREPROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
+            NODE_KEY_PUBLIC_1:${{ secrets.PREPROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
+            NODE_KEY_PRIVATE_2:${{ secrets.PREPROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
+            NODE_KEY_PUBLIC_2:${{ secrets.PREPROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
+            NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.PREPROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
+            NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.PREPROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            SSH_HOST:${{ secrets.PREPROD_GCP_PROJECT_ID }}/SSH_HOST
+            SSH_USERNAME:${{ secrets.PREPROD_GCP_PROJECT_ID }}/SSH_USERNAME
+            SSH_KEY:${{ secrets.PREPROD_GCP_PROJECT_ID }}/SSH_KEY
+            SSH_PORT:${{ secrets.PREPROD_GCP_PROJECT_ID }}/SSH_PORT
+      - name: Deploy
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.secrets.outputs.SSH_HOST }}
+          username: ${{ steps.secrets.outputs.SSH_USERNAME }}
+          key: ${{ steps.secrets.outputs.SSH_KEY }}
+          port: ${{ steps.secrets.outputs.SSH_PORT }}
+          script: |
+            helm repo add myriad https://charts.myriad.systems
+            helm repo update
+            helm upgrade myriad-node myriad/myriad-node \
+              --install \
+              --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
+              --set-string config.chain=testnet \
+              --set-string config.nodes[0].name=full1 \
+              --set config.nodes[0].bootnode=true \
+              --set config.nodes[0].validator=false \
+              --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
+              --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
+              --set config.nodes[0].sessionInjectionEnabled=false \
+              --set-string config.nodes[1].name=full2 \
+              --set config.nodes[1].bootnode=true \
+              --set config.nodes[1].validator=false \
+              --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
+              --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
+              --set config.nodes[1].sessionInjectionEnabled=false \
+              --set-string config.nodes[2].name=validator1 \
+              --set config.nodes[2].bootnode=true \
+              --set config.nodes[2].validator=true \
+              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
+              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+              --set config.nodes[2].sessionInjectionEnabled=false \
+              --set services.httpRPC.enabled=true \
+              --set services.websocketRPC.enabled=true \
+              --set ingress.httpRPC.enabled=true \
+              --set-string ingress.httpRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.httpRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.httpRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.httpRPC.hosts[0].host=http-rpc.testnet.myriad.systems \
+              --set-string ingress.httpRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.httpRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.httpRPC.tls[0].secretName=myriad-node-http-rpc-tls \
+              --set-string ingress.httpRPC.tls[0].hosts[0]=http-rpc.testnet.myriad.systems \
+              --set ingress.websocketRPC.enabled=true \
+              --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
+              --set-string ingress.websocketRPC.hosts[0].host=ws-rpc.testnet.myriad.systems \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=ws-rpc.testnet.myriad.systems \
+              --set-string volume.storageClassName=premium-rwo \
+              --set-string volume.dataSize=50Gi
+            kubectl rollout status statefulset/myriad-node-full1
+
+  deploy-pre-release:
+    runs-on: ubuntu-20.04
+    needs: [compute-build-info, build-and-publish-docker-image]
+    env:
+      DEPLOY: ${{ secrets.PROD_DEPLOY }}
+    if: "github.event.release.prerelease && contains(needs.compute-build-info.outputs.latest_tag, 'rc')"
+    steps:
+      - name: Checkout code
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Cloud SDK
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.PROD_GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.PROD_GCP_SA_KEY }}
+          export_default_credentials: true
+      - name: Get secrets
+        if: "${{ env.DEPLOY == 'true' }}"
+        id: secrets
+        uses: google-github-actions/get-secretmanager-secrets@main
+        with:
+          secrets: |-
+            NODE_KEY_PRIVATE_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
+            NODE_KEY_PUBLIC_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
+            NODE_KEY_PRIVATE_2:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
+            NODE_KEY_PUBLIC_2:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
+            NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
+            NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            SSH_HOST:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_HOST
+            SSH_USERNAME:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_USERNAME
+            SSH_KEY:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_KEY
+            SSH_PORT:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_PORT
+      - name: Deploy
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.secrets.outputs.SSH_HOST }}
+          username: ${{ steps.secrets.outputs.SSH_USERNAME }}
+          key: ${{ steps.secrets.outputs.SSH_KEY }}
+          port: ${{ steps.secrets.outputs.SSH_PORT }}
+          script: |
+            helm repo add myriad https://charts.myriad.systems
+            helm repo update
+            helm upgrade myriad-node myriad/myriad-node \
+              --install \
+              --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
+              --set-string config.chain=mainnet \
+              --set-string config.nodes[0].name=full1 \
+              --set config.nodes[0].bootnode=true \
+              --set config.nodes[0].validator=false \
+              --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
+              --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
+              --set config.nodes[0].sessionInjectionEnabled=false \
+              --set-string config.nodes[1].name=full2 \
+              --set config.nodes[1].bootnode=true \
+              --set config.nodes[1].validator=false \
+              --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
+              --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
+              --set config.nodes[1].sessionInjectionEnabled=false \
+              --set-string config.nodes[2].name=validator1 \
+              --set config.nodes[2].bootnode=true \
+              --set config.nodes[2].validator=true \
+              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
+              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+              --set config.nodes[2].sessionInjectionEnabled=false \
+              --set services.httpRPC.enabled=true \
+              --set services.websocketRPC.enabled=true \
+              --set ingress.httpRPC.enabled=true \
+              --set-string ingress.httpRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.httpRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.httpRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.httpRPC.hosts[0].host=http-rpc.myriad.systems \
+              --set-string ingress.httpRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.httpRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.httpRPC.tls[0].secretName=myriad-node-http-rpc-tls \
+              --set-string ingress.httpRPC.tls[0].hosts[0]=http-rpc.myriad.systems \
+              --set ingress.websocketRPC.enabled=true \
+              --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
+              --set-string ingress.websocketRPC.hosts[0].host=ws-rpc.myriad.systems \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=ws-rpc.myriad.systems \
+              --set-string volume.storageClassName=premium-rwo \
+              --set-string volume.dataSize=50Gi
+            kubectl rollout status statefulset/myriad-node-full1
+
+  deploy-release:
+    if: "startsWith(github.ref, 'refs/tags/') && !github.event.release.prerelease"
+    runs-on: ubuntu-20.04
+    needs: [compute-build-info, build-and-publish-docker-image]
+    env:
+      DEPLOY: ${{ secrets.PROD_DEPLOY }}
+    steps:
+      - name: Checkout code
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Cloud SDK
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.PROD_GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.PROD_GCP_SA_KEY }}
+          export_default_credentials: true
+      - name: Get secrets
+        if: "${{ env.DEPLOY == 'true' }}"
+        id: secrets
+        uses: google-github-actions/get-secretmanager-secrets@main
+        with:
+          secrets: |-
+            NODE_KEY_PRIVATE_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
+            NODE_KEY_PUBLIC_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
+            NODE_KEY_PRIVATE_2:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
+            NODE_KEY_PUBLIC_2:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
+            NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
+            NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.PROD_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            SSH_HOST:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_HOST
+            SSH_USERNAME:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_USERNAME
+            SSH_KEY:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_KEY
+            SSH_PORT:${{ secrets.PROD_GCP_PROJECT_ID }}/SSH_PORT
+      - name: Deploy
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.secrets.outputs.SSH_HOST }}
+          username: ${{ steps.secrets.outputs.SSH_USERNAME }}
+          key: ${{ steps.secrets.outputs.SSH_KEY }}
+          port: ${{ steps.secrets.outputs.SSH_PORT }}
+          script: |
+            helm repo add myriad https://charts.myriad.systems
+            helm repo update
+            helm upgrade myriad-node myriad/myriad-node \
+              --install \
+              --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
+              --set-string config.chain=mainnet \
+              --set-string config.nodes[0].name=full1 \
+              --set config.nodes[0].bootnode=true \
+              --set config.nodes[0].validator=false \
+              --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
+              --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
+              --set config.nodes[0].sessionInjectionEnabled=false \
+              --set-string config.nodes[1].name=full2 \
+              --set config.nodes[1].bootnode=true \
+              --set config.nodes[1].validator=false \
+              --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
+              --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
+              --set config.nodes[1].sessionInjectionEnabled=false \
+              --set-string config.nodes[2].name=validator1 \
+              --set config.nodes[2].bootnode=true \
+              --set config.nodes[2].validator=true \
+              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
+              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+              --set config.nodes[2].sessionInjectionEnabled=false \
+              --set services.httpRPC.enabled=true \
+              --set services.websocketRPC.enabled=true \
+              --set ingress.httpRPC.enabled=true \
+              --set-string ingress.httpRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.httpRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.httpRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.httpRPC.hosts[0].host=http-rpc.myriad.systems \
+              --set-string ingress.httpRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.httpRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.httpRPC.tls[0].secretName=myriad-node-http-rpc-tls \
+              --set-string ingress.httpRPC.tls[0].hosts[0]=http-rpc.myriad.systems \
+              --set ingress.websocketRPC.enabled=true \
+              --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="10" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
+              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
+              --set-string ingress.websocketRPC.hosts[0].host=ws-rpc.myriad.systems \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
+              --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=ws-rpc.myriad.systems \
+              --set-string volume.storageClassName=premium-rwo \
+              --set-string volume.dataSize=50Gi
+            kubectl rollout status statefulset/myriad-node-full1
