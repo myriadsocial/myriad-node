@@ -389,7 +389,7 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const UncleGenerations: BlockNumber = 5;
+	pub const UncleGenerations: BlockNumber = 0;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -579,6 +579,7 @@ impl pallet_octopus_appchain::Config for Runtime {
 	type RequestEventLimit = RequestEventLimit;
 	type UnsignedPriority = UnsignedPriority;
 	type UpwardMessagesInterface = OctopusUpwardMessages;
+	type WeightInfo = pallet_octopus_appchain::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -611,6 +612,7 @@ impl pallet_octopus_upward_messages::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
 	type UpwardMessagesLimit = UpwardMessagesLimit;
+	type WeightInfo = pallet_octopus_upward_messages::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {
