@@ -14,7 +14,7 @@ use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_octopus_appchain::AuthorityId as OctopusId;
 
 use myriad_runtime::{
-	currency::UNITS as MYRIA,
+	currency::{OCTS, UNITS as MYRIA},
 	opaque::{Block, SessionKeys},
 	AccountId, BabeConfig, Balance, BalancesConfig, GenesisConfig, OctopusAppchainConfig,
 	OctopusLposConfig, SessionConfig, Signature, SudoConfig, SystemConfig,
@@ -103,227 +103,11 @@ pub fn appchain_config(
 }
 
 pub fn mainnet_config() -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
-	let properties = get_properties("MYRIA", 18, 42);
-
-	Ok(ChainSpec::from_genesis(
-		// Name
-		"Myriad",
-		// ID
-		"myriad",
-		ChainType::Live,
-		move || {
-			genesis(
-				// WASM Binary
-				wasm_binary,
-				// Sudo account
-				// 5FU6fqBeRJGzhJ5pwN3my2yCzTDKuNz39dyX2XHwfLRybpL1
-				hex!["968c23fcb138050fc04cc23fef5dd27d2a7665d355b417549eda39eadec38776"].into(),
-				// Initial PoA authorities
-				vec![],
-				// Pre-funded accounts
-				vec![],
-				// Appchain config
-				appchain_config(
-					// Relay Contract
-					"",
-					// Asset Id by Name
-					"usdc.testnet",
-					// Premined Amount
-					875_000_000 * MYRIA,
-					// Era Payout
-					68_493 * MYRIA,
-				),
-			)
-		},
-		// Bootnodes
-		vec![],
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("myriad"),
-		// Properties
-		Some(properties),
-		// Extensions
-		Default::default(),
-	))
+	ChainSpec::from_json_bytes(&include_bytes!("../res/mainnet.json")[..])
 }
 
 pub fn testnet_config() -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
-	let properties = get_properties("MYRIA", 18, 42);
-
-	Ok(ChainSpec::from_genesis(
-		// Name
-		"Myriad Testnet",
-		// ID
-		"myriad_testnet",
-		ChainType::Live,
-		move || {
-			genesis(
-				// WASM Binary
-				wasm_binary,
-				// Sudo account
-				// 5HdaTtFK9kYGHLgrBMAKMiHQXF92JX16XBohKSXyvDeWxZTs
-				hex!["f63f610d703646c65a1a98fde39e9ee964d555d4d050559189ae791123ffd641"].into(),
-				// Initial PoA authorities
-				vec![
-					(
-						// 5FRzbdg5WEQQPu34pdowRehCfA4rgZuDQE4bQEbcWGnthegY
-						hex!["94f135526ec5fe830e0cbc6fd58683cb2d9ee06522cd9a2c0481268c5c73674f"]
-							.into(),
-						// 5GQqSQ3R8DxUJTpRPPCJZv4foEYrLpDn3858oYSivB21XXB8
-						hex!["c04b5d176ccb7ff1bf8014baae55614ae998c4d9c476598a95869216dfd3c356"]
-							.unchecked_into(),
-						// 5GEGWDRGKRJyjj7rvt8RWU7AcjgVz7TwXPnebTqr8FQugir6
-						hex!["b83c0b10820f068051e62f1362b681f1539567f6225f55925bd5d7b53fa0e6d0"]
-							.unchecked_into(),
-						// 5GYqx4xhtHDNk4Lnq3SDVpCUakayFGaEgNNyhtky4FaRMZ8Q
-						hex!["c6670c893b8bc9f9b883d40d0ea1a8dbce71ce3de8d57cf467f1026cb927384c"]
-							.unchecked_into(),
-						// KWDm4WP68DG4Kg3ADTmZQmPWuWp74xf7C25ydqrhxtwk6m9h1
-						hex!["03df461db93e4434e2f629134b171d3b2e075ad629839f1c697b547750f1e07248"]
-							.unchecked_into(),
-						// 5FZuGnwJVzhHDfqz9GYXuopc86xqqJk2oQ98UBRqmVcXvjJd
-						hex!["9af93f1d2cf773015a1baee1028edb612a25f56fde130f5da2ac488c2884e619"]
-							.unchecked_into(),
-						// Stash amount
-						100 * MYRIA,
-					),
-					(
-						// 5GVtTAfgTZrRf4gs2fDmGMPrCUWZx4eD7gzYvoCSxCuke67t
-						hex!["c425bbf59c7bf49e4fcc6547539d84ba8ecd2fb171f5b83cde3571d45d0c8224"]
-							.into(),
-						// 5DJ474dCD9qGx8r8tCXkJUchwS6dEFAvBzLizoXyVsXpHCuE
-						hex!["366a95cd6d3a75b2e7094b3cfc0ef40d3d5ad37e9394667a57ec2270899f9074"]
-							.unchecked_into(),
-						// 5DBw1qYaGN8DoD6y2uYizf12qFHRsB2u5fonhaW4tNVsrzgb
-						hex!["31bf3ecf6785449ee1fa52cebc512e3638399e889c1a72640d836378d3b99889"]
-							.unchecked_into(),
-						// 5DCQDScgxoSqEqqXHqoDGGCeoPhJuuCaxuUBKo2oqjGNWnUE
-						hex!["321acf19ab3edaaf90601c4fff9e8ad0e9e63dc19fb39915ff0776e10c5d4e62"]
-							.unchecked_into(),
-						// KW54T4BS4gQaa5vZX9ykSkBr9bY4MdTSzMaWnUPijwRUUEh8p
-						hex!["025e6b175317ab988d6d18f8e083e9b3bcf3de711798228044274c8d8ff85f0f10"]
-							.unchecked_into(),
-						// 5D7J3Gnjyt1hzRRX1n2g89tpjhhYspvtgLxMVLdVv8DV44NL
-						hex!["2e35cb3f34b1e1d456981f4cc39a57b35a5287146925a9a95b66feec76b3e339"]
-							.unchecked_into(),
-						// Stash amount
-						100 * MYRIA,
-					),
-					(
-						// 5Gs3JPQknr3LbPuP5kuva2XxijodjU1sAAWncES719ZfuhCq
-						hex!["d447acbfe7761c0cfba8341e616275caca6401637308ee123b77082a40095331"]
-							.into(),
-						// 5Dyr6DRdQrDGe1cidZ4qnv5k8sAVyLkzqyVH9xDU1t7HGgyg
-						hex!["54c3f4dd996025cf3a0f793ce058a0c614541ef6fccb939d3483fff21065b374"]
-							.unchecked_into(),
-						// 5DDUj1ez9MWqGo32KXNLCFYgBTqNvKzbKQ2FJVAK5KWYBZ5d
-						hex!["32ed3c5d8a3ee2589b9ea0a53593a606d866385e73aa2d1f6cfe0f1fdf06702f"]
-							.unchecked_into(),
-						// 5H9YaNETz66q5oXc9D1Z2RTSCvXhdqfgfDMdZpGd34hqWFSk
-						hex!["e0de26c436aeb19b1b66a22976914134df559f66583962c0a78367e4e095d341"]
-							.unchecked_into(),
-						// KW7xD3xSTGLeNgi42SJ9MfSsv3u1rv8zBCdtGcm8vG8VkZFr2
-						hex!["02de5d2d86fffbdb27187a58354d130aa6ff876ee5a2114f2c42b8b147d3753272"]
-							.unchecked_into(),
-						// 5E2Lp4CRph6cYTmq1P8sUyQPP22P3FzFT5FegwovLgwc2bYF
-						hex!["56ab21d481aeb3f93b756bbd78b0e38c4db567b1663b75c7d672bd3f7eaefb5d"]
-							.unchecked_into(),
-						// Stash amount
-						100 * MYRIA,
-					),
-					(
-						// 5DXNnoH2EMDQ1kk2JM7ZEutZFqZD8m6A6E5wZKfJVXjoJEez
-						hex!["4093acd03283fa2d53d3b684b2a7ce3118ceb047b869f6c000d041578420de22"]
-							.into(),
-						// 5HTtvH6s59JKYyuSoc9CUV6V9WRZWVv6HsC4Xo4yXrZtQ9zX
-						hex!["eedd0ce50d355a9590ba7b3ac0f4116e00bfe5ed1684d7eef630371dbd018110"]
-							.unchecked_into(),
-						// 5GFmQyUvApYnZRYqRwTosBQXrQrRwE42SFrV7KQ2UFBDx2dg
-						hex!["b9609b704d6f8b242c51ee79b4b23c7c09350bda96c0d01e6c214d26a778e8f4"]
-							.unchecked_into(),
-						// 5FH4WtPN93KETuHWRn4q7oikRjPozP4cXtreXVia1oQ3eaQf
-						hex!["8e21307acc160a81d92addae65e26b0bb047a016bd881eb234b6db693b09a074"]
-							.unchecked_into(),
-						// KWALuXvqYgmoPymKwg8v5qNSckbeFLGEXGjq2LeS2LMjo7vFM
-						hex!["03482551b40c34c48a8d84ba1b0a3f48eb230cf923b1c21dafbc1d7295212e4a88"]
-							.unchecked_into(),
-						// 5FJAQA33PTTwr6VNGKecxJjyiL6jN5oPHG77WRdinj97LEPb
-						hex!["8ef83df12c339f41551d44a83bf82c6dfbf944bb2c6caa8b4761600b09dc324a"]
-							.unchecked_into(),
-						// Stash amount
-						100 * MYRIA,
-					),
-				],
-				// Pre-funded accounts
-				vec![
-					(
-						// Sudo account
-						// 5HdaTtFK9kYGHLgrBMAKMiHQXF92JX16XBohKSXyvDeWxZTs
-						hex!["f63f610d703646c65a1a98fde39e9ee964d555d4d050559189ae791123ffd641"]
-							.into(),
-						// Balance amount
-						10 * MYRIA,
-					),
-					(
-						// Octopus Foundation Valiadator 1 account
-						// 5FRzbdg5WEQQPu34pdowRehCfA4rgZuDQE4bQEbcWGnthegY
-						hex!["94f135526ec5fe830e0cbc6fd58683cb2d9ee06522cd9a2c0481268c5c73674f"]
-							.into(),
-						// Balance amount
-						10 * MYRIA,
-					),
-					(
-						// Octopus Foundation Valiadator 2 account
-						// 5GVtTAfgTZrRf4gs2fDmGMPrCUWZx4eD7gzYvoCSxCuke67t
-						hex!["c425bbf59c7bf49e4fcc6547539d84ba8ecd2fb171f5b83cde3571d45d0c8224"]
-							.into(),
-						// Balance amount
-						10 * MYRIA,
-					),
-					(
-						// Octopus Foundation Valiadator 3 account
-						// 5Gs3JPQknr3LbPuP5kuva2XxijodjU1sAAWncES719ZfuhCq
-						hex!["d447acbfe7761c0cfba8341e616275caca6401637308ee123b77082a40095331"]
-							.into(),
-						// Balance amount
-						10 * MYRIA,
-					),
-					(
-						// Octopus Foundation Valiadator 4 account
-						// 5DXNnoH2EMDQ1kk2JM7ZEutZFqZD8m6A6E5wZKfJVXjoJEez
-						hex!["4093acd03283fa2d53d3b684b2a7ce3118ceb047b869f6c000d041578420de22"]
-							.into(),
-						// Balance amount
-						10 * MYRIA,
-					),
-				],
-				// Appchain config
-				appchain_config(
-					// Relay Contract
-					"myriad.registry.test_oct.testnet",
-					// Asset Id by Name
-					"usdc.testnet",
-					// Premined Amount
-					875_000_000 * MYRIA,
-					// Era Payout
-					68_493 * MYRIA,
-				),
-			)
-		},
-		// Bootnodes
-		vec![],
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("myriad-testnet"),
-		// Properties
-		Some(properties),
-		// Extensions
-		Default::default(),
-	))
+	ChainSpec::from_json_bytes(&include_bytes!("../res/testnet.json")[..])
 }
 
 pub fn staging_testnet_config() -> Result<ChainSpec, String> {
@@ -365,7 +149,7 @@ pub fn staging_testnet_config() -> Result<ChainSpec, String> {
 						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"]
 							.unchecked_into(),
 						// Stash amount
-						100 * MYRIA,
+						100 * OCTS,
 					),
 					(
 						// 5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
@@ -387,7 +171,7 @@ pub fn staging_testnet_config() -> Result<ChainSpec, String> {
 						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"]
 							.unchecked_into(),
 						// Stash amount
-						100 * MYRIA,
+						100 * OCTS,
 					),
 				],
 				// Pre-funded accounts
@@ -396,21 +180,21 @@ pub fn staging_testnet_config() -> Result<ChainSpec, String> {
 						// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
 						hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"]
 							.into(),
-						124_998_000 * MYRIA,
+						124_999_980 * MYRIA,
 					),
 					(
 						// 5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
 						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"]
 							.into(),
 						// Balance amount
-						1_000 * MYRIA,
+						10 * MYRIA,
 					),
 					(
 						// 5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
 						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"]
 							.into(),
 						// Balance amount
-						1_000 * MYRIA,
+						10 * MYRIA,
 					),
 				],
 				// Appchain config
@@ -478,7 +262,7 @@ pub fn development_testnet_config() -> Result<ChainSpec, String> {
 						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
 							.unchecked_into(),
 						// Stash amount
-						100 * MYRIA,
+						100 * OCTS,
 					),
 					(
 						// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
@@ -500,7 +284,7 @@ pub fn development_testnet_config() -> Result<ChainSpec, String> {
 						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
 							.unchecked_into(),
 						// Stash amount
-						100 * MYRIA,
+						100 * OCTS,
 					),
 				],
 				// Pre-funded accounts
@@ -510,21 +294,21 @@ pub fn development_testnet_config() -> Result<ChainSpec, String> {
 						hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"]
 							.into(),
 						// Balance amount
-						124_998_000 * MYRIA,
+						124_999_980 * MYRIA,
 					),
 					(
 						// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
 						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
 							.into(),
 						// Balance amount
-						1_000 * MYRIA,
+						10 * MYRIA,
 					),
 					(
 						// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
 						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
 							.into(),
 						// Balance amount
-						1_000 * MYRIA,
+						10 * MYRIA,
 					),
 				],
 				// Appchain config
@@ -573,9 +357,9 @@ pub fn local_config() -> Result<ChainSpec, String> {
 				// Initial PoA authorities
 				vec![
 					// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-					authority_keys_from_seed("Alice", 100 * MYRIA),
+					authority_keys_from_seed("Alice", 100 * OCTS),
 					// 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
-					authority_keys_from_seed("Bob", 100 * MYRIA),
+					authority_keys_from_seed("Bob", 100 * OCTS),
 				],
 				// Pre-funded accounts
 				vec![
@@ -583,13 +367,13 @@ pub fn local_config() -> Result<ChainSpec, String> {
 						// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
 						// Balance amount
-						124_999_000 * MYRIA,
+						124_999_990 * MYRIA,
 					),
 					(
 						// 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
 						// Balance amount
-						1_000 * MYRIA,
+						10 * MYRIA,
 					),
 				],
 				// Appchain config
@@ -638,7 +422,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 				// Initial PoA authorities
 				vec![
 					// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-					authority_keys_from_seed("Alice", 100 * MYRIA),
+					authority_keys_from_seed("Alice", 100 * OCTS),
 				],
 				// Pre-funded accounts
 				vec![(
@@ -694,18 +478,24 @@ fn genesis(
 			code: wasm_binary.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		sudo: SudoConfig { key: root_key },
+		balances: BalancesConfig {
+			balances: endowed_accounts.iter().map(|x| (x.0.clone(), x.1)).collect(),
+		},
 		babe: BabeConfig {
 			authorities: Default::default(),
 			epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
 		},
+		assets: Default::default(),
 		grandpa: Default::default(),
 		im_online: Default::default(),
 		beefy: Default::default(),
-		assets: Default::default(),
-		balances: BalancesConfig {
-			balances: endowed_accounts.iter().map(|x| (x.0.clone(), x.1)).collect(),
+		octopus_appchain: OctopusAppchainConfig {
+			anchor_contract: appchain_config.0,
+			asset_id_by_name: vec![(appchain_config.1, 0)],
+			premined_amount: appchain_config.2,
+			validators: initial_authorities.iter().map(|x| (x.0.clone(), x.6)).collect(),
 		},
+		octopus_lpos: OctopusLposConfig { era_payout: appchain_config.3, ..Default::default() },
 		session: SessionConfig {
 			keys: initial_authorities
 				.iter()
@@ -724,12 +514,6 @@ fn genesis(
 				})
 				.collect(),
 		},
-		octopus_appchain: OctopusAppchainConfig {
-			anchor_contract: appchain_config.0,
-			asset_id_by_name: vec![(appchain_config.1, 0)],
-			premined_amount: appchain_config.2,
-			validators: initial_authorities.iter().map(|x| (x.0.clone(), x.6)).collect(),
-		},
-		octopus_lpos: OctopusLposConfig { era_payout: appchain_config.3, ..Default::default() },
+		sudo: SudoConfig { key: root_key },
 	}
 }
