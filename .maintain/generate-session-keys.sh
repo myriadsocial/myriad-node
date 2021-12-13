@@ -8,7 +8,7 @@ if [ -z "$1" ]; then
 fi
 
 if [ ! -z "$2" ]; then
-    SECRET=$2
+  SECRET=$2
 fi
 
 generate_account_id() {
