@@ -103,6 +103,7 @@ spec:
               {{- end }}
               {{- if .validator }}
               --validator
+              --enable-offchain-indexing=true
               {{- end }}
               --port=30333
               --rpc-cors=all

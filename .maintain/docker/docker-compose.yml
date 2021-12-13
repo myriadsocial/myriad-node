@@ -13,6 +13,7 @@ services:
       --base-path /data
       --dev
       --alice
+      --enable-offchain-indexing=true
       --rpc-cors all
       --rpc-methods unsafe
       --unsafe-rpc-external
