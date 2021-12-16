@@ -2,7 +2,12 @@
   "name": "Myriad Testnet",
   "id": "myriad_testnet",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/dns/node-0.myriad.testnet.octopus.network/tcp/30333/p2p/12D3KooWGvrtiDuKDw6z7GLrqSJcWiLdFxhGHqWsAFV81AyocNAR",
+    "/dns/node-1.myriad.testnet.octopus.network/tcp/30333/p2p/12D3KooWKqyWUqHvQPiyTGKHFmnPSZky2CQM8GcEyHabs83ejTPF",
+    "/dns/node-2.myriad.testnet.octopus.network/tcp/30333/p2p/12D3KooWHzPDHHxRHTCwjFShg8rno2CbJLutARySs6UV28pf6zJg",
+    "/dns/node-3.myriad.testnet.octopus.network/tcp/30333/p2p/12D3KooWMYWFGEMyKK1kiyzMsGvAMMU8MumnVF3ZgQAaeB1fWedm"
+  ],
   "telemetryEndpoints": null,
   "protocolId": "myriad-testnet",
   "properties": {
