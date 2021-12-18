@@ -66,7 +66,7 @@ jobs:
             NODE_KEY_PUBLIC_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
-            DNS_RPC_WS:${{ secrets.DEV_GCP_PROJECT_ID }}/DNS_RPC_WS
+            NODE_RPC_WS_DNS:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
             SSH_HOST:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_HOST
             SSH_USERNAME:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_USERNAME
             SSH_KEY:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_KEY
@@ -112,11 +112,11 @@ jobs:
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
-              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
               --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
-              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
               --set-string volume.dataSize=50Gi
             kubectl rollout status statefulset/myriad-node-full1
@@ -152,7 +152,7 @@ jobs:
             NODE_KEY_PUBLIC_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
-            DNS_RPC_WS:${{ secrets.STG_GCP_PROJECT_ID }}/DNS_RPC_WS
+            NODE_RPC_WS_DNS:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
             SSH_HOST:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_HOST
             SSH_USERNAME:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_USERNAME
             SSH_KEY:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_KEY
@@ -197,11 +197,11 @@ jobs:
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
-              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
               --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
-              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
               --set-string volume.dataSize=50Gi
             kubectl rollout status statefulset/myriad-node-full1
@@ -237,7 +237,7 @@ jobs:
             NODE_KEY_PUBLIC_2:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
-            DNS_RPC_WS:${{ secrets.TESTNET_GCP_PROJECT_ID }}/DNS_RPC_WS
+            NODE_RPC_WS_DNS:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
             SSH_HOST:${{ secrets.TESTNET_GCP_PROJECT_ID }}/SSH_HOST
             SSH_USERNAME:${{ secrets.TESTNET_GCP_PROJECT_ID }}/SSH_USERNAME
             SSH_KEY:${{ secrets.TESTNET_GCP_PROJECT_ID }}/SSH_KEY
@@ -282,11 +282,11 @@ jobs:
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
-              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
               --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
-              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
               --set-string volume.dataSize=50Gi
             kubectl rollout status statefulset/myriad-node-full1
@@ -322,7 +322,7 @@ jobs:
             NODE_KEY_PUBLIC_2:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
-            DNS_RPC_WS:${{ secrets.MAINNET_GCP_PROJECT_ID }}/DNS_RPC_WS
+            NODE_RPC_WS_DNS:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
             SSH_HOST:${{ secrets.MAINNET_GCP_PROJECT_ID }}/SSH_HOST
             SSH_USERNAME:${{ secrets.MAINNET_GCP_PROJECT_ID }}/SSH_USERNAME
             SSH_KEY:${{ secrets.MAINNET_GCP_PROJECT_ID }}/SSH_KEY
@@ -367,11 +367,11 @@ jobs:
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
-              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
               --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
-              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
               --set-string volume.dataSize=50Gi
             kubectl rollout status statefulset/myriad-node-full1
@@ -407,7 +407,7 @@ jobs:
             NODE_KEY_PUBLIC_2:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
-            DNS_RPC_WS:${{ secrets.MAINNET_GCP_PROJECT_ID }}/DNS_RPC_WS
+            NODE_RPC_WS_DNS:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
             SSH_HOST:${{ secrets.MAINNET_GCP_PROJECT_ID }}/SSH_HOST
             SSH_USERNAME:${{ secrets.MAINNET_GCP_PROJECT_ID }}/SSH_USERNAME
             SSH_KEY:${{ secrets.MAINNET_GCP_PROJECT_ID }}/SSH_KEY
@@ -452,11 +452,11 @@ jobs:
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
-              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
               --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
-              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.DNS_RPC_WS }} \
+              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
               --set-string volume.dataSize=50Gi
             kubectl rollout status statefulset/myriad-node-full1
