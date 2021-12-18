@@ -32,9 +32,9 @@ jobs:
           LATEST_TAG=latest-pre-alpha
           PRE_RELEASE=true
 
-          if [[ $GITHUB_REF =~ refs/heads/tags/ ]] ;
+          if [[ $GITHUB_REF =~ refs/tags/ ]] ;
           then
-            TAG=${GITHUB_REF#refs/heads/tags/}
+            TAG=${GITHUB_REF#refs/tags/}
             VERSION=${TAG%.*}.$((${TAG##*.}))
             REVISION_TAG=$TAG
 
@@ -50,7 +50,7 @@ jobs:
           echo "::set-output name=sha_short::$SHA_SHORT"
           echo "::set-output name=revision_tag::$REVISION_TAG"
           echo "::set-output name=latest_tag::$LATEST_TAG"
-          echo "::set-output name=pre_release::$version"
+          echo "::set-output name=pre_release::$PRE_RELEASE"
 
   build:
     runs-on: ubuntu-20.04
