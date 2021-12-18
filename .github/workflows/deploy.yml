@@ -109,7 +109,6 @@ jobs:
               --set ingress.websocketRPC.enabled=true \
               --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
-              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="500" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
               --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
@@ -195,7 +194,6 @@ jobs:
               --set ingress.websocketRPC.enabled=true \
               --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
-              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="500" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
               --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
@@ -281,7 +279,6 @@ jobs:
               --set ingress.websocketRPC.enabled=true \
               --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
-              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="500" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
               --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
@@ -367,7 +364,6 @@ jobs:
               --set ingress.websocketRPC.enabled=true \
               --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
-              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="500" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
               --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
@@ -453,7 +449,6 @@ jobs:
               --set ingress.websocketRPC.enabled=true \
               --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
-              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="500" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
               --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.DNS_RPC_WS }} \
