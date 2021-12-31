@@ -156,7 +156,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 101,
+	spec_version: 102,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -554,7 +554,7 @@ impl pallet_octopus_appchain::Config for Runtime {
 }
 
 parameter_types! {
-	pub const BlocksPerEra: BlockNumber = EPOCH_DURATION_IN_BLOCKS * 6 / (SECS_PER_BLOCK as BlockNumber);
+	pub const BlocksPerEra: BlockNumber = EPOCH_DURATION_IN_BLOCKS * 6;
 	pub const BondingDuration: pallet_octopus_lpos::EraIndex = 24 * 28;
 	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
 }
