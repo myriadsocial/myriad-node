@@ -2,7 +2,12 @@
   "name": "Myriad",
   "id": "myriad",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/dns/bootnode-0.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWAQJG2wjefSAiMrb485f9Ee74qFccm96TY5JKofCdCDVj",
+    "/dns/bootnode-1.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWMov9mqgQspWsFZXK8h8B4ffni2wmhkh6Aes5ShjMxVLT",
+    "/dns/bootnode-2.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWJyAbd8RVQjpuuwBwkAigtR4zBusdkwTXfzTVCzMa4ZKJ",
+    "/dns/bootnode-3.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWD8Xw3XoS3RgDvicC4vQNpUTiMVRG4QDRHv23vBnnWsmF"
+  ],
   "telemetryEndpoints": null,
   "protocolId": "myriad",
   "properties": {
