@@ -66,6 +66,8 @@ jobs:
             NODE_KEY_PUBLIC_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
+            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
             NODE_RPC_WS_DNS:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
             SSH_HOST:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_HOST
             SSH_USERNAME:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_USERNAME
@@ -104,6 +106,12 @@ jobs:
               --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
               --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
               --set config.nodes[2].sessionInjectionEnabled=false \
+              --set-string config.nodes[3].name=validator2 \
+              --set config.nodes[3].bootnode=true \
+              --set config.nodes[3].validator=true \
+              --set-string config.nodes[3].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
+              --set config.nodes[3].sessionInjectionEnabled=false \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
@@ -152,6 +160,8 @@ jobs:
             NODE_KEY_PUBLIC_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
+            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
             NODE_RPC_WS_DNS:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
             SSH_HOST:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_HOST
             SSH_USERNAME:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_USERNAME
@@ -190,6 +200,12 @@ jobs:
               --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
               --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
               --set config.nodes[2].sessionInjectionEnabled=false \
+              --set-string config.nodes[3].name=validator2 \
+              --set config.nodes[3].bootnode=true \
+              --set config.nodes[3].validator=true \
+              --set-string config.nodes[3].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
+              --set config.nodes[3].sessionInjectionEnabled=false \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
