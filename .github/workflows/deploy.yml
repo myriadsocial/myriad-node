@@ -66,6 +66,8 @@ jobs:
             NODE_KEY_PUBLIC_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
+            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
             NODE_RPC_WS_DNS:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
             SSH_HOST:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_HOST
             SSH_USERNAME:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_USERNAME
@@ -91,19 +93,21 @@ jobs:
               --set config.nodes[0].validator=false \
               --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
               --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set config.nodes[0].sessionInjectionEnabled=false \
               --set-string config.nodes[1].name=full2 \
               --set config.nodes[1].bootnode=true \
               --set config.nodes[1].validator=false \
               --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
               --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set config.nodes[1].sessionInjectionEnabled=false \
               --set-string config.nodes[2].name=validator1 \
               --set config.nodes[2].bootnode=true \
               --set config.nodes[2].validator=true \
               --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
               --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
-              --set config.nodes[2].sessionInjectionEnabled=false \
+              --set-string config.nodes[3].name=validator2 \
+              --set config.nodes[3].bootnode=true \
+              --set config.nodes[3].validator=true \
+              --set-string config.nodes[3].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
@@ -117,7 +121,8 @@ jobs:
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
               --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
-              --set-string volume.dataSize=50Gi
+              --set-string volume.dataSize=50Gi \
+              --set-string nodeSelector.pool=blockchain
             kubectl rollout status statefulset/myriad-node-full1
 
   deploy-alpha-release:
@@ -151,6 +156,8 @@ jobs:
             NODE_KEY_PUBLIC_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
+            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
             NODE_RPC_WS_DNS:${{ secrets.STG_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
             SSH_HOST:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_HOST
             SSH_USERNAME:${{ secrets.STG_GCP_PROJECT_ID }}/SSH_USERNAME
@@ -176,19 +183,21 @@ jobs:
               --set config.nodes[0].validator=false \
               --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
               --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set config.nodes[0].sessionInjectionEnabled=false \
               --set-string config.nodes[1].name=full2 \
               --set config.nodes[1].bootnode=true \
               --set config.nodes[1].validator=false \
               --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
               --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set config.nodes[1].sessionInjectionEnabled=false \
               --set-string config.nodes[2].name=validator1 \
               --set config.nodes[2].bootnode=true \
               --set config.nodes[2].validator=true \
               --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
               --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
-              --set config.nodes[2].sessionInjectionEnabled=false \
+              --set-string config.nodes[3].name=validator2 \
+              --set config.nodes[3].bootnode=true \
+              --set config.nodes[3].validator=true \
+              --set-string config.nodes[3].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
+              --set-string config.nodes[3].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
@@ -202,7 +211,8 @@ jobs:
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
               --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
-              --set-string volume.dataSize=50Gi
+              --set-string volume.dataSize=50Gi \
+              --set-string nodeSelector.pool=blockchain
             kubectl rollout status statefulset/myriad-node-full1
 
   deploy-beta-release:
@@ -261,19 +271,16 @@ jobs:
               --set config.nodes[0].validator=false \
               --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
               --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set config.nodes[0].sessionInjectionEnabled=false \
               --set-string config.nodes[1].name=full2 \
               --set config.nodes[1].bootnode=true \
               --set config.nodes[1].validator=false \
               --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
               --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set config.nodes[1].sessionInjectionEnabled=false \
               --set-string config.nodes[2].name=validator1 \
               --set config.nodes[2].bootnode=true \
               --set config.nodes[2].validator=true \
               --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
               --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
-              --set config.nodes[2].sessionInjectionEnabled=false \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
@@ -287,7 +294,8 @@ jobs:
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
               --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
-              --set-string volume.dataSize=50Gi
+              --set-string volume.dataSize=50Gi \
+              --set-string nodeSelector.pool=blockchain
             kubectl rollout status statefulset/myriad-node-full1
 
   deploy-pre-release:
@@ -346,19 +354,16 @@ jobs:
               --set config.nodes[0].validator=false \
               --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
               --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set config.nodes[0].sessionInjectionEnabled=false \
               --set-string config.nodes[1].name=full2 \
               --set config.nodes[1].bootnode=true \
               --set config.nodes[1].validator=false \
               --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
               --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set config.nodes[1].sessionInjectionEnabled=false \
               --set-string config.nodes[2].name=validator1 \
               --set config.nodes[2].bootnode=true \
               --set config.nodes[2].validator=true \
               --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
               --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
-              --set config.nodes[2].sessionInjectionEnabled=false \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
@@ -372,7 +377,8 @@ jobs:
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
               --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
-              --set-string volume.dataSize=50Gi
+              --set-string volume.dataSize=50Gi \
+              --set-string nodeSelector.pool=blockchain
             kubectl rollout status statefulset/myriad-node-full1
 
   deploy-release:
@@ -431,19 +437,16 @@ jobs:
               --set config.nodes[0].validator=false \
               --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
               --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set config.nodes[0].sessionInjectionEnabled=false \
               --set-string config.nodes[1].name=full2 \
               --set config.nodes[1].bootnode=true \
               --set config.nodes[1].validator=false \
               --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
               --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set config.nodes[1].sessionInjectionEnabled=false \
               --set-string config.nodes[2].name=validator1 \
               --set config.nodes[2].bootnode=true \
               --set config.nodes[2].validator=true \
               --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
               --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
-              --set config.nodes[2].sessionInjectionEnabled=false \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
@@ -457,5 +460,6 @@ jobs:
               --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
               --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
               --set-string volume.storageClassName=premium-rwo \
-              --set-string volume.dataSize=50Gi
+              --set-string volume.dataSize=50Gi \
+              --set-string nodeSelector.pool=blockchain
             kubectl rollout status statefulset/myriad-node-full1
