@@ -3,10 +3,13 @@ use crate::{
 	cli::{Cli, Subcommand},
 	service,
 };
-use myriad_runtime::Block;
-use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
-use sc_service::PartialComponents;
+
 use std::path::PathBuf;
+
+use sc_cli::{ChainSpec, Error::Service as CliErrorService, Result as CliResult, RuntimeVersion, SubstrateCli};
+use sc_service::PartialComponents;
+
+use myriad_runtime::{Block, VERSION};
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -33,7 +36,7 @@ impl SubstrateCli for Cli {
 		2021
 	}
 
-	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
+	fn load_spec(&self, id: &str) -> Result<Box<dyn ChainSpec>, String> {
 		Ok(match id {
 			"dev" => Box::new(chain_spec::development_config()?),
 			"local" | "" => Box::new(chain_spec::local_config()?),
@@ -48,12 +51,12 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&myriad_runtime::VERSION
+		&VERSION
 	}
 }
 
 /// Parse and run command line arguments
-pub fn run() -> sc_cli::Result<()> {
+pub fn run() -> CliResult<()> {
 	let cli = Cli::from_args();
 
 	match &cli.subcommand {
@@ -65,8 +68,7 @@ pub fn run() -> sc_cli::Result<()> {
 		Some(Subcommand::CheckBlock(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents { client, task_manager, import_queue, .. } =
-					service::new_partial(&config)?;
+				let PartialComponents { client, task_manager, import_queue, .. } = service::new_partial(&config)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -87,8 +89,7 @@ pub fn run() -> sc_cli::Result<()> {
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents { client, task_manager, import_queue, .. } =
-					service::new_partial(&config)?;
+				let PartialComponents { client, task_manager, import_queue, .. } = service::new_partial(&config)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -99,15 +100,13 @@ pub fn run() -> sc_cli::Result<()> {
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents { client, task_manager, backend, .. } =
-					service::new_partial(&config)?;
+				let PartialComponents { client, task_manager, backend, .. } = service::new_partial(&config)?;
 				Ok((cmd.run(client, backend), task_manager))
 			})
 		},
 		Some(Subcommand::Benchmark(cmd)) =>
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
-
 				runner.sync_run(|config| cmd.run::<Block, service::ExecutorDispatch>(config))
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. You can enable it with \
@@ -116,13 +115,7 @@ pub fn run() -> sc_cli::Result<()> {
 			},
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
-			runner.run_node_until_exit(|config| async move {
-				match config.role {
-					Role::Light => service::new_light(config),
-					_ => service::new_full(config),
-				}
-				.map_err(sc_cli::Error::Service)
-			})
+			runner.run_node_until_exit(|config| async move { service::new_full(config).map_err(CliErrorService) })
 		},
 	}
 }
