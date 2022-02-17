@@ -10,19 +10,21 @@ use beefy_primitives::{crypto::AuthorityId as BeefyId, mmr::MmrLeafVersion};
 use sp_api::impl_runtime_apis;
 use sp_consensus_babe::{
 	AllowedSlots::PrimaryAndSecondaryVRFSlots, BabeEpochConfiguration, BabeGenesisConfiguration,
-	Epoch, OpaqueKeyOwnershipProof, Slot,
+	Epoch, EquivocationProof, OpaqueKeyOwnershipProof, Slot,
 };
 use sp_core::{crypto::KeyTypeId, sr25519, Encode, OpaqueMetadata, H256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		self, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount,
-		Keccak256, NumberFor, OpaqueKeys, SaturatedConversion, StaticLookup, Verify,
+		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, Hash as HashT,
+		IdentifyAccount, Keccak256, NumberFor, OpaqueKeys, SaturatedConversion, StaticLookup,
+		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature, Perbill,
+	ApplyExtrinsicResult, FixedPointNumber, MultiAddress, MultiSignature, Perbill, Perquintill,
 };
+use sp_staking::SessionIndex;
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -39,18 +41,28 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	offchain, EnsureRoot,
+	offchain, ChainContext, CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion,
+	CheckWeight, EnsureRoot,
 };
 
-use pallet_babe::{AuthorityId as BabeId, ExternalTrigger};
+use pallet_babe::{
+	AuthorityId as BabeId, EquivocationHandler as BabeEquivocationHandler, ExternalTrigger,
+};
+use pallet_balances::AccountData;
+use pallet_beefy_mmr::{BeefyEcdsaToEthereum, DepositBeefyDigest};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
+	EquivocationHandler as GrandpaEquivocationHandler,
 };
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_mmr_primitives as mmr;
 use pallet_octopus_appchain::AuthorityId as OctopusId;
-use pallet_session::historical as pallet_session_historical;
-use pallet_transaction_payment::CurrencyAdapter;
+use pallet_octopus_lpos::{EraIndex, ExposureOf};
+use pallet_session::{historical as pallet_session_historical, FindAccountFromAuthorIndex};
+use pallet_session_historical::NoteHistoricalRoot;
+use pallet_transaction_payment::{
+	ChargeTransactionPayment, CurrencyAdapter, Multiplier, TargetedFeeAdjustment,
+};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -68,33 +80,30 @@ pub type Index = u32;
 /// A hash of some data used by the chain.
 pub type Hash = H256;
 /// The address format for describing accounts.
-pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
+pub type Address = MultiAddress<AccountId, ()>;
 /// Block header type as expected by this runtime.
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
-	frame_system::CheckSpecVersion<Runtime>,
-	frame_system::CheckTxVersion<Runtime>,
-	frame_system::CheckGenesis<Runtime>,
-	frame_system::CheckEra<Runtime>,
-	frame_system::CheckNonce<Runtime>,
-	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	CheckSpecVersion<Runtime>,
+	CheckTxVersion<Runtime>,
+	CheckGenesis<Runtime>,
+	CheckEra<Runtime>,
+	CheckNonce<Runtime>,
+	CheckWeight<Runtime>,
+	ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = frame_executive::Executive<
-	Runtime,
-	Block,
-	frame_system::ChainContext<Runtime>,
-	Runtime,
-	AllPallets,
->;
+pub type Executive =
+	frame_executive::Executive<Runtime, Block, ChainContext<Runtime>, Runtime, AllPallets>;
+pub type ClassId = u32;
+pub type InstanceId = u32;
 pub type OctopusAssetId = u32;
 pub type OctopusAssetBalance = u128;
 
@@ -147,7 +156,7 @@ pub mod currency {
 }
 
 // To learn more about runtime versioning and what each of the following value means:
-//   https://docs.substrate.io/v3/runtime/origins#runtime-versioning
+//   https://docs.substrate.io/v3/runtime/upgrades#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("appchain"),
@@ -227,8 +236,7 @@ pub fn native_version() -> NativeVersion {
 
 // Configure FRAME pallets to include in runtime.
 parameter_types! {
-	pub RuntimeBlockLength: BlockLength =
-		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+	pub RuntimeBlockLength: BlockLength = BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
 		.base_block(BlockExecutionWeight::get())
 		.for_class(DispatchClass::all(), |weights| {
@@ -241,9 +249,7 @@ parameter_types! {
 			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
 			// Operational transactions have some extra reserved space, so that they
 			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-			weights.reserved = Some(
-				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-			);
+			weights.reserved = Some(MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
@@ -294,7 +300,7 @@ impl frame_system::Config for Runtime {
 	/// What to do if an account is fully reaped from the system.
 	type OnKilledAccount = ();
 	/// The data to be stored in an account.
-	type AccountData = pallet_balances::AccountData<Balance>;
+	type AccountData = AccountData<Balance>;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = ();
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
@@ -303,7 +309,99 @@ impl frame_system::Config for Runtime {
 	type OnSetCode = ();
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
+impl offchain::SigningTypes for Runtime {
+	type Public = <Signature as Verify>::Signer;
+	type Signature = Signature;
+}
+
+impl<C> offchain::SendTransactionTypes<C> for Runtime
+where
+	Call: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = Call;
+}
+
+impl offchain::AppCrypto<<Signature as Verify>::Signer, Signature> for OctopusAppCrypto {
+	type RuntimeAppPublic = OctopusId;
+	type GenericSignature = sr25519::Signature;
+	type GenericPublic = sr25519::Public;
+}
+
+impl<LocalCall> offchain::CreateSignedTransaction<LocalCall> for Runtime
+where
+	Call: From<LocalCall>,
+{
+	fn create_transaction<C: offchain::AppCrypto<Self::Public, Self::Signature>>(
+		call: Call,
+		public: <Signature as Verify>::Signer,
+		account: AccountId,
+		nonce: Index,
+	) -> Option<(Call, <UncheckedExtrinsic as Extrinsic>::SignaturePayload)> {
+		let tip = 0;
+		// take the biggest period possible.
+		let period =
+			BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+		let current_block = System::block_number().saturated_into::<u64>().saturating_sub(1);
+		let era = generic::Era::mortal(period, current_block);
+		let extra = (
+			CheckSpecVersion::<Runtime>::new(),
+			CheckTxVersion::<Runtime>::new(),
+			CheckGenesis::<Runtime>::new(),
+			CheckEra::<Runtime>::from(era),
+			CheckNonce::<Runtime>::from(nonce),
+			CheckWeight::<Runtime>::new(),
+			ChargeTransactionPayment::<Runtime>::from(tip),
+		);
+		let raw_payload = SignedPayload::new(call, extra)
+			.map_err(|e| {
+				log::warn!("Unable to create signed payload: {:?}", e);
+			})
+			.ok()?;
+		let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
+		let address = <Self as frame_system::Config>::Lookup::unlookup(account);
+		let (call, extra, _) = raw_payload.deconstruct();
+		Some((call, (address, signature, extra)))
+	}
+}
+
+parameter_types! {
+	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
+	//       Attempting to do so will brick block production.
+	pub const EpochDuration: Moment = EPOCH_DURATION_IN_SLOTS;
+	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
+	pub const MaxAuthorities: u32 = 100;
+	pub const ReportLongevity: Moment = BondingDuration::get() as Moment * SessionsPerEra::get() as Moment * EpochDuration::get();
+}
+
+impl pallet_babe::Config for Runtime {
+	type DisabledValidators = Session;
+	type EpochChangeTrigger = ExternalTrigger;
+	type EpochDuration = EpochDuration;
+	type ExpectedBlockTime = ExpectedBlockTime;
+	type HandleEquivocation =
+		BabeEquivocationHandler<Self::KeyOwnerIdentification, (), ReportLongevity>;
+	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+		KeyTypeId,
+		BabeId,
+	)>>::IdentificationTuple;
+	type KeyOwnerProof =
+		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, BabeId)>>::Proof;
+	type KeyOwnerProofSystem = Historical;
+	type MaxAuthorities = MaxAuthorities;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const MinimumPeriod: Moment = SLOT_DURATION / 2;
+}
+
+impl pallet_timestamp::Config for Runtime {
+	type MinimumPeriod = MinimumPeriod;
+	type Moment = Moment;
+	type OnTimestampSet = Babe;
+	type WeightInfo = ();
+}
 
 parameter_types! {
 	pub const ExistentialDeposit: Balance = currency::EXISTENSIAL_DEPOSIT;
@@ -326,113 +424,45 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
+	pub const OperationalFeeMultiplier: u8 = 5;
 	pub const TransactionByteFee: Balance = currency::BYTE_FEE;
-	pub OperationalFeeMultiplier: u8 = 5;
+	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
+	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000);
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type FeeMultiplierUpdate = ();
+	type FeeMultiplierUpdate =
+		TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 }
 
-impl<LocalCall> offchain::CreateSignedTransaction<LocalCall> for Runtime
-where
-	Call: From<LocalCall>,
-{
-	fn create_transaction<C: offchain::AppCrypto<Self::Public, Self::Signature>>(
-		call: Call,
-		public: <Signature as traits::Verify>::Signer,
-		account: AccountId,
-		nonce: Index,
-	) -> Option<(Call, <UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload)> {
-		let tip = 0;
-		// take the biggest period possible.
-		let period =
-			BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
-		let current_block = System::block_number()
-			.saturated_into::<u64>()
-			// The `System::block_number` is initialized with `n+1`,
-			// so the actual block number is `n`.
-			.saturating_sub(1);
-		let era = generic::Era::mortal(period, current_block);
-		let extra = (
-			frame_system::CheckSpecVersion::<Runtime>::new(),
-			frame_system::CheckTxVersion::<Runtime>::new(),
-			frame_system::CheckGenesis::<Runtime>::new(),
-			frame_system::CheckEra::<Runtime>::from(era),
-			frame_system::CheckNonce::<Runtime>::from(nonce),
-			frame_system::CheckWeight::<Runtime>::new(),
-			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
-		);
-		let raw_payload = SignedPayload::new(call, extra)
-			.map_err(|e| {
-				log::warn!("Unable to create signed payload: {:?}", e);
-			})
-			.ok()?;
-		let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
-		let address = <Self as frame_system::Config>::Lookup::unlookup(account);
-		let (call, extra, _) = raw_payload.deconstruct();
-		Some((call, (address, signature, extra)))
-	}
-}
-
-impl offchain::SigningTypes for Runtime {
-	type Public = <Signature as traits::Verify>::Signer;
-	type Signature = Signature;
-}
-
-impl<C> offchain::SendTransactionTypes<C> for Runtime
-where
-	Call: From<C>,
-{
-	type Extrinsic = UncheckedExtrinsic;
-	type OverarchingCall = Call;
-}
-
-impl offchain::AppCrypto<<Signature as Verify>::Signer, Signature> for OctopusAppCrypto {
-	type RuntimeAppPublic = OctopusId;
-	type GenericSignature = sr25519::Signature;
-	type GenericPublic = sr25519::Public;
-}
+impl pallet_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
-	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
-	//       Attempting to do so will brick block production.
-	pub const EpochDuration: Moment = EPOCH_DURATION_IN_SLOTS;
-	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
-	pub const MaxAuthorities: u32 = 100;
-	pub const ReportLongevity: Moment = BondingDuration::get() as Moment * SessionsPerEra::get() as Moment * EpochDuration::get();
+	pub const ClassDeposit: Balance = 100 * currency::DOLLARS;
+	pub const InstanceDeposit: Balance = currency::DOLLARS;
+	pub const KeyLimit: u32 = 32;
+	pub const ValueLimit: u32 = 256;
 }
 
-impl pallet_babe::Config for Runtime {
-	type DisabledValidators = Session;
-	type EpochChangeTrigger = ExternalTrigger;
-	type EpochDuration = EpochDuration;
-	type ExpectedBlockTime = ExpectedBlockTime;
-	type HandleEquivocation =
-		pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, (), ReportLongevity>;
-	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-		KeyTypeId,
-		BabeId,
-	)>>::IdentificationTuple;
-	type KeyOwnerProof =
-		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, BabeId)>>::Proof;
-	type KeyOwnerProofSystem = Historical;
-	type MaxAuthorities = MaxAuthorities;
-	type WeightInfo = ();
-}
-
-parameter_types! {
-	pub const MinimumPeriod: Moment = SLOT_DURATION / 2;
-}
-
-impl pallet_timestamp::Config for Runtime {
-	type MinimumPeriod = MinimumPeriod;
-	type Moment = Moment;
-	type OnTimestampSet = Babe;
+impl pallet_uniques::Config for Runtime {
+	type AttributeDepositBase = MetadataDepositBase;
+	type ClassDeposit = ClassDeposit;
+	type ClassId = ClassId;
+	type Currency = Balances;
+	type DepositPerByte = MetadataDepositPerByte;
+	type Event = Event;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type InstanceDeposit = InstanceDeposit;
+	type InstanceId = InstanceId;
+	type KeyLimit = KeyLimit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type StringLimit = StringLimit;
+	type ValueLimit = ValueLimit;
 	type WeightInfo = ();
 }
 
@@ -457,79 +487,6 @@ impl pallet_assets::Config<pallet_assets::Instance1> for Runtime {
 	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = ();
-}
-
-impl pallet_grandpa::Config for Runtime {
-	type Call = Call;
-	type Event = Event;
-	type HandleEquivocation =
-		pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, (), ReportLongevity>;
-	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-		KeyTypeId,
-		GrandpaId,
-	)>>::IdentificationTuple;
-	type KeyOwnerProof =
-		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-	type KeyOwnerProofSystem = Historical;
-	type MaxAuthorities = MaxAuthorities;
-	type WeightInfo = ();
-}
-
-parameter_types! {
-	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
-	pub const MaxKeys: u32 = 10_000;
-	pub const MaxPeerDataEncodingSize: u32 = 1_000;
-	pub const MaxPeerInHeartbeats: u32 = 10_000;
-	pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
-}
-
-impl pallet_im_online::Config for Runtime {
-	type AuthorityId = ImOnlineId;
-	type Event = Event;
-	type MaxKeys = MaxKeys;
-	type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
-	type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
-	type NextSessionRotation = Babe;
-	type ReportUnresponsiveness = ();
-	type UnsignedPriority = ImOnlineUnsignedPriority;
-	type ValidatorSet = Historical;
-	type WeightInfo = ();
-}
-
-impl pallet_beefy::Config for Runtime {
-	type BeefyId = BeefyId;
-}
-
-parameter_types! {
-	/// Version of the produced MMR leaf.
-	///
-	/// The version consists of two parts;
-	/// - `major` (3 bits)
-	/// - `minor` (5 bits)
-	///
-	/// `major` should be updated only if decoding the previous MMR Leaf format from the payload
-	/// is not possible (i.e. backward incompatible change).
-	/// `minor` should be updated if fields are added to the previous MMR Leaf, which given SCALE
-	/// encoding does not prevent old leafs from being decoded.
-	///
-	/// Hence we expect `major` to be changed really rarely (think never).
-	/// See [`MmrLeafVersion`] type documentation for more details.
-	pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
-}
-
-impl pallet_beefy_mmr::Config for Runtime {
-	type LeafVersion = LeafVersion;
-	type BeefyAuthorityToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
-	type ParachainHeads = ();
-}
-
-impl pallet_mmr::Config for Runtime {
-	const INDEXING_PREFIX: &'static [u8] = b"mmr";
-	type Hash = <Keccak256 as traits::Hash>::Output;
-	type Hashing = Keccak256;
-	type LeafData = pallet_beefy_mmr::Pallet<Runtime>;
-	type OnNewRoot = pallet_beefy_mmr::DepositBeefyDigest<Runtime>;
 	type WeightInfo = ();
 }
 
@@ -560,8 +517,8 @@ impl pallet_octopus_appchain::Config for Runtime {
 
 parameter_types! {
 	pub const BlocksPerEra: BlockNumber = EPOCH_DURATION_IN_BLOCKS * 6;
-	pub const BondingDuration: pallet_octopus_lpos::EraIndex = 24 * 28;
-	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+	pub const BondingDuration: EraIndex = 24 * 28;
+	pub const SessionsPerEra: SessionIndex = 6;
 }
 
 impl pallet_octopus_lpos::Config for Runtime {
@@ -598,13 +555,13 @@ parameter_types! {
 impl pallet_authorship::Config for Runtime {
 	type EventHandler = (OctopusLpos, ImOnline);
 	type FilterUncle = ();
-	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
+	type FindAuthor = FindAccountFromAuthorIndex<Self, Babe>;
 	type UncleGenerations = UncleGenerations;
 }
 
 impl pallet_session_historical::Config for Runtime {
 	type FullIdentification = u128;
-	type FullIdentificationOf = pallet_octopus_lpos::ExposureOf<Runtime>;
+	type FullIdentificationOf = ExposureOf<Runtime>;
 }
 
 impl pallet_session::Config for Runtime {
@@ -613,9 +570,82 @@ impl pallet_session::Config for Runtime {
 	type ValidatorIdOf = ConvertInto;
 	type ShouldEndSession = Babe;
 	type NextSessionRotation = Babe;
-	type SessionManager = pallet_session_historical::NoteHistoricalRoot<Self, OctopusLpos>;
+	type SessionManager = NoteHistoricalRoot<Self, OctopusLpos>;
 	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
+	type WeightInfo = ();
+}
+
+impl pallet_grandpa::Config for Runtime {
+	type Call = Call;
+	type Event = Event;
+	type HandleEquivocation =
+		GrandpaEquivocationHandler<Self::KeyOwnerIdentification, (), ReportLongevity>;
+	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+		KeyTypeId,
+		GrandpaId,
+	)>>::IdentificationTuple;
+	type KeyOwnerProof =
+		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
+	type KeyOwnerProofSystem = Historical;
+	type MaxAuthorities = MaxAuthorities;
+	type WeightInfo = ();
+}
+
+impl pallet_beefy::Config for Runtime {
+	type BeefyId = BeefyId;
+}
+
+parameter_types! {
+	/// Version of the produced MMR leaf.
+	///
+	/// The version consists of two parts;
+	/// - `major` (3 bits)
+	/// - `minor` (5 bits)
+	///
+	/// `major` should be updated only if decoding the previous MMR Leaf format from the payload
+	/// is not possible (i.e. backward incompatible change).
+	/// `minor` should be updated if fields are added to the previous MMR Leaf, which given SCALE
+	/// encoding does not prevent old leafs from being decoded.
+	///
+	/// Hence we expect `major` to be changed really rarely (think never).
+	/// See [`MmrLeafVersion`] type documentation for more details.
+	pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
+}
+
+impl pallet_beefy_mmr::Config for Runtime {
+	type LeafVersion = LeafVersion;
+	type BeefyAuthorityToMerkleLeaf = BeefyEcdsaToEthereum;
+	type ParachainHeads = ();
+}
+
+impl pallet_mmr::Config for Runtime {
+	const INDEXING_PREFIX: &'static [u8] = b"mmr";
+	type Hash = <Keccak256 as HashT>::Output;
+	type Hashing = Keccak256;
+	type LeafData = pallet_beefy_mmr::Pallet<Runtime>;
+	type OnNewRoot = DepositBeefyDigest<Runtime>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+	pub const MaxKeys: u32 = 10_000;
+	pub const MaxPeerDataEncodingSize: u32 = 1_000;
+	pub const MaxPeerInHeartbeats: u32 = 10_000;
+	pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+}
+
+impl pallet_im_online::Config for Runtime {
+	type AuthorityId = ImOnlineId;
+	type Event = Event;
+	type MaxKeys = MaxKeys;
+	type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
+	type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
+	type NextSessionRotation = Babe;
+	type ReportUnresponsiveness = ();
+	type UnsignedPriority = ImOnlineUnsignedPriority;
+	type ValidatorSet = Historical;
 	type WeightInfo = ();
 }
 
@@ -645,23 +675,24 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		System: frame_system::{Call, Config, Event<T>, Pallet, Storage},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-		Balances: pallet_balances::{Call, Config<T>, Event<T>, Pallet, Storage},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		Babe: pallet_babe::{Call, Config, Pallet, Storage, ValidateUnsigned},
 		Timestamp: pallet_timestamp::{Call, Inherent, Pallet, Storage},
-		OctopusAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		Grandpa: pallet_grandpa::{Call, Config, Event, Pallet, Storage, ValidateUnsigned},
-		ImOnline: pallet_im_online::{Call, Config<T>, Event<T>, Pallet, Storage, ValidateUnsigned},
-		Beefy: pallet_beefy::{Config<T>, Pallet, Storage},
-		MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
-		Mmr: pallet_mmr::{Pallet, Storage},
+		Balances: pallet_balances::{Call, Config<T>, Event<T>, Pallet, Storage},
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
+		Uniques: pallet_uniques::{Call, Event<T>, Pallet, Storage},
+		OctopusAssets: pallet_assets::<Instance1>::{Call, Config<T>, Event<T>, Pallet, Storage},
 		OctopusAppchain: pallet_octopus_appchain::{Call, Config<T>, Event<T>, Pallet, Storage, ValidateUnsigned},
 		OctopusLpos: pallet_octopus_lpos::{Call, Config, Event<T>, Pallet, Storage},
 		OctopusUpwardMessages: pallet_octopus_upward_messages::{Call, Event<T>, Pallet, Storage},
 		Authorship: pallet_authorship::{Call, Inherent, Pallet, Storage},
 		Historical: pallet_session_historical::{Pallet},
 		Session: pallet_session::{Call, Event, Config<T>, Pallet, Storage},
+		Grandpa: pallet_grandpa::{Call, Config, Event, Pallet, Storage, ValidateUnsigned},
+		Beefy: pallet_beefy::{Config<T>, Pallet, Storage},
+		MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
+		Mmr: pallet_mmr::{Pallet, Storage},
+		ImOnline: pallet_im_online::{Call, Config<T>, Event<T>, Pallet, Storage, ValidateUnsigned},
 		Sudo: pallet_sudo::{Call, Config<T>, Event<T>, Pallet, Storage},
 
 		// Local pallets
@@ -704,10 +735,7 @@ impl_runtime_apis! {
 			data.create_extrinsics()
 		}
 
-		fn check_inherents(
-			block: Block,
-			data: InherentData,
-		) -> CheckInherentsResult {
+		fn check_inherents(block: Block, data: InherentData) -> CheckInherentsResult {
 			data.check_extrinsics(&block)
 		}
 	}
@@ -757,25 +785,17 @@ impl_runtime_apis! {
 			Babe::next_epoch()
 		}
 
-		fn generate_key_ownership_proof(
-			_slot: Slot,
-			authority_id: BabeId,
-		) -> Option<OpaqueKeyOwnershipProof> {
-			Historical::prove((sp_consensus_babe::KEY_TYPE, authority_id))
-				.map(|p| p.encode())
-				.map(OpaqueKeyOwnershipProof::new)
+		fn generate_key_ownership_proof(_slot: Slot, authority_id: BabeId) -> Option<OpaqueKeyOwnershipProof> {
+			Historical::prove((sp_consensus_babe::KEY_TYPE, authority_id)).map(|p| p.encode()).map(OpaqueKeyOwnershipProof::new)
 		}
 
 		fn submit_report_equivocation_unsigned_extrinsic(
-			equivocation_proof: sp_consensus_babe::EquivocationProof<<Block as BlockT>::Header>,
+			equivocation_proof: EquivocationProof<<Block as BlockT>::Header>,
 			key_owner_proof: OpaqueKeyOwnershipProof,
 		) -> Option<()> {
 			let key_owner_proof = key_owner_proof.decode()?;
 
-			Babe::submit_unsigned_equivocation_report(
-				equivocation_proof,
-				key_owner_proof,
-			)
+			Babe::submit_unsigned_equivocation_report(equivocation_proof, key_owner_proof)
 		}
 	}
 
@@ -784,9 +804,7 @@ impl_runtime_apis! {
 			opaque::SessionKeys::generate(seed)
 		}
 
-		fn decode_session_keys(
-			encoded: Vec<u8>,
-		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
+		fn decode_session_keys(encoded: Vec<u8>) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
 			opaque::SessionKeys::decode_into_raw_public_keys(&encoded)
 		}
 	}
@@ -801,27 +819,25 @@ impl_runtime_apis! {
 		}
 
 		fn submit_report_equivocation_unsigned_extrinsic(
-			equivocation_proof: fg_primitives::EquivocationProof<
-				<Block as BlockT>::Hash,
-				NumberFor<Block>,
-			>,
+			equivocation_proof: fg_primitives::EquivocationProof<<Block as BlockT>::Hash, NumberFor<Block>>,
 			key_owner_proof: fg_primitives::OpaqueKeyOwnershipProof,
 		) -> Option<()> {
 			let key_owner_proof = key_owner_proof.decode()?;
 
-			Grandpa::submit_unsigned_equivocation_report(
-				equivocation_proof,
-				key_owner_proof,
-			)
+			Grandpa::submit_unsigned_equivocation_report(equivocation_proof, key_owner_proof)
 		}
 
 		fn generate_key_ownership_proof(
 			_set_id: fg_primitives::SetId,
 			authority_id: GrandpaId,
 		) -> Option<fg_primitives::OpaqueKeyOwnershipProof> {
-			Historical::prove((fg_primitives::KEY_TYPE, authority_id))
-				.map(|p| p.encode())
-				.map(fg_primitives::OpaqueKeyOwnershipProof::new)
+			Historical::prove((fg_primitives::KEY_TYPE, authority_id)).map(|p| p.encode()).map(fg_primitives::OpaqueKeyOwnershipProof::new)
+		}
+	}
+
+	impl beefy_primitives::BeefyApi<Block> for Runtime {
+		fn validator_set() -> beefy_primitives::ValidatorSet<BeefyId> {
+			Beefy::validator_set()
 		}
 	}
 
@@ -838,50 +854,35 @@ impl_runtime_apis! {
 		) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
 			TransactionPayment::query_info(uxt, len)
 		}
-		fn query_fee_details(
-			uxt: <Block as BlockT>::Extrinsic,
-			len: u32,
-		) -> pallet_transaction_payment::FeeDetails<Balance> {
+
+		fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
 		}
 	}
 
 	impl pallet_mmr_primitives::MmrApi<Block, Hash> for Runtime {
-		fn generate_proof(leaf_index: u64)
-			-> Result<(mmr::EncodableOpaqueLeaf, mmr::Proof<Hash>), mmr::Error>
-		{
-			Mmr::generate_proof(leaf_index)
-				.map(|(leaf, proof)| (mmr::EncodableOpaqueLeaf::from_leaf(&leaf), proof))
+		fn generate_proof(leaf_index: u64) -> Result<(mmr::EncodableOpaqueLeaf, mmr::Proof<Hash>), mmr::Error> {
+			Mmr::generate_proof(leaf_index).map(|(leaf, proof)| (mmr::EncodableOpaqueLeaf::from_leaf(&leaf), proof))
 		}
 
-		fn verify_proof(leaf: mmr::EncodableOpaqueLeaf, proof: mmr::Proof<Hash>)
-			-> Result<(), mmr::Error>
-		{
-			pub type Leaf = <
-				<Runtime as pallet_mmr::Config>::LeafData as mmr::LeafDataProvider
-			>::LeafData;
+		fn verify_proof(leaf: mmr::EncodableOpaqueLeaf, proof: mmr::Proof<Hash>) -> Result<(), mmr::Error> {
+			pub type Leaf = <<Runtime as pallet_mmr::Config>::LeafData as mmr::LeafDataProvider>::LeafData;
 
-			let leaf: Leaf = leaf
-				.into_opaque_leaf()
-				.try_decode()
-				.ok_or(mmr::Error::Verify)?;
+			let leaf: Leaf = leaf.into_opaque_leaf().try_decode().ok_or(mmr::Error::Verify)?;
+
 			Mmr::verify_leaf(leaf, proof)
 		}
 
 		fn verify_proof_stateless(
 			root: Hash,
 			leaf: mmr::EncodableOpaqueLeaf,
-			proof: mmr::Proof<Hash>
+			proof: mmr::Proof<Hash>,
 		) -> Result<(), mmr::Error> {
 			type MmrHashing = <Runtime as pallet_mmr::Config>::Hashing;
-			let node = mmr::DataOrHash::Data(leaf.into_opaque_leaf());
-			pallet_mmr::verify_leaf_proof::<MmrHashing, _>(root, node, proof)
-		}
-	}
 
-	impl beefy_primitives::BeefyApi<Block> for Runtime {
-		fn validator_set() -> beefy_primitives::ValidatorSet<BeefyId> {
-			Beefy::validator_set()
+			let node = mmr::DataOrHash::Data(leaf.into_opaque_leaf());
+
+			pallet_mmr::verify_leaf_proof::<MmrHashing, _>(root, node, proof)
 		}
 	}
 
@@ -892,10 +893,14 @@ impl_runtime_apis! {
 			Vec<frame_support::traits::StorageInfo>,
 		) {
 			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
+			use frame_benchmarking::baseline::Pallet as BaselineBench;
 			use frame_support::traits::StorageInfoTrait;
+
 			use pallet_tipping_benchmarking::Pallet as TippingBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
+
+			list_benchmark!(list, extra, frame_benchmarking, BaselineBench::<Runtime>);
 
 			// Local Pallets
 			list_benchmark!(list, extra, pallet_server, Server);
@@ -909,9 +914,12 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
+			use frame_benchmarking::{add_benchmark, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+			use frame_benchmarking::baseline::Pallet as BaselineBench;
 
 			use pallet_tipping_benchmarking::Pallet as TippingBench;
+
+			impl frame_benchmarking::baseline::Config for Runtime {}
 
 			impl pallet_tipping_benchmarking::Config for Runtime {}
 
@@ -931,11 +939,12 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
+			add_benchmark!(params, batches, frame_benchmarking, BaselineBench::<Runtime>);
+
 			// Local Pallets
 			add_benchmark!(params, batches, pallet_server, Server);
 			add_benchmark!(params, batches, pallet_tipping, TippingBench::<Runtime>);
 
-			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
 		}
 	}
