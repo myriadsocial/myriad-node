@@ -95,6 +95,8 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllPallets,
 >;
+pub type OctopusAssetId = u32;
+pub type OctopusAssetBalance = u128;
 
 pub struct OctopusAppCrypto;
 
@@ -156,7 +158,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 102,
+	spec_version: 103,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -442,10 +444,10 @@ parameter_types! {
 	pub const StringLimit: u32 = 50;
 }
 
-impl pallet_assets::Config for Runtime {
+impl pallet_assets::Config<pallet_assets::Instance1> for Runtime {
 	type Event = Event;
-	type Balance = Balance;
-	type AssetId = Index;
+	type Balance = OctopusAssetBalance;
+	type AssetId = OctopusAssetId;
 	type Currency = Balances;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
@@ -539,7 +541,10 @@ parameter_types! {
 }
 
 impl pallet_octopus_appchain::Config for Runtime {
-	type Assets = Assets;
+	type Assets = OctopusAssets;
+	type AssetBalance = OctopusAssetBalance;
+	type AssetId = OctopusAssetId;
+	type AssetIdByName = OctopusAppchain;
 	type AuthorityId = OctopusAppCrypto;
 	type Call = Call;
 	type Currency = Balances;
@@ -648,7 +653,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		Babe: pallet_babe::{Call, Config, Pallet, Storage, ValidateUnsigned},
 		Timestamp: pallet_timestamp::{Call, Inherent, Pallet, Storage},
-		Assets: pallet_assets::{Call, Config<T>, Event<T>, Pallet, Storage},
+		OctopusAssets: pallet_assets::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Grandpa: pallet_grandpa::{Call, Config, Event, Pallet, Storage, ValidateUnsigned},
 		ImOnline: pallet_im_online::{Call, Config<T>, Event<T>, Pallet, Storage, ValidateUnsigned},
 		Beefy: pallet_beefy::{Config<T>, Pallet, Storage},
