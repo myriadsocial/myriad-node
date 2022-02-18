@@ -485,7 +485,6 @@ fn genesis(
 			authorities: Default::default(),
 			epoch_config: Some(BABE_GENESIS_EPOCH_CONFIG),
 		},
-		assets: Default::default(),
 		grandpa: Default::default(),
 		im_online: Default::default(),
 		beefy: Default::default(),
@@ -496,6 +495,7 @@ fn genesis(
 			validators: initial_authorities.iter().map(|x| (x.0.clone(), x.6)).collect(),
 		},
 		octopus_lpos: OctopusLposConfig { era_payout: appchain_config.3, ..Default::default() },
+		octopus_assets: Default::default(),
 		session: SessionConfig {
 			keys: initial_authorities
 				.iter()
