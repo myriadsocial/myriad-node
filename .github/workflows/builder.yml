@@ -111,6 +111,21 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      - name: Send WASM to Discord
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: tsickert/discord-webhook@v4.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          username: "DevOps Bot"
+          avatar-url: ${{ secrets.LOGO_URL }}
+          embed-title: New build wasm
+          content: "<@813609814650388491> <@739126196469497989>"
+          embed-description: "Build success on commit sha `${{ needs.compute-build-info.outputs.sha_short }}`"
+          filename: "./target/release/wbuild/myriad-runtime/myriad_runtime.compact.compressed.wasm"
+          embed-color: 3878306
+          embed-footer-text: "Myriad DevOps"
+          embed-footer-icon-url: ${{ secrets.LOGO_URL }}
+          embed-image-url: ${{ secrets.BANNER_URL }}
       # publish-draft-release
       - name: Build changelog
         if: "startsWith(github.ref, 'refs/tags/')"
