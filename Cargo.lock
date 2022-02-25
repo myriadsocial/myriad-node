@@ -4200,7 +4200,7 @@ dependencies = [
 [[package]]
 name = "pallet-octopus-appchain"
 version = "4.0.0-pre.0"
-source = "git+https://github.com/octopus-network/octopus-pallets.git?branch=release-v0.9.12#5c9dbf4ab617f2b0655ab0a9a94f7fca9578c975"
+source = "git+https://github.com/octopus-network/octopus-pallets.git?branch=release-v0.9.12#51ed694034b57c73ebb177502470df602140ddad"
 dependencies = [
  "base64 0.13.0",
  "borsh",
@@ -4224,7 +4224,7 @@ dependencies = [
 [[package]]
 name = "pallet-octopus-lpos"
 version = "4.0.0-pre.0"
-source = "git+https://github.com/octopus-network/octopus-pallets.git?branch=release-v0.9.12#5c9dbf4ab617f2b0655ab0a9a94f7fca9578c975"
+source = "git+https://github.com/octopus-network/octopus-pallets.git?branch=release-v0.9.12#51ed694034b57c73ebb177502470df602140ddad"
 dependencies = [
  "borsh",
  "frame-benchmarking",
@@ -4246,7 +4246,7 @@ dependencies = [
 [[package]]
 name = "pallet-octopus-support"
 version = "4.0.0-pre.0"
-source = "git+https://github.com/octopus-network/octopus-pallets.git?branch=release-v0.9.12#5c9dbf4ab617f2b0655ab0a9a94f7fca9578c975"
+source = "git+https://github.com/octopus-network/octopus-pallets.git?branch=release-v0.9.12#51ed694034b57c73ebb177502470df602140ddad"
 dependencies = [
  "borsh",
  "frame-support",
@@ -4259,7 +4259,7 @@ dependencies = [
 [[package]]
 name = "pallet-octopus-upward-messages"
 version = "4.0.0-pre.0"
-source = "git+https://github.com/octopus-network/octopus-pallets.git?branch=release-v0.9.12#5c9dbf4ab617f2b0655ab0a9a94f7fca9578c975"
+source = "git+https://github.com/octopus-network/octopus-pallets.git?branch=release-v0.9.12#51ed694034b57c73ebb177502470df602140ddad"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7799,9 +7799,9 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 
 [[package]]
 name = "twox-hash"
-version = "1.6.1"
+version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f559b464de2e2bdabcac6a210d12e9b5a5973c251e102c44c585c71d51bd78e"
+checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
  "cfg-if 1.0.0",
  "rand 0.8.4",
