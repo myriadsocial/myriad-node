@@ -3,10 +3,10 @@
   "id": "myriad",
   "chainType": "Live",
   "bootNodes": [
-    "/dns/bootnode-0.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWAQJG2wjefSAiMrb485f9Ee74qFccm96TY5JKofCdCDVj",
-    "/dns/bootnode-1.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWMov9mqgQspWsFZXK8h8B4ffni2wmhkh6Aes5ShjMxVLT",
-    "/dns/bootnode-2.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWJyAbd8RVQjpuuwBwkAigtR4zBusdkwTXfzTVCzMa4ZKJ",
-    "/dns/bootnode-3.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWD8Xw3XoS3RgDvicC4vQNpUTiMVRG4QDRHv23vBnnWsmF"
+    "/dns/bootnode-v1-0.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWB2VWMUu2LygYqrCW1a3Deg3Hdwyoe4d42R3dDH332Ghm",
+    "/dns/bootnode-v1-1.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWFViNvvydYx2ztUR4UBxYDDNzcUS9e5Qi124NPEyfo3dR",
+    "/dns/bootnode-v1-2.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWKvK3gGjafRfgUJVyqy35E6aRY78TmdVakraP9Ljju3V5",
+    "/dns/bootnode-v1-3.myriad.mainnet.octopus.network/tcp/30333/ws/p2p/12D3KooWJpeVy5v2uC3iVh8X5WoP1sUiaZ32uKHWZ2cSwjz9fEru"
   ],
   "telemetryEndpoints": null,
   "protocolId": "myriad",
