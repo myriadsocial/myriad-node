@@ -3718,7 +3718,6 @@ dependencies = [
  "pallet-beefy",
  "pallet-beefy-mmr",
  "pallet-currency",
- "pallet-escrow",
  "pallet-grandpa",
  "pallet-im-online",
  "pallet-mmr",
@@ -3728,6 +3727,7 @@ dependencies = [
  "pallet-octopus-upward-messages",
  "pallet-platform",
  "pallet-randomness-collective-flip",
+ "pallet-server",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -4301,6 +4301,23 @@ dependencies = [
  "parity-scale-codec",
  "safe-mix",
  "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-server"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

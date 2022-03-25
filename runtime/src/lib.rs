@@ -635,7 +635,7 @@ impl pallet_currency::Config for Runtime {
 	type WeightInfo = ();
 }
 
-impl pallet_escrow::Config for Runtime {
+impl pallet_server::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 }
@@ -670,7 +670,7 @@ construct_runtime!(
 		// Local pallets
 		Platform: pallet_platform::{Call, Event<T>, Pallet, Storage},
 		Currency: pallet_currency::{Call, Event<T>, Pallet, Storage},
-		Escrow: pallet_escrow::{Call, Event<T>, Pallet, Storage},
+		Server: pallet_server::{Call, Event<T>, Pallet, Storage},
 	}
 );
 
@@ -903,7 +903,7 @@ impl_runtime_apis! {
 			// Local Pallets
 			list_benchmark!(list, extra, pallet_platform, Platform);
 			list_benchmark!(list, extra, pallet_currency, Currency);
-			list_benchmark!(list, extra, pallet_escrow, Escrow);
+			list_benchmark!(list, extra, pallet_server, Server);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -934,7 +934,7 @@ impl_runtime_apis! {
 			// Local Pallets
 			add_benchmark!(params, batches, pallet_platform, Platform);
 			add_benchmark!(params, batches, pallet_currency, Currency);
-			add_benchmark!(params, batches, pallet_escrow, Escrow);
+			add_benchmark!(params, batches, pallet_server, Server);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
