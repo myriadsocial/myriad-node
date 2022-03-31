@@ -69,9 +69,9 @@ pallet-octopus-lpos = { git = 'https://github.com/octopus-network/octopus-pallet
 pallet-octopus-upward-messages = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.12', default-features = false }
 
 # Local Pallet
-pallet-platform = { path = '../pallets/platform', default-features = false }
-pallet-currency = { path = '../pallets/currency', default-features = false }
 pallet-server = { path = '../pallets/server', default-features = false }
+pallet-tipping = { path = '../pallets/tipping', default-features = false }
+pallet-tipping-benchmarking = { path = '../pallets/tipping/benchmarking', default-features = false, optional = true }
 
 [features]
 default = ['std']
@@ -128,9 +128,8 @@ std = [
     'pallet-octopus-upward-messages/std',
 
 	# Local Pallet
-	'pallet-platform/std',
-	'pallet-currency/std',
 	'pallet-server/std',
+	'pallet-tipping/std',
 ]
 runtime-benchmarks = [
 	# External Dependencies
@@ -156,7 +155,7 @@ runtime-benchmarks = [
     'pallet-timestamp/runtime-benchmarks',
 
 	# Local Pallet
-	'pallet-platform/runtime-benchmarks',
-	'pallet-currency/runtime-benchmarks',
 	'pallet-server/runtime-benchmarks',
+	'pallet-tipping/runtime-benchmarks',
+	'pallet-tipping-benchmarking',
 ]
