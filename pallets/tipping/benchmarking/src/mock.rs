@@ -1,26 +1,27 @@
-use crate as pallet_platform;
-use frame_support::parameter_types;
+#![cfg(test)]
+
+use frame_support::{construct_runtime, parameter_types, traits::Everything};
 use frame_system as system;
+use pallet_balances::AccountData;
 use sp_core::H256;
-use sp_io::TestExternalities;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
 
-use frame_support::traits::Everything;
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-frame_support::construct_runtime!(
+construct_runtime!(
 	pub enum Test where
 		Block = Block,
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Platform: pallet_platform::{Pallet, Call, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Tipping: pallet_tipping::{Pallet, Call, Storage, Event<T>},
+		Server: pallet_server::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -49,7 +50,7 @@ impl system::Config for Test {
 	type DbWeight = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -57,16 +58,34 @@ impl system::Config for Test {
 	type OnSetCode = ();
 }
 
-impl pallet_platform::Config for Test {
+type Balance = u128;
+
+parameter_types! {
+	pub static ExistentialDeposit: Balance = 0;
+}
+
+impl pallet_balances::Config for Test {
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	/// The type for recording an account's balance.
+	type Balance = Balance;
+	/// The ubiquitous event type.
 	type Event = Event;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
 	type WeightInfo = ();
 }
 
-pub struct ExternalityBuilder;
+impl pallet_tipping::Config for Test {
+	type Event = Event;
+	type Currency = Balances;
+	type Server = Server;
+	type WeightInfo = ();
+}
 
-impl ExternalityBuilder {
-	pub fn build() -> TestExternalities {
-		let storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
-		TestExternalities::from(storage)
-	}
+impl pallet_server::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
 }

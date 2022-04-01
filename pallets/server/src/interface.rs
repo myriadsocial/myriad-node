@@ -26,13 +26,13 @@ pub trait ServerInterface<T: frame_system::Config> {
 		server_id: &T::Hash,
 		account_id: &T::AccountId,
 		new_owner: &T::AccountId,
-	) -> Result<Self::Server, Self::Error>;
+	) -> Result<(), Self::Error>;
 
 	fn update_name(
 		server_id: &T::Hash,
 		account_id: &T::AccountId,
 		new_name: &Self::Name,
-	) -> Result<Self::Server, Self::Error>;
+	) -> Result<(), Self::Error>;
 
 	fn unregister(server_id: &T::Hash, account_id: &T::AccountId) -> Result<(), Self::Error>;
 }

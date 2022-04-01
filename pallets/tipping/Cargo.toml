@@ -1,5 +1,5 @@
 [package]
-name = 'pallet-currency'
+name = 'pallet-tipping'
 version = '1.0.0'
 edition = '2018'
 license = 'AGPL-3.0'
@@ -24,6 +24,12 @@ frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = 
 frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.12', default-features = false }
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false, optional = true }
 
+# Substrate Pallet Dependencies
+pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.12', default-features = false }
+
+# Local Dependencies
+pallet-server = { path = '../server', default-features = false }
+
 [dev-dependencies]
 # External Dependencies
 serde = { version = '1.0.119', default-features = false }
@@ -46,6 +52,10 @@ std = [
 	'frame-support/std',
 	'frame-system/std',
 	'frame-benchmarking/std',
+
+	'pallet-balances/std',
+
+	'pallet-server/std',
 ]
 runtime-benchmarks = [
 	'frame-benchmarking'

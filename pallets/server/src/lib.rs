@@ -31,9 +31,9 @@ pub mod pallet {
 		pub owner: AccountId,
 		pub name: Vec<u8>,
 	}
-	impl<AccountId, Hash> Server<AccountId, Hash> {
-		pub fn new(id: Hash, owner: AccountId, name: Vec<u8>) -> Self {
-			Self { id, owner, name }
+	impl<AccountId: Clone, Hash> Server<AccountId, Hash> {
+		pub fn new(id: Hash, owner: &AccountId, name: &[u8]) -> Self {
+			Self { id, owner: owner.clone(), name: name.to_vec() }
 		}
 
 		pub fn get_id(&self) -> &Hash {
@@ -48,11 +48,15 @@ pub mod pallet {
 			&self.name
 		}
 
-		pub fn transfer_owner(&mut self, account_id: AccountId) {
-			self.owner = account_id;
+		pub fn set_owner(&mut self, account_id: &AccountId) {
+			self.owner = account_id.clone();
+		}
+
+		pub fn set_name(&mut self, name: &[u8]) {
+			self.name = name.to_vec();
 		}
 	}
-	impl<T, AccountId, Hash> ServerInfo<T> for Server<AccountId, Hash>
+	impl<T, AccountId: Clone, Hash> ServerInfo<T> for Server<AccountId, Hash>
 	where
 		T: frame_system::Config<AccountId = AccountId, Hash = Hash>,
 	{
@@ -80,9 +84,32 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 	}
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		pub admin_key: T::AccountId,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			Self { admin_key: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			AdminKey::<T>::put(&self.admin_key);
+		}
+	}
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
+
+	#[pallet::storage]
+	#[pallet::getter(fn admin_key)]
+	pub type AdminKey<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn server_by_id)]
@@ -91,21 +118,22 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Register server success. [who, server]
-		Registered(T::AccountId, ServerOf<T>),
-		/// Name updated success. [who, name, server_id]
-		NameUpdated(T::AccountId, Vec<u8>, T::Hash),
-		/// Owner transferred success. [who, new_owner, server_id]
-		OwnerTransferred(T::AccountId, T::AccountId, T::Hash),
-		/// Unregister server success. [who, server_id]
-		Unregistered(T::AccountId, ServerIdOf<T>),
+		/// Register server success. [server]
+		Registered(ServerOf<T>),
+		/// Name updated success. [name, server_id]
+		NameUpdated(Vec<u8>, T::Hash),
+		/// Owner transferred success. [new_owner, server_id]
+		OwnerTransferred(T::AccountId, T::Hash),
+		/// Unregister server success. [server_id]
+		Unregistered(ServerIdOf<T>),
+		/// Transfer admin key [current_admin_key, new_admin_key]
+		AdminKeyTransferred(T::AccountId, T::AccountId),
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
 		NotExists,
 		Unauthorized,
-		OwnerNotChanged,
 	}
 
 	#[pallet::hooks]
@@ -114,25 +142,36 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(T::WeightInfo::register(name.len() as u32))]
-		pub fn register(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
-			let server = <Self as ServerInterface<T>>::register(&who, &name);
+		pub fn register(
+			origin: OriginFor<T>,
+			account_id: AccountIdOf<T>,
+			name: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let admin = ensure_signed(origin)?;
 
-			Self::deposit_event(Event::Registered(who, server));
+			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+
+			let server = <Self as ServerInterface<T>>::register(&account_id, &name);
+
+			Self::deposit_event(Event::Registered(server));
 			Ok(().into())
 		}
 
 		#[pallet::weight(T::WeightInfo::transfer_owner())]
 		pub fn transfer_owner(
 			origin: OriginFor<T>,
+			account_id: AccountIdOf<T>,
 			server_id: HashOf<T>,
 			new_owner: AccountIdOf<T>,
 		) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
+			let admin = ensure_signed(origin)?;
 
-			match <Self as ServerInterface<T>>::transfer_owner(&server_id, &who, &new_owner) {
-				Ok(server) => {
-					Self::deposit_event(Event::OwnerTransferred(who, server.owner, server.id));
+			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+
+			match <Self as ServerInterface<T>>::transfer_owner(&server_id, &account_id, &new_owner)
+			{
+				Ok(_) => {
+					Self::deposit_event(Event::OwnerTransferred(new_owner, server_id));
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),
@@ -142,14 +181,17 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::update_name(new_name.len() as u32))]
 		pub fn update_name(
 			origin: OriginFor<T>,
+			account_id: AccountIdOf<T>,
 			server_id: HashOf<T>,
 			new_name: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
+			let admin = ensure_signed(origin)?;
 
-			match <Self as ServerInterface<T>>::update_name(&server_id, &who, &new_name) {
-				Ok(server) => {
-					Self::deposit_event(Event::NameUpdated(who, server.name, server.id));
+			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+
+			match <Self as ServerInterface<T>>::update_name(&server_id, &account_id, &new_name) {
+				Ok(_) => {
+					Self::deposit_event(Event::NameUpdated(new_name, server_id));
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),
@@ -159,17 +201,36 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::unregister())]
 		pub fn unregister(
 			origin: OriginFor<T>,
+			account_id: AccountIdOf<T>,
 			server_id: ServerIdOf<T>,
 		) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
+			let admin = ensure_signed(origin)?;
 
-			match <Self as ServerInterface<T>>::unregister(&server_id, &who) {
+			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+
+			match <Self as ServerInterface<T>>::unregister(&server_id, &account_id) {
 				Ok(_) => {
-					Self::deposit_event(Event::Unregistered(who, server_id));
+					Self::deposit_event(Event::Unregistered(server_id));
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),
 			}
+		}
+
+		#[pallet::weight(T::WeightInfo::transfer_admin_key())]
+		pub fn transfer_admin_key(
+			origin: OriginFor<T>,
+			account_id: AccountIdOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let admin = ensure_signed(origin)?;
+
+			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+
+			AdminKey::<T>::put(account_id.clone());
+
+			Self::deposit_event(Event::AdminKeyTransferred(admin, account_id));
+
+			Ok(().into())
 		}
 	}
 
@@ -196,7 +257,7 @@ pub mod pallet {
 
 		fn register(account_id: &T::AccountId, name: &Self::Name) -> Self::Server {
 			let id = Self::generate_server_id(account_id, name);
-			let server = Server::new(id, account_id.clone(), name.to_vec());
+			let server = Server::new(id, account_id, name);
 
 			ServerById::<T>::insert(id, server.clone());
 
@@ -207,34 +268,34 @@ pub mod pallet {
 			server_id: &T::Hash,
 			account_id: &T::AccountId,
 			new_owner: &T::AccountId,
-		) -> Result<Self::Server, Self::Error> {
+		) -> Result<(), Self::Error> {
 			if !ServerById::<T>::contains_key(server_id) {
 				return Err(Error::<T>::NotExists)
 			}
 
 			let mut server = <Self as ServerInterface<T>>::get_by_id(server_id).unwrap();
-			let current_owner = server.get_owner().clone();
+			let current_owner = server.get_owner();
 
-			if &current_owner != account_id {
+			if current_owner != account_id {
 				return Err(Error::<T>::Unauthorized)
 			}
 
-			if &current_owner == new_owner {
-				return Ok(server)
+			if current_owner == new_owner {
+				return Ok(())
 			}
 
-			server.transfer_owner(new_owner.clone());
+			server.set_owner(new_owner);
 
-			ServerById::<T>::insert(server_id, server.clone());
+			ServerById::<T>::insert(server_id, server);
 
-			Ok(server)
+			Ok(())
 		}
 
 		fn update_name(
 			server_id: &T::Hash,
 			account_id: &T::AccountId,
 			new_name: &Self::Name,
-		) -> Result<Self::Server, Self::Error> {
+		) -> Result<(), Self::Error> {
 			if !ServerById::<T>::contains_key(server_id) {
 				return Err(Error::<T>::NotExists)
 			}
@@ -245,11 +306,11 @@ pub mod pallet {
 				return Err(Error::<T>::Unauthorized)
 			}
 
-			server.name = new_name.to_vec();
+			server.set_name(new_name);
 
-			ServerById::<T>::insert(server_id, server.clone());
+			ServerById::<T>::insert(server_id, server);
 
-			Ok(server)
+			Ok(())
 		}
 
 		fn unregister(server_id: &T::Hash, account_id: &T::AccountId) -> Result<(), Self::Error> {

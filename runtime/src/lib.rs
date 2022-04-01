@@ -625,18 +625,15 @@ impl pallet_sudo::Config for Runtime {
 }
 
 // Local pallets
-impl pallet_platform::Config for Runtime {
-	type Event = Event;
-	type WeightInfo = ();
-}
-
-impl pallet_currency::Config for Runtime {
-	type Event = Event;
-	type WeightInfo = ();
-}
-
 impl pallet_server::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = ();
+}
+
+impl pallet_tipping::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type Server = Server;
 	type WeightInfo = ();
 }
 
@@ -668,9 +665,8 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Call, Config<T>, Event<T>, Pallet, Storage},
 
 		// Local pallets
-		Platform: pallet_platform::{Call, Event<T>, Pallet, Storage},
-		Currency: pallet_currency::{Call, Event<T>, Pallet, Storage},
-		Server: pallet_server::{Call, Event<T>, Pallet, Storage},
+		Server: pallet_server::{Call, Event<T>, Config<T>, Pallet, Storage},
+		Tipping: pallet_tipping::{Call, Event<T>, Pallet, Storage},
 	}
 );
 
@@ -897,13 +893,13 @@ impl_runtime_apis! {
 		) {
 			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
+			use pallet_tipping_benchmarking::Pallet as TippingBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
 			// Local Pallets
-			list_benchmark!(list, extra, pallet_platform, Platform);
-			list_benchmark!(list, extra, pallet_currency, Currency);
 			list_benchmark!(list, extra, pallet_server, Server);
+			list_benchmark!(list, extra, pallet_tipping, TippingBench::<Runtime>);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -914,6 +910,10 @@ impl_runtime_apis! {
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
+
+			use pallet_tipping_benchmarking::Pallet as TippingBench;
+
+			impl pallet_tipping_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
@@ -932,9 +932,8 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			// Local Pallets
-			add_benchmark!(params, batches, pallet_platform, Platform);
-			add_benchmark!(params, batches, pallet_currency, Currency);
 			add_benchmark!(params, batches, pallet_server, Server);
+			add_benchmark!(params, batches, pallet_tipping, TippingBench::<Runtime>);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

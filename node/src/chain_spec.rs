@@ -17,7 +17,7 @@ use myriad_runtime::{
 	currency::{OCTS, UNITS as MYRIA},
 	opaque::{Block, SessionKeys},
 	AccountId, BabeConfig, Balance, BalancesConfig, GenesisConfig, OctopusAppchainConfig,
-	OctopusLposConfig, SessionConfig, Signature, SudoConfig, SystemConfig,
+	OctopusLposConfig, ServerConfig, SessionConfig, Signature, SudoConfig, SystemConfig,
 	BABE_GENESIS_EPOCH_CONFIG, WASM_BINARY,
 };
 
@@ -208,6 +208,9 @@ pub fn staging_testnet_config() -> Result<ChainSpec, String> {
 					// Era Payout
 					68_493 * MYRIA,
 				),
+				// Admin key
+				// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
+				hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"].into(),
 			)
 		},
 		// Bootnodes
@@ -322,6 +325,9 @@ pub fn development_testnet_config() -> Result<ChainSpec, String> {
 					// Era Payout
 					68_493 * MYRIA,
 				),
+				// Admin key
+				// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
+				hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"].into(),
 			)
 		},
 		// Bootnodes
@@ -387,6 +393,9 @@ pub fn local_config() -> Result<ChainSpec, String> {
 					// Era Payout
 					68_493 * MYRIA,
 				),
+				// Admin key
+				// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		// Bootnodes
@@ -442,6 +451,9 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					// Era Payout
 					68_493 * MYRIA,
 				),
+				// Admin key
+				// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		// Bootnodes
@@ -472,6 +484,7 @@ fn genesis(
 	)>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
 	appchain_config: (String, String, Balance, Balance),
+	admin_key: AccountId,
 ) -> GenesisConfig {
 	GenesisConfig {
 		system: SystemConfig {
@@ -515,5 +528,6 @@ fn genesis(
 				.collect(),
 		},
 		sudo: SudoConfig { key: root_key },
+		server: ServerConfig { admin_key },
 	}
 }
