@@ -101,12 +101,7 @@ pub mod pallet {
 		pub ft_identifier: Vec<u8>,
 	}
 	impl<Hash: Clone> TipsBalanceInfo<Hash> {
-		pub fn new(
-			server_id: &Hash,
-			reference_type: &[u8],
-			reference_id: &[u8],
-			ft_identifier: &[u8],
-		) -> Self {
+		pub fn new(server_id: &Hash, reference_type: &[u8], reference_id: &[u8], ft_identifier: &[u8]) -> Self {
 			Self {
 				server_id: server_id.clone(),
 				reference_type: reference_type.to_vec(),
@@ -225,10 +220,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::claim_tip())]
-		pub fn claim_tip(
-			origin: OriginFor<T>,
-			tips_balance_info: TipsBalanceInfoOf<T>,
-		) -> DispatchResultWithPostInfo {
+		pub fn claim_tip(origin: OriginFor<T>, tips_balance_info: TipsBalanceInfoOf<T>) -> DispatchResultWithPostInfo {
 			let sender = Self::tipping_account_id();
 			let receiver = ensure_signed(origin)?;
 
@@ -316,8 +308,7 @@ pub mod pallet {
 							result.set_amount(total_amount);
 							Self::update_tips_balance(&result)
 						},
-						None =>
-							Self::create_tips_balance(tips_balance_info, &None, &Some(tip_amount)),
+						None => Self::create_tips_balance(tips_balance_info, &None, &Some(tip_amount)),
 					};
 					let receiver = Self::tipping_account_id();
 
@@ -367,12 +358,8 @@ pub mod pallet {
 
 			tips_balance.set_amount(Zero::zero());
 
-			match CurrencyOf::<T>::withdraw(
-				&sender,
-				amount,
-				WithdrawReasons::TRANSFER,
-				ExistenceRequirement::KeepAlive,
-			) {
+			match CurrencyOf::<T>::withdraw(&sender, amount, WithdrawReasons::TRANSFER, ExistenceRequirement::KeepAlive)
+			{
 				Ok(imb) => {
 					CurrencyOf::<T>::resolve_creating(receiver, imb);
 
@@ -461,11 +448,7 @@ pub mod pallet {
 
 						Self::update_tips_balance(&result)
 					},
-					None => Self::create_tips_balance(
-						&tips_balance_info,
-						account_id,
-						&Some(initial_balance),
-					),
+					None => Self::create_tips_balance(&tips_balance_info, account_id, &Some(initial_balance)),
 				};
 			}
 
@@ -485,12 +468,7 @@ pub mod pallet {
 			let server_id = tips_balance_info.get_server_id();
 			let ft_identifier = tips_balance_info.get_ft_identifier();
 
-			Self::tips_balance_by_reference((
-				server_id,
-				reference_type,
-				reference_id,
-				ft_identifier,
-			))
+			Self::tips_balance_by_reference((server_id, reference_type, reference_id, ft_identifier))
 		}
 
 		fn create_tips_balance(

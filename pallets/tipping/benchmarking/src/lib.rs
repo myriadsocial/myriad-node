@@ -9,9 +9,7 @@ use frame_support::{sp_runtime::SaturatedConversion, traits::Currency};
 use frame_system::RawOrigin;
 use pallet_server::{AdminKey, Config as ServerConfig, Pallet as Server};
 #[allow(unused)]
-use pallet_tipping::{
-	Call, Config as TippingConfig, Pallet as Tipping, TipsBalance, TipsBalanceInfo,
-};
+use pallet_tipping::{Call, Config as TippingConfig, Pallet as Tipping, TipsBalance, TipsBalanceInfo};
 
 pub struct Pallet<T: Config>(Tipping<T>);
 
