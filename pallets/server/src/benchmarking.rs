@@ -47,6 +47,10 @@ benchmarks! {
 		let caller: T::AccountId = AdminKey::<T>::get();
 		let account_id: T::AccountId = whitelisted_caller();
 	}: _(RawOrigin::Signed(caller), account_id)
+
+	force_transfer_admin_key {
+		let new_admin: T::AccountId = account("new_admin", 0, SEED);
+	}: _(RawOrigin::Root, new_admin)
 }
 
 impl_benchmark_test_suite! {Server, crate::mock::ExternalityBuilder::build(), crate::mock::Test}

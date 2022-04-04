@@ -34,6 +34,7 @@ pub trait WeightInfo {
 	fn transfer_owner() -> Weight;
 	fn unregister() -> Weight;
 	fn transfer_admin_key() -> Weight;
+	fn force_transfer_admin_key() -> Weight;
 }
 
 /// Weights for pallet_server using the Substrate node and recommended hardware.
@@ -75,6 +76,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	// Storage: Server AdminKey (r:0 w:1)
+	fn force_transfer_admin_key() -> Weight {
+		38_200_000_u64
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -113,6 +119,11 @@ impl WeightInfo for () {
 	fn transfer_admin_key() -> Weight {
 		21_927_000_u64
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	// Storage: Server AdminKey (r:0 w:1)
+	fn force_transfer_admin_key() -> Weight {
+		38_200_000_u64
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
