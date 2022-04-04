@@ -128,6 +128,8 @@ pub mod pallet {
 		Unregistered(ServerIdOf<T>),
 		/// Transfer admin key [current_admin_key, new_admin_key]
 		AdminKeyTransferred(T::AccountId, T::AccountId),
+		/// Set admin key [new_admin_key]
+		SetAdminKey(T::AccountId),
 	}
 
 	#[pallet::error]
@@ -229,6 +231,20 @@ pub mod pallet {
 			AdminKey::<T>::put(account_id.clone());
 
 			Self::deposit_event(Event::AdminKeyTransferred(admin, account_id));
+
+			Ok(().into())
+		}
+
+		#[pallet::weight(T::WeightInfo::force_transfer_admin_key())]
+		pub fn force_transfer_admin_key(
+			origin: OriginFor<T>,
+			account_id: AccountIdOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let _ = ensure_root(origin)?;
+
+			AdminKey::<T>::put(account_id.clone());
+
+			Self::deposit_event(Event::SetAdminKey(account_id));
 
 			Ok(().into())
 		}
