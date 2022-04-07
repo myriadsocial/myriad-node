@@ -18,9 +18,7 @@ pub use weights::WeightInfo;
 pub mod pallet {
 	use super::*;
 
-	use frame_support::{
-		dispatch::DispatchResultWithPostInfo, pallet_prelude::*, sp_runtime::traits::Hash,
-	};
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, sp_runtime::traits::Hash};
 	use frame_system::pallet_prelude::*;
 
 	use sp_std::vec::Vec;
@@ -144,11 +142,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(T::WeightInfo::register(name.len() as u32))]
-		pub fn register(
-			origin: OriginFor<T>,
-			account_id: AccountIdOf<T>,
-			name: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
+		pub fn register(origin: OriginFor<T>, account_id: AccountIdOf<T>, name: Vec<u8>) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
 			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
@@ -170,8 +164,7 @@ pub mod pallet {
 
 			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
 
-			match <Self as ServerInterface<T>>::transfer_owner(&server_id, &account_id, &new_owner)
-			{
+			match <Self as ServerInterface<T>>::transfer_owner(&server_id, &account_id, &new_owner) {
 				Ok(_) => {
 					Self::deposit_event(Event::OwnerTransferred(new_owner, server_id));
 					Ok(().into())
@@ -220,10 +213,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::transfer_admin_key())]
-		pub fn transfer_admin_key(
-			origin: OriginFor<T>,
-			account_id: AccountIdOf<T>,
-		) -> DispatchResultWithPostInfo {
+		pub fn transfer_admin_key(origin: OriginFor<T>, account_id: AccountIdOf<T>) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
 			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);

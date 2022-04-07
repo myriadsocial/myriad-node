@@ -1,3 +1,10 @@
+use sc_cli::{
+	BuildSpecCmd, CheckBlockCmd, ExportBlocksCmd, ExportStateCmd, ImportBlocksCmd, KeySubcommand, PurgeChainCmd,
+	RevertCmd, RunCmd,
+};
+
+use frame_benchmarking_cli::BenchmarkCmd;
+
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -6,35 +13,36 @@ pub struct Cli {
 	pub subcommand: Option<Subcommand>,
 
 	#[structopt(flatten)]
-	pub run: sc_cli::RunCmd,
+	pub run: RunCmd,
 }
 
 #[derive(Debug, StructOpt)]
 pub enum Subcommand {
 	/// Key management cli utilities
-	Key(sc_cli::KeySubcommand),
+	Key(KeySubcommand),
+
 	/// Build a chain specification.
-	BuildSpec(sc_cli::BuildSpecCmd),
+	BuildSpec(BuildSpecCmd),
 
 	/// Validate blocks.
-	CheckBlock(sc_cli::CheckBlockCmd),
+	CheckBlock(CheckBlockCmd),
 
 	/// Export blocks.
-	ExportBlocks(sc_cli::ExportBlocksCmd),
+	ExportBlocks(ExportBlocksCmd),
 
 	/// Export the state of a given block into a chain spec.
-	ExportState(sc_cli::ExportStateCmd),
+	ExportState(ExportStateCmd),
 
 	/// Import blocks.
-	ImportBlocks(sc_cli::ImportBlocksCmd),
+	ImportBlocks(ImportBlocksCmd),
 
 	/// Remove the whole chain.
-	PurgeChain(sc_cli::PurgeChainCmd),
+	PurgeChain(PurgeChainCmd),
 
 	/// Revert the chain to a previous state.
-	Revert(sc_cli::RevertCmd),
+	Revert(RevertCmd),
 
 	/// The custom benchmark subcommand benchmarking runtime pallets.
 	#[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
-	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
+	Benchmark(BenchmarkCmd),
 }

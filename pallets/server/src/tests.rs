@@ -11,17 +11,12 @@ fn register_works() {
 
 		assert_ok!(Server::register(Origin::signed(2), 1, "myriad".as_bytes().to_vec()));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
 
 		assert_eq!(
 			Server::server_by_id(server_id),
-			Some(pallet_server::Server {
-				id: server_id,
-				owner: 1,
-				name: "myriad".as_bytes().to_vec(),
-			})
+			Some(pallet_server::Server { id: server_id, owner: 1, name: "myriad".as_bytes().to_vec() })
 		);
 	})
 }
@@ -33,19 +28,14 @@ pub fn transfer_owner_works() {
 
 		assert_ok!(Server::register(Origin::signed(2), 1, "myriad".as_bytes().to_vec()));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
 
 		assert_ok!(Server::transfer_owner(Origin::signed(2), 1, server_id, 3));
 
 		assert_eq!(
 			Server::server_by_id(server_id),
-			Some(pallet_server::Server {
-				id: server_id,
-				owner: 3,
-				name: "myriad".as_bytes().to_vec(),
-			})
+			Some(pallet_server::Server { id: server_id, owner: 3, name: "myriad".as_bytes().to_vec() })
 		);
 	})
 }
@@ -57,24 +47,14 @@ pub fn change_name_works() {
 
 		assert_ok!(Server::register(Origin::signed(2), 1, "myriad".as_bytes().to_vec()));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
 
-		assert_ok!(Server::update_name(
-			Origin::signed(2),
-			1,
-			server_id,
-			"local".as_bytes().to_vec()
-		));
+		assert_ok!(Server::update_name(Origin::signed(2), 1, server_id, "local".as_bytes().to_vec()));
 
 		assert_eq!(
 			Server::server_by_id(server_id),
-			Some(pallet_server::Server {
-				id: server_id,
-				owner: 1,
-				name: "local".as_bytes().to_vec(),
-			})
+			Some(pallet_server::Server { id: server_id, owner: 1, name: "local".as_bytes().to_vec() })
 		);
 	})
 }
@@ -86,8 +66,7 @@ pub fn deregister_works() {
 
 		assert_ok!(Server::register(Origin::signed(2), 1, "myriad".as_bytes().to_vec()));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
 
 		assert_ok!(Server::unregister(Origin::signed(2), 1, server_id));
@@ -113,12 +92,7 @@ pub fn cant_transfer_owner_when_server_id_not_exist() {
 		AdminKey::<Test>::put(2);
 
 		assert_noop!(
-			Server::transfer_owner(
-				Origin::signed(2),
-				1,
-				BlakeTwo256::hash("server_id".as_bytes()),
-				2
-			),
+			Server::transfer_owner(Origin::signed(2), 1, BlakeTwo256::hash("server_id".as_bytes()), 2),
 			Error::<Test>::NotExists,
 		);
 	})
@@ -131,14 +105,10 @@ pub fn cant_transfer_owner_when_not_owner() {
 
 		assert_ok!(Server::register(Origin::signed(2), 1, "myriad".as_bytes().to_vec()));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
 
-		assert_noop!(
-			Server::transfer_owner(Origin::signed(2), 3, server_id, 1),
-			Error::<Test>::Unauthorized,
-		);
+		assert_noop!(Server::transfer_owner(Origin::signed(2), 3, server_id, 1), Error::<Test>::Unauthorized,);
 	})
 }
 
@@ -166,8 +136,7 @@ pub fn cant_change_name_when_not_owner() {
 
 		assert_ok!(Server::register(Origin::signed(2), 1, "myriad".as_bytes().to_vec()));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
 
 		assert_noop!(
@@ -196,14 +165,10 @@ pub fn cant_deregister_when_not_owner() {
 
 		assert_ok!(Server::register(Origin::signed(2), 1, "myriad".as_bytes().to_vec()));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
 
-		assert_noop!(
-			Server::unregister(Origin::signed(2), 3, server_id),
-			Error::<Test>::Unauthorized
-		);
+		assert_noop!(Server::unregister(Origin::signed(2), 3, server_id), Error::<Test>::Unauthorized);
 	})
 }
 
@@ -216,8 +181,7 @@ fn call_event_should_work() {
 
 		assert_ok!(Server::register(Origin::signed(2), 1, "myriad".as_bytes().to_vec()));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
 
 		System::assert_last_event(Event::Server(crate::Event::Registered(pallet_server::Server {
@@ -230,17 +194,9 @@ fn call_event_should_work() {
 
 		System::assert_last_event(Event::Server(crate::Event::OwnerTransferred(3, server_id)));
 
-		assert_ok!(Server::update_name(
-			Origin::signed(2),
-			3,
-			server_id,
-			"local".as_bytes().to_vec()
-		));
+		assert_ok!(Server::update_name(Origin::signed(2), 3, server_id, "local".as_bytes().to_vec()));
 
-		System::assert_last_event(Event::Server(crate::Event::NameUpdated(
-			"local".as_bytes().to_vec(),
-			server_id,
-		)));
+		System::assert_last_event(Event::Server(crate::Event::NameUpdated("local".as_bytes().to_vec(), server_id)));
 
 		assert_ok!(Server::unregister(Origin::signed(2), 3, server_id));
 
