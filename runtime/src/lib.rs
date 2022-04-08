@@ -161,7 +161,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 105,
+	spec_version: 106,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -876,9 +876,10 @@ impl_runtime_apis! {
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
-			use frame_benchmarking::{list_benchmark, BenchmarkList};
+			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
 			use frame_benchmarking::baseline::Pallet as BaselineBench;
 			use frame_support::traits::StorageInfoTrait;
+
 			use pallet_tipping_benchmarking::Pallet as TippingBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
@@ -897,12 +898,12 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{add_benchmark, BenchmarkBatch, TrackedStorageKey};
+			use frame_benchmarking::{add_benchmark, Benchmarking, BenchmarkBatch, TrackedStorageKey};
 			use frame_benchmarking::baseline::Pallet as BaselineBench;
 
-			impl baseline::Config for Runtime {}
-
 			use pallet_tipping_benchmarking::Pallet as TippingBench;
+
+			impl frame_benchmarking::baseline::Config for Runtime {}
 
 			impl pallet_tipping_benchmarking::Config for Runtime {}
 
