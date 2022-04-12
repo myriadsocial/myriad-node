@@ -27,8 +27,8 @@ benchmarks! {
 		let server_account: T::AccountId = account("server_account", 0, SEED);
 		let server_name = "myriad".as_bytes().to_vec();
 		let admin_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(admin));
-		let server_id = Server::<T>::generate_server_id(&server_account, &server_name);
-		let _server = Server::<T>::register(admin_origin, server_account, server_name);
+		let server_id = "server".as_bytes().to_vec();
+		let _server = Server::<T>::register(admin_origin, server_account, server_id.clone(), server_name);
 
 		let reference_id = "people_id".as_bytes().to_vec();
 		let reference_type = "people".as_bytes().to_vec();
@@ -42,8 +42,8 @@ benchmarks! {
 		let admin: T::AccountId = AdminKey::<T>::get();
 		let admin_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(admin));
 		let server_name = "myriad".as_bytes().to_vec();
-		let server_id = Server::<T>::generate_server_id(&caller, &server_name);
-		let _server = Server::<T>::register(admin_origin, caller.clone(), server_name);
+		let server_id = "server".as_bytes().to_vec();
+		let _server = Server::<T>::register(admin_origin, caller.clone(), server_id.clone(), server_name);
 
 		let reference_id = "people_id".as_bytes().to_vec();
 		let reference_type = "people".as_bytes().to_vec();
@@ -64,9 +64,9 @@ benchmarks! {
 		let server_account: T::AccountId = account("server_account", 0, SEED);
 		let admin_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(admin));
 		let server_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(server_account.clone()));
-		let server_id = Server::<T>::generate_server_id(&server_account, "myriad".as_bytes());
+		let server_id = "server".as_bytes().to_vec();
 
-		let _ = Server::<T>::register(admin_origin, server_account, "myriad".as_bytes().to_vec());
+		let _ = Server::<T>::register(admin_origin, server_account, server_id.clone(), "myriad".as_bytes().to_vec());
 
 		// Send Tipping
 		let account_1: T::AccountId = account("account", 0, SEED);
