@@ -9,16 +9,17 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use beefy_primitives::{crypto::AuthorityId as BeefyId, mmr::MmrLeafVersion};
 use sp_api::impl_runtime_apis;
 use sp_consensus_babe::{
-	AllowedSlots::PrimaryAndSecondaryVRFSlots, BabeEpochConfiguration, BabeGenesisConfiguration, Epoch,
-	EquivocationProof, OpaqueKeyOwnershipProof, Slot,
+	AllowedSlots::PrimaryAndSecondaryVRFSlots, BabeEpochConfiguration, BabeGenesisConfiguration,
+	Epoch, EquivocationProof, OpaqueKeyOwnershipProof, Slot,
 };
 use sp_core::{crypto::KeyTypeId, sr25519, Encode, OpaqueMetadata, H256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, Hash as HashT, IdentifyAccount,
-		Keccak256, NumberFor, OpaqueKeys, SaturatedConversion, StaticLookup, Verify,
+		AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, Hash as HashT,
+		IdentifyAccount, Keccak256, NumberFor, OpaqueKeys, SaturatedConversion, StaticLookup,
+		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, FixedPointNumber, MultiAddress, MultiSignature, Perbill, Perquintill,
@@ -40,11 +41,13 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	offchain, ChainContext, CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion, CheckWeight,
-	EnsureRoot,
+	offchain, ChainContext, CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion,
+	CheckWeight, EnsureRoot,
 };
 
-use pallet_babe::{AuthorityId as BabeId, EquivocationHandler as BabeEquivocationHandler, ExternalTrigger};
+use pallet_babe::{
+	AuthorityId as BabeId, EquivocationHandler as BabeEquivocationHandler, ExternalTrigger,
+};
 use pallet_balances::AccountData;
 use pallet_beefy_mmr::{BeefyEcdsaToEthereum, DepositBeefyDigest};
 use pallet_grandpa::{
@@ -57,7 +60,9 @@ use pallet_octopus_appchain::AuthorityId as OctopusId;
 use pallet_octopus_lpos::{EraIndex, ExposureOf};
 use pallet_session::{historical as pallet_session_historical, FindAccountFromAuthorIndex};
 use pallet_session_historical::NoteHistoricalRoot;
-use pallet_transaction_payment::{ChargeTransactionPayment, CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
+use pallet_transaction_payment::{
+	ChargeTransactionPayment, CurrencyAdapter, Multiplier, TargetedFeeAdjustment,
+};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -95,7 +100,8 @@ pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signatu
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = frame_executive::Executive<Runtime, Block, ChainContext<Runtime>, Runtime, AllPallets>;
+pub type Executive =
+	frame_executive::Executive<Runtime, Block, ChainContext<Runtime>, Runtime, AllPallets>;
 pub type ClassId = u32;
 pub type InstanceId = u32;
 pub type OctopusAssetId = u32;
@@ -334,7 +340,8 @@ where
 	) -> Option<(Call, <UncheckedExtrinsic as Extrinsic>::SignaturePayload)> {
 		let tip = 0;
 		// take the biggest period possible.
-		let period = BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+		let period =
+			BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
 		let current_block = System::block_number().saturated_into::<u64>().saturating_sub(1);
 		let era = generic::Era::mortal(period, current_block);
 		let extra = (
@@ -372,10 +379,14 @@ impl pallet_babe::Config for Runtime {
 	type EpochChangeTrigger = ExternalTrigger;
 	type EpochDuration = EpochDuration;
 	type ExpectedBlockTime = ExpectedBlockTime;
-	type HandleEquivocation = BabeEquivocationHandler<Self::KeyOwnerIdentification, (), ReportLongevity>;
-	type KeyOwnerIdentification =
-		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, BabeId)>>::IdentificationTuple;
-	type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, BabeId)>>::Proof;
+	type HandleEquivocation =
+		BabeEquivocationHandler<Self::KeyOwnerIdentification, (), ReportLongevity>;
+	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+		KeyTypeId,
+		BabeId,
+	)>>::IdentificationTuple;
+	type KeyOwnerProof =
+		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, BabeId)>>::Proof;
 	type KeyOwnerProofSystem = Historical;
 	type MaxAuthorities = MaxAuthorities;
 	type WeightInfo = ();
@@ -421,7 +432,8 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type FeeMultiplierUpdate = TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
+	type FeeMultiplierUpdate =
+		TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type TransactionByteFee = TransactionByteFee;
@@ -567,10 +579,14 @@ impl pallet_session::Config for Runtime {
 impl pallet_grandpa::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
-	type HandleEquivocation = GrandpaEquivocationHandler<Self::KeyOwnerIdentification, (), ReportLongevity>;
-	type KeyOwnerIdentification =
-		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::IdentificationTuple;
-	type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
+	type HandleEquivocation =
+		GrandpaEquivocationHandler<Self::KeyOwnerIdentification, (), ReportLongevity>;
+	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+		KeyTypeId,
+		GrandpaId,
+	)>>::IdentificationTuple;
+	type KeyOwnerProof =
+		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 	type KeyOwnerProofSystem = Historical;
 	type MaxAuthorities = MaxAuthorities;
 	type WeightInfo = ();

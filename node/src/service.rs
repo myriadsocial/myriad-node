@@ -12,19 +12,22 @@ use sp_transaction_storage_proof::registration;
 use sc_basic_authorship::ProposerFactory;
 use sc_client_api::ExecutorProvider;
 use sc_consensus::{DefaultImportQueue, LongestChain};
-use sc_consensus_babe::{self, BabeBlockImport, BabeLink, BabeParams, Config as BabeConfig, SlotProportion};
+use sc_consensus_babe::{
+	self, BabeBlockImport, BabeLink, BabeParams, Config as BabeConfig, SlotProportion,
+};
 use sc_consensus_slots::BackoffAuthoringOnFinalizedHeadLagging;
 use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch, NativeVersion};
 use sc_finality_grandpa::{
-	warp_proof::NetworkProvider, Config as GrandpaConfig, FinalityProofProvider, GrandpaBlockImport, GrandpaParams,
-	LinkHalf as GrandpaLinkHalf, SharedVoterState, VotingRulesBuilder,
+	warp_proof::NetworkProvider, Config as GrandpaConfig, FinalityProofProvider,
+	GrandpaBlockImport, GrandpaParams, LinkHalf as GrandpaLinkHalf, SharedVoterState,
+	VotingRulesBuilder,
 };
 use sc_network::NetworkService;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_rpc_api::DenyUnsafe;
 use sc_service::{
-	config::Configuration, error::Error as ServiceError, BuildNetworkParams, PartialComponents, RpcHandlers,
-	SpawnTasksParams, TFullBackend, TFullClient, TaskManager,
+	config::Configuration, error::Error as ServiceError, BuildNetworkParams, PartialComponents,
+	RpcHandlers, SpawnTasksParams, TFullBackend, TFullClient, TaskManager,
 };
 use sc_telemetry::{Error as TelemetryError, Telemetry, TelemetryWorker};
 use sc_transaction_pool::{BasicPool, FullPool};
@@ -119,11 +122,12 @@ pub fn new_partial(
 		config.max_runtime_instances,
 	);
 
-	let (client, backend, keystore_container, task_manager) = sc_service::new_full_parts::<Block, RuntimeApi, _>(
-		config,
-		telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
-		executor,
-	)?;
+	let (client, backend, keystore_container, task_manager) =
+		sc_service::new_full_parts::<Block, RuntimeApi, _>(
+			config,
+			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
+			executor,
+		)?;
 
 	let client = Arc::new(client);
 
@@ -151,8 +155,11 @@ pub fn new_partial(
 
 	let justification_import = grandpa_block_import.clone();
 
-	let (block_import, babe_link) =
-		sc_consensus_babe::block_import(BabeConfig::get_or_compute(&*client)?, grandpa_block_import, client.clone())?;
+	let (block_import, babe_link) = sc_consensus_babe::block_import(
+		BabeConfig::get_or_compute(&*client)?,
+		grandpa_block_import,
+		client.clone(),
+	)?;
 
 	let slot_duration = babe_link.config().slot_duration();
 
@@ -165,9 +172,11 @@ pub fn new_partial(
 		move |_, ()| async move {
 			let timestamp = InherentDataProvider::from_system_time();
 
-			let slot = BabeInherentDataProvider::from_timestamp_and_duration(*timestamp, slot_duration);
+			let slot =
+				BabeInherentDataProvider::from_timestamp_and_duration(*timestamp, slot_duration);
 
-			let uncles = AuthorshipInherentDataProvider::<<Block as BlockT>::Header>::check_inherents();
+			let uncles =
+				AuthorshipInherentDataProvider::<<Block as BlockT>::Header>::check_inherents();
 
 			Ok((timestamp, slot, uncles))
 		},
@@ -197,36 +206,39 @@ pub fn new_partial(
 		let shared_voter_state = shared_voter_state_new.clone();
 		let justification_stream = grandpa_link.justification_stream();
 		let shared_authority_set = grandpa_link.shared_authority_set().clone();
-		let finality_proof_provider =
-			FinalityProofProvider::new_for_service(backend.clone(), Some(shared_authority_set.clone()));
+		let finality_proof_provider = FinalityProofProvider::new_for_service(
+			backend.clone(),
+			Some(shared_authority_set.clone()),
+		);
 
-		let rpc_extensions_builder = move |deny_unsafe, subscription_executor: SubscriptionTaskExecutor| {
-			let deps = FullDeps {
-				client: client.clone(),
-				pool: pool.clone(),
-				select_chain: select_chain.clone(),
-				chain_spec: chain_spec.cloned_box(),
-				deny_unsafe,
-				babe: BabeDeps {
-					babe_config: babe_config.clone(),
-					shared_epoch_changes: shared_epoch_changes.clone(),
-					keystore: keystore.clone(),
-				},
-				grandpa: GrandpaDeps {
-					shared_voter_state: shared_voter_state_new.clone(),
-					shared_authority_set: shared_authority_set.clone(),
-					justification_stream: justification_stream.clone(),
-					subscription_executor: subscription_executor.clone(),
-					finality_provider: finality_proof_provider.clone(),
-				},
-				beefy: BeefyDeps {
-					beefy_commitment_stream: beefy_commitment_stream.clone(),
-					beefy_subscription_executor: subscription_executor,
-				},
+		let rpc_extensions_builder =
+			move |deny_unsafe, subscription_executor: SubscriptionTaskExecutor| {
+				let deps = FullDeps {
+					client: client.clone(),
+					pool: pool.clone(),
+					select_chain: select_chain.clone(),
+					chain_spec: chain_spec.cloned_box(),
+					deny_unsafe,
+					babe: BabeDeps {
+						babe_config: babe_config.clone(),
+						shared_epoch_changes: shared_epoch_changes.clone(),
+						keystore: keystore.clone(),
+					},
+					grandpa: GrandpaDeps {
+						shared_voter_state: shared_voter_state_new.clone(),
+						shared_authority_set: shared_authority_set.clone(),
+						justification_stream: justification_stream.clone(),
+						subscription_executor: subscription_executor.clone(),
+						finality_provider: finality_proof_provider.clone(),
+					},
+					beefy: BeefyDeps {
+						beefy_commitment_stream: beefy_commitment_stream.clone(),
+						beefy_subscription_executor: subscription_executor,
+					},
+				};
+
+				crate::rpc::create_full(deps).map_err(Into::into)
 			};
-
-			crate::rpc::create_full(deps).map_err(Into::into)
-		};
 
 		(rpc_extensions_builder, shared_voter_state)
 	};
@@ -246,7 +258,10 @@ pub fn new_partial(
 /// Creates a full service from the configuration.
 pub fn new_full_base(
 	mut config: Configuration,
-	with_startup_data: impl FnOnce(&BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>, &BabeLink<Block>),
+	with_startup_data: impl FnOnce(
+		&BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+		&BabeLink<Block>,
+	),
 ) -> Result<NewFullBase, ServiceError> {
 	let PartialComponents {
 		client,
@@ -264,21 +279,30 @@ pub fn new_full_base(
 	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
 	config.network.extra_sets.push(beefy_gadget::beefy_peers_set_config());
 
-	let warp_sync =
-		Arc::new(NetworkProvider::new(backend.clone(), grandpa_link.shared_authority_set().clone(), Vec::default()));
+	let warp_sync = Arc::new(NetworkProvider::new(
+		backend.clone(),
+		grandpa_link.shared_authority_set().clone(),
+		Vec::default(),
+	));
 
-	let (network, system_rpc_tx, network_starter) = sc_service::build_network(BuildNetworkParams {
-		config: &config,
-		client: client.clone(),
-		transaction_pool: transaction_pool.clone(),
-		spawn_handle: task_manager.spawn_handle(),
-		import_queue,
-		block_announce_validator_builder: None,
-		warp_sync: Some(warp_sync),
-	})?;
+	let (network, system_rpc_tx, network_starter) =
+		sc_service::build_network(BuildNetworkParams {
+			config: &config,
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			spawn_handle: task_manager.spawn_handle(),
+			import_queue,
+			block_announce_validator_builder: None,
+			warp_sync: Some(warp_sync),
+		})?;
 
 	if config.offchain_worker.enabled {
-		sc_service::build_offchain_workers(&config, task_manager.spawn_handle(), client.clone(), network.clone());
+		sc_service::build_offchain_workers(
+			&config,
+			task_manager.spawn_handle(),
+			client.clone(),
+			network.clone(),
+		);
 	}
 
 	let name = config.network.node_name.clone();
@@ -328,11 +352,17 @@ pub fn new_full_base(
 			create_inherent_data_providers: move |parent, ()| {
 				let client_clone = client_clone.clone();
 				async move {
-					let uncles = sc_consensus_uncles::create_uncles_inherent_data_provider(&*client_clone, parent)?;
+					let uncles = sc_consensus_uncles::create_uncles_inherent_data_provider(
+						&*client_clone,
+						parent,
+					)?;
 
 					let timestamp = InherentDataProvider::from_system_time();
 
-					let slot = BabeInherentDataProvider::from_timestamp_and_duration(*timestamp, slot_duration);
+					let slot = BabeInherentDataProvider::from_timestamp_and_duration(
+						*timestamp,
+						slot_duration,
+					);
 
 					let storage_proof = registration::new_data_provider(&*client_clone, &parent)?;
 
@@ -350,12 +380,15 @@ pub fn new_full_base(
 
 		let babe = sc_consensus_babe::start_babe(babe_params)?;
 
-		task_manager.spawn_essential_handle().spawn_blocking("babe-proposer", None, babe);
+		task_manager
+			.spawn_essential_handle()
+			.spawn_blocking("babe-proposer", None, babe);
 	}
 
 	// if the node isn't actively participating in consensus then it doesn't
 	// need a keystore, regardless of which protocol we use below.
-	let keystore = if role.is_authority() { Some(keystore_container.sync_keystore()) } else { None };
+	let keystore =
+		if role.is_authority() { Some(keystore_container.sync_keystore()) } else { None };
 
 	if enable_grandpa {
 		let grandpa_config = GrandpaConfig {
@@ -389,7 +422,9 @@ pub fn new_full_base(
 		// if it fails we take down the service with it.
 		let grandpa = sc_finality_grandpa::run_grandpa_voter(grandpa_params)?;
 
-		task_manager.spawn_essential_handle().spawn_blocking("grandpa-voter", None, grandpa);
+		task_manager
+			.spawn_essential_handle()
+			.spawn_blocking("grandpa-voter", None, grandpa);
 	}
 
 	let beefy_params = BeefyParams {

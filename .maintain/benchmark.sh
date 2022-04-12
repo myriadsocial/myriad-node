@@ -14,6 +14,7 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 cd $PROJECT_ROOT
 
 PALLET=$1
+FOLDER=${PALLET#*_}
 
 cargo +nightly run --release --locked --features=runtime-benchmarks -- benchmark \
   --chain=dev \
@@ -26,6 +27,6 @@ cargo +nightly run --release --locked --features=runtime-benchmarks -- benchmark
   --heap-pages=4096 \
   --raw \
   --template="./.maintain/pallet-weight-template.hbs" \
-  --output="./pallets/${PALLET#*-}/src/weights.rs"
+  --output="./pallets/$FOLDER/src/weights.rs"
 
 popd

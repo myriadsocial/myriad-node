@@ -12,7 +12,9 @@ use sc_client_api::{backend::StateBackend, AuxStore, Backend};
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::{BabeApi, BabeRpcHandler};
 use sc_consensus_epochs::SharedEpochChanges;
-use sc_finality_grandpa::{FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState};
+use sc_finality_grandpa::{
+	FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
+};
 use sc_finality_grandpa_rpc::{GrandpaApi, GrandpaRpcHandler};
 use sc_rpc::{Metadata, SubscriptionTaskExecutor};
 use sc_rpc_api::DenyUnsafe;
@@ -24,7 +26,9 @@ use substrate_frame_rpc_system::{AccountNonceApi, FullSystem, SystemApi};
 use beefy_gadget::notification::BeefySignedCommitmentStream;
 use beefy_gadget_rpc::{BeefyApi, BeefyRpcHandler};
 use pallet_mmr_rpc::{Mmr, MmrApi, MmrRuntimeApi};
-use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi, TransactionPaymentRuntimeApi};
+use pallet_transaction_payment_rpc::{
+	TransactionPayment, TransactionPaymentApi, TransactionPaymentRuntimeApi,
+};
 
 use myriad_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
 
@@ -107,7 +111,8 @@ where
 	B: Backend<Block> + Send + Sync + 'static,
 	B::State: StateBackend<HashFor<Block>>,
 {
-	let FullDeps { client, pool, select_chain, chain_spec, deny_unsafe, babe, grandpa, beefy } = deps;
+	let FullDeps { client, pool, select_chain, chain_spec, deny_unsafe, babe, grandpa, beefy } =
+		deps;
 
 	let BabeDeps { keystore, babe_config, shared_epoch_changes } = babe;
 
@@ -140,7 +145,10 @@ where
 		subscription_executor,
 		finality_provider,
 	)));
-	io.extend_with(BeefyApi::to_delegate(BeefyRpcHandler::new(beefy_commitment_stream, beefy_subscription_executor)));
+	io.extend_with(BeefyApi::to_delegate(BeefyRpcHandler::new(
+		beefy_commitment_stream,
+		beefy_subscription_executor,
+	)));
 	io.extend_with(MmrApi::to_delegate(Mmr::new(client.clone())));
 	io.extend_with(SyncStateRpcApi::to_delegate(SyncStateRpcHandler::new(
 		chain_spec,

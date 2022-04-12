@@ -1,6 +1,6 @@
 use sc_cli::{
-	BuildSpecCmd, CheckBlockCmd, ExportBlocksCmd, ExportStateCmd, ImportBlocksCmd, KeySubcommand, PurgeChainCmd,
-	RevertCmd, RunCmd,
+	BuildSpecCmd, CheckBlockCmd, ExportBlocksCmd, ExportStateCmd, ImportBlocksCmd, KeySubcommand,
+	PurgeChainCmd, RevertCmd, RunCmd,
 };
 
 use frame_benchmarking_cli::BenchmarkCmd;
