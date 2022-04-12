@@ -6,7 +6,9 @@ use crate::{
 
 use std::path::PathBuf;
 
-use sc_cli::{ChainSpec, Error::Service as CliErrorService, Result as CliResult, RuntimeVersion, SubstrateCli};
+use sc_cli::{
+	ChainSpec, Error::Service as CliErrorService, Result as CliResult, RuntimeVersion, SubstrateCli,
+};
 use sc_service::PartialComponents;
 
 use myriad_runtime::{Block, VERSION};
@@ -68,7 +70,8 @@ pub fn run() -> CliResult<()> {
 		Some(Subcommand::CheckBlock(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents { client, task_manager, import_queue, .. } = service::new_partial(&config)?;
+				let PartialComponents { client, task_manager, import_queue, .. } =
+					service::new_partial(&config)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -89,7 +92,8 @@ pub fn run() -> CliResult<()> {
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents { client, task_manager, import_queue, .. } = service::new_partial(&config)?;
+				let PartialComponents { client, task_manager, import_queue, .. } =
+					service::new_partial(&config)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -100,7 +104,8 @@ pub fn run() -> CliResult<()> {
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents { client, task_manager, backend, .. } = service::new_partial(&config)?;
+				let PartialComponents { client, task_manager, backend, .. } =
+					service::new_partial(&config)?;
 				Ok((cmd.run(client, backend), task_manager))
 			})
 		},
@@ -115,7 +120,9 @@ pub fn run() -> CliResult<()> {
 			},
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
-			runner.run_node_until_exit(|config| async move { service::new_full(config).map_err(CliErrorService) })
+			runner.run_node_until_exit(|config| async move {
+				service::new_full(config).map_err(CliErrorService)
+			})
 		},
 	}
 }

@@ -12,10 +12,15 @@ fn send_tip_myria_works() {
 
 		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
 
-		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed =
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
-		let tips_balance_info =
-			TipsBalanceInfo::new(&server_id, "people".as_bytes(), "people_id".as_bytes(), "native".as_bytes());
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			"people".as_bytes(),
+			"people_id".as_bytes(),
+			"native".as_bytes(),
+		);
 		let tips_balance = TipsBalance::new(&tips_balance_info, &None, &1);
 
 		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info, 1));
@@ -41,10 +46,15 @@ fn claim_reference_works() {
 
 		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
 
-		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed =
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
-		let mut tips_balance_info =
-			TipsBalanceInfo::new(&server_id, "people".as_bytes(), "people_id".as_bytes(), "native".as_bytes());
+		let mut tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			"people".as_bytes(),
+			"people_id".as_bytes(),
+			"native".as_bytes(),
+		);
 		let mut tips_balance = TipsBalance::new(&tips_balance_info, &None, &1);
 
 		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
@@ -113,10 +123,15 @@ pub fn claim_tip_myria_works() {
 
 		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
 
-		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed =
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
-		let mut tips_balance_info =
-			TipsBalanceInfo::new(&server_id, "people".as_bytes(), "people_id".as_bytes(), "native".as_bytes());
+		let mut tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			"people".as_bytes(),
+			"people_id".as_bytes(),
+			"native".as_bytes(),
+		);
 
 		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
 
@@ -152,12 +167,20 @@ fn cant_send_tip_myria_when_insufficient_balance() {
 
 		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
 
-		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed =
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
-		let tips_balance_info =
-			TipsBalanceInfo::new(&server_id, "people".as_bytes(), "people_id".as_bytes(), "native".as_bytes());
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			"people".as_bytes(),
+			"people_id".as_bytes(),
+			"native".as_bytes(),
+		);
 
-		assert_noop!(Tipping::send_tip(Origin::signed(2), tips_balance_info, 21,), Error::<Test>::InsufficientBalance);
+		assert_noop!(
+			Tipping::send_tip(Origin::signed(2), tips_balance_info, 21,),
+			Error::<Test>::InsufficientBalance
+		);
 	})
 }
 
@@ -171,7 +194,10 @@ fn cant_send_tip_myria_when_server_id_not_register() {
 			"native".as_bytes(),
 		);
 
-		assert_noop!(Tipping::send_tip(Origin::signed(2), tips_balance_info, 1,), Error::<Test>::ServerNotRegister);
+		assert_noop!(
+			Tipping::send_tip(Origin::signed(2), tips_balance_info, 1,),
+			Error::<Test>::ServerNotRegister
+		);
 	})
 }
 
@@ -185,7 +211,10 @@ fn cant_send_tip_myria_when_ft_identifier_exists() {
 			"native".as_bytes(),
 		);
 
-		assert_noop!(Tipping::send_tip(Origin::signed(2), tips_balance_info, 1,), Error::<Test>::ServerNotRegister);
+		assert_noop!(
+			Tipping::send_tip(Origin::signed(2), tips_balance_info, 1,),
+			Error::<Test>::ServerNotRegister
+		);
 	})
 }
 
@@ -219,10 +248,15 @@ fn cant_claim_reference_when_not_as_server_owner() {
 
 		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
 
-		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed =
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
-		let tips_balance_info =
-			TipsBalanceInfo::new(&server_id, "people".as_bytes(), "people_id".as_bytes(), "native".as_bytes());
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			"people".as_bytes(),
+			"people_id".as_bytes(),
+			"native".as_bytes(),
+		);
 
 		assert_noop!(
 			Tipping::claim_reference(
@@ -244,10 +278,15 @@ fn cant_claim_reference_when_receiver_not_exists() {
 
 		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
 
-		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed =
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
-		let mut tips_balance_info =
-			TipsBalanceInfo::new(&server_id, "people".as_bytes(), "people_id".as_bytes(), "native".as_bytes());
+		let mut tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			"people".as_bytes(),
+			"people_id".as_bytes(),
+			"native".as_bytes(),
+		);
 
 		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
 
@@ -287,14 +326,22 @@ fn cant_claim_tip_balance_when_nothing_to_claimed() {
 
 		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
 
-		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed =
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
-		let tips_balance_info =
-			TipsBalanceInfo::new(&server_id, "user".as_bytes(), "user_id".as_bytes(), "native".as_bytes());
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			"user".as_bytes(),
+			"user_id".as_bytes(),
+			"native".as_bytes(),
+		);
 
 		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 0));
 
-		assert_noop!(Tipping::claim_tip(Origin::signed(1), tips_balance_info,), Error::<Test>::NothingToClaimed,);
+		assert_noop!(
+			Tipping::claim_tip(Origin::signed(1), tips_balance_info,),
+			Error::<Test>::NothingToClaimed,
+		);
 	})
 }
 
@@ -305,10 +352,15 @@ fn cant_claim_tip_balance_when_unauthorized() {
 
 		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
 
-		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed =
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
-		let tips_balance_info =
-			TipsBalanceInfo::new(&server_id, "user".as_bytes(), "user_id".as_bytes(), "native".as_bytes());
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			"user".as_bytes(),
+			"user_id".as_bytes(),
+			"native".as_bytes(),
+		);
 
 		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
 
@@ -320,7 +372,10 @@ fn cant_claim_tip_balance_when_unauthorized() {
 			Some(3),
 		));
 
-		assert_noop!(Tipping::claim_tip(Origin::signed(4), tips_balance_info,), Error::<Test>::Unauthorized);
+		assert_noop!(
+			Tipping::claim_tip(Origin::signed(4), tips_balance_info,),
+			Error::<Test>::Unauthorized
+		);
 	})
 }
 
@@ -331,17 +386,26 @@ fn call_event_should_work() {
 
 		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
 
-		let seed = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
+		let seed =
+			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
 		let server_id = BlakeTwo256::hash(&seed);
-		let mut tips_balance_info =
-			TipsBalanceInfo::new(&server_id, "people".as_bytes(), "people_id".as_bytes(), "native".as_bytes());
+		let mut tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			"people".as_bytes(),
+			"people_id".as_bytes(),
+			"native".as_bytes(),
+		);
 		let mut tips_balance = TipsBalance::new(&tips_balance_info, &None, &1);
 
 		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
 
 		let tipping_account_id = Tipping::tipping_account_id();
 
-		System::assert_last_event(Event::Tipping(crate::Event::SendTip(2, tipping_account_id, tips_balance.clone())));
+		System::assert_last_event(Event::Tipping(crate::Event::SendTip(
+			2,
+			tipping_account_id,
+			tips_balance.clone(),
+		)));
 
 		assert_ok!(Tipping::claim_reference(
 			Origin::signed(1),
@@ -376,7 +440,10 @@ fn call_event_should_work() {
 
 		tips_balance_1.set_account_id(&Some(3));
 
-		System::assert_last_event(Event::Tipping(crate::Event::ClaimReference(tips_balance_1, None)));
+		System::assert_last_event(Event::Tipping(crate::Event::ClaimReference(
+			tips_balance_1,
+			None,
+		)));
 
 		assert_ok!(Tipping::claim_tip(Origin::signed(3), tips_balance_info,));
 
