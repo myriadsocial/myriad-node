@@ -1,8 +1,5 @@
 use crate::{mock::*, Error, TipsBalance, TipsBalanceInfo};
-use frame_support::{
-	assert_noop, assert_ok,
-	sp_runtime::traits::{BlakeTwo256, Hash, Zero},
-};
+use frame_support::{assert_noop, assert_ok, sp_runtime::traits::Zero};
 use pallet_server::AdminKey;
 
 #[test]
@@ -10,13 +7,15 @@ fn send_tip_myria_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		AdminKey::<Test>::put(5);
 
-		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
+		assert_ok!(Server::register(
+			Origin::signed(5),
+			1,
+			"myriad".as_bytes().to_vec(),
+			"myriad".as_bytes().to_vec()
+		));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
-		let server_id = BlakeTwo256::hash(&seed);
 		let tips_balance_info = TipsBalanceInfo::new(
-			&server_id,
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
@@ -27,7 +26,7 @@ fn send_tip_myria_works() {
 
 		assert_eq!(
 			Tipping::tips_balance_by_reference((
-				server_id,
+				"myriad".as_bytes().to_vec(),
 				"people".as_bytes().to_vec(),
 				"people_id".as_bytes().to_vec(),
 				"native".as_bytes().to_vec()
@@ -44,13 +43,15 @@ fn claim_reference_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		AdminKey::<Test>::put(5);
 
-		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
+		assert_ok!(Server::register(
+			Origin::signed(5),
+			1,
+			"myriad".as_bytes().to_vec(),
+			"myriad".as_bytes().to_vec()
+		));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
-		let server_id = BlakeTwo256::hash(&seed);
 		let mut tips_balance_info = TipsBalanceInfo::new(
-			&server_id,
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
@@ -71,7 +72,7 @@ fn claim_reference_works() {
 
 		assert_eq!(
 			Tipping::tips_balance_by_reference((
-				server_id,
+				"myriad".as_bytes().to_vec(),
 				"people".as_bytes().to_vec(),
 				"people_id".as_bytes().to_vec(),
 				"native".as_bytes().to_vec()
@@ -86,7 +87,7 @@ fn claim_reference_works() {
 
 		assert_eq!(
 			Tipping::tips_balance_by_reference((
-				server_id,
+				"myriad".as_bytes().to_vec(),
 				"user".as_bytes().to_vec(),
 				"user_id".as_bytes().to_vec(),
 				"native".as_bytes().to_vec()
@@ -106,7 +107,7 @@ fn claim_reference_works() {
 
 		assert_eq!(
 			Tipping::tips_balance_by_reference((
-				server_id,
+				"myriad".as_bytes().to_vec(),
 				"user".as_bytes().to_vec(),
 				"user_id".as_bytes().to_vec(),
 				"native".as_bytes().to_vec()
@@ -121,13 +122,15 @@ pub fn claim_tip_myria_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		AdminKey::<Test>::put(5);
 
-		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
+		assert_ok!(Server::register(
+			Origin::signed(5),
+			1,
+			"myriad".as_bytes().to_vec(),
+			"myriad".as_bytes().to_vec()
+		));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
-		let server_id = BlakeTwo256::hash(&seed);
 		let mut tips_balance_info = TipsBalanceInfo::new(
-			&server_id,
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
@@ -165,13 +168,15 @@ fn cant_send_tip_myria_when_insufficient_balance() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		AdminKey::<Test>::put(5);
 
-		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
+		assert_ok!(Server::register(
+			Origin::signed(5),
+			1,
+			"myriad".as_bytes().to_vec(),
+			"myriad".as_bytes().to_vec()
+		));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
-		let server_id = BlakeTwo256::hash(&seed);
 		let tips_balance_info = TipsBalanceInfo::new(
-			&server_id,
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
@@ -188,7 +193,7 @@ fn cant_send_tip_myria_when_insufficient_balance() {
 fn cant_send_tip_myria_when_server_id_not_register() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		let tips_balance_info = TipsBalanceInfo::new(
-			&BlakeTwo256::hash("server_id".as_bytes()),
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
@@ -205,7 +210,7 @@ fn cant_send_tip_myria_when_server_id_not_register() {
 fn cant_send_tip_myria_when_ft_identifier_exists() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		let tips_balance_info = TipsBalanceInfo::new(
-			&BlakeTwo256::hash("server_id".as_bytes()),
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
@@ -222,7 +227,7 @@ fn cant_send_tip_myria_when_ft_identifier_exists() {
 fn cant_claim_reference_when_server_not_registered() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		let tips_balance_info = TipsBalanceInfo::new(
-			&BlakeTwo256::hash("server_id".as_bytes()),
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
@@ -246,13 +251,15 @@ fn cant_claim_reference_when_not_as_server_owner() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		AdminKey::<Test>::put(5);
 
-		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
+		assert_ok!(Server::register(
+			Origin::signed(5),
+			1,
+			"myriad".as_bytes().to_vec(),
+			"myriad".as_bytes().to_vec()
+		));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
-		let server_id = BlakeTwo256::hash(&seed);
 		let tips_balance_info = TipsBalanceInfo::new(
-			&server_id,
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
@@ -276,13 +283,15 @@ fn cant_claim_reference_when_receiver_not_exists() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		AdminKey::<Test>::put(5);
 
-		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
+		assert_ok!(Server::register(
+			Origin::signed(5),
+			1,
+			"myriad".as_bytes().to_vec(),
+			"myriad".as_bytes().to_vec()
+		));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
-		let server_id = BlakeTwo256::hash(&seed);
 		let mut tips_balance_info = TipsBalanceInfo::new(
-			&server_id,
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
@@ -315,7 +324,7 @@ fn cant_claim_tip_balance_when_nothing_to_claimed() {
 				TipsBalanceInfo {
 					reference_id: "user_id".as_bytes().to_vec(),
 					reference_type: "user".as_bytes().to_vec(),
-					server_id: BlakeTwo256::hash("server_id".as_bytes()),
+					server_id: "myriad".as_bytes().to_vec(),
 					ft_identifier: "native".as_bytes().to_vec(),
 				},
 			),
@@ -324,13 +333,15 @@ fn cant_claim_tip_balance_when_nothing_to_claimed() {
 
 		AdminKey::<Test>::put(5);
 
-		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
+		assert_ok!(Server::register(
+			Origin::signed(5),
+			1,
+			"myriad".as_bytes().to_vec(),
+			"myriad".as_bytes().to_vec()
+		));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
-		let server_id = BlakeTwo256::hash(&seed);
 		let tips_balance_info = TipsBalanceInfo::new(
-			&server_id,
+			"myriad".as_bytes(),
 			"user".as_bytes(),
 			"user_id".as_bytes(),
 			"native".as_bytes(),
@@ -350,13 +361,15 @@ fn cant_claim_tip_balance_when_unauthorized() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		AdminKey::<Test>::put(5);
 
-		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
+		assert_ok!(Server::register(
+			Origin::signed(5),
+			1,
+			"myriad".as_bytes().to_vec(),
+			"myriad".as_bytes().to_vec()
+		));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
-		let server_id = BlakeTwo256::hash(&seed);
 		let tips_balance_info = TipsBalanceInfo::new(
-			&server_id,
+			"myriad".as_bytes(),
 			"user".as_bytes(),
 			"user_id".as_bytes(),
 			"native".as_bytes(),
@@ -384,13 +397,15 @@ fn call_event_should_work() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		AdminKey::<Test>::put(5);
 
-		assert_ok!(Server::register(Origin::signed(5), 1, "myriad".as_bytes().to_vec()));
+		assert_ok!(Server::register(
+			Origin::signed(5),
+			1,
+			"myriad".as_bytes().to_vec(),
+			"myriad".as_bytes().to_vec()
+		));
 
-		let seed =
-			[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 109, 121, 114, 105, 97, 100];
-		let server_id = BlakeTwo256::hash(&seed);
 		let mut tips_balance_info = TipsBalanceInfo::new(
-			&server_id,
+			"myriad".as_bytes(),
 			"people".as_bytes(),
 			"people_id".as_bytes(),
 			"native".as_bytes(),
