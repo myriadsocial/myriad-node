@@ -34,14 +34,14 @@ pub mod pallet {
 	const PALLET_ID: PalletId = PalletId(*b"Tipping!");
 
 	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
-	pub struct TipsBalance<Hash, Balance, AccountId> {
-		pub tips_balance_info: TipsBalanceInfo<Hash>,
+	pub struct TipsBalance<Balance, AccountId> {
+		pub tips_balance_info: TipsBalanceInfo,
 		pub account_id: Option<AccountId>,
 		pub amount: Balance,
 	}
-	impl<Hash: Clone, Balance: Clone, AccountId: Clone> TipsBalance<Hash, Balance, AccountId> {
+	impl<Balance: Clone, AccountId: Clone> TipsBalance<Balance, AccountId> {
 		pub fn new(
-			tips_balance_info: &TipsBalanceInfo<Hash>,
+			tips_balance_info: &TipsBalanceInfo,
 			account_id: &Option<AccountId>,
 			amount: &Balance,
 		) -> Self {
@@ -52,7 +52,7 @@ pub mod pallet {
 			}
 		}
 
-		pub fn get_tips_balance_info(&self) -> &TipsBalanceInfo<Hash> {
+		pub fn get_tips_balance_info(&self) -> &TipsBalanceInfo {
 			&self.tips_balance_info
 		}
 
@@ -68,7 +68,7 @@ pub mod pallet {
 			self.tips_balance_info.get_reference_type()
 		}
 
-		pub fn get_server_id(&self) -> &Hash {
+		pub fn get_server_id(&self) -> &Vec<u8> {
 			self.tips_balance_info.get_server_id()
 		}
 
@@ -80,7 +80,7 @@ pub mod pallet {
 			&self.account_id
 		}
 
-		pub fn set_tips_balance_info(&mut self, tips_balance_info: &TipsBalanceInfo<Hash>) {
+		pub fn set_tips_balance_info(&mut self, tips_balance_info: &TipsBalanceInfo) {
 			self.tips_balance_info = tips_balance_info.clone();
 		}
 
@@ -94,21 +94,21 @@ pub mod pallet {
 	}
 
 	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
-	pub struct TipsBalanceInfo<Hash> {
-		pub server_id: Hash,
+	pub struct TipsBalanceInfo {
+		pub server_id: Vec<u8>,
 		pub reference_type: Vec<u8>,
 		pub reference_id: Vec<u8>,
 		pub ft_identifier: Vec<u8>,
 	}
-	impl<Hash: Clone> TipsBalanceInfo<Hash> {
+	impl TipsBalanceInfo {
 		pub fn new(
-			server_id: &Hash,
+			server_id: &[u8],
 			reference_type: &[u8],
 			reference_id: &[u8],
 			ft_identifier: &[u8],
 		) -> Self {
 			Self {
-				server_id: server_id.clone(),
+				server_id: server_id.to_vec(),
 				reference_type: reference_type.to_vec(),
 				reference_id: reference_id.to_vec(),
 				ft_identifier: ft_identifier.to_vec(),
@@ -123,7 +123,7 @@ pub mod pallet {
 			&self.reference_type
 		}
 
-		pub fn get_server_id(&self) -> &Hash {
+		pub fn get_server_id(&self) -> &Vec<u8> {
 			&self.server_id
 		}
 
@@ -143,13 +143,11 @@ pub mod pallet {
 	pub type FtIdentifier = Vec<u8>;
 	pub type ReferenceId = Vec<u8>;
 	pub type ReferenceType = Vec<u8>;
-	pub type HashOf<T> = <T as frame_system::Config>::Hash;
 	pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 	pub type CurrencyOf<T> = <T as self::Config>::Currency;
 	pub type BalanceOf<T> = <CurrencyOf<T> as Currency<AccountIdOf<T>>>::Balance;
-	pub type TipsBalanceOf<T> = TipsBalance<HashOf<T>, BalanceOf<T>, AccountIdOf<T>>;
-	pub type TipsBalanceInfoOf<T> = TipsBalanceInfo<HashOf<T>>;
-	pub type ServerIdOf<T> = HashOf<T>;
+	pub type TipsBalanceOf<T> = TipsBalance<BalanceOf<T>, AccountIdOf<T>>;
+	pub type ServerId = Vec<u8>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -168,7 +166,7 @@ pub mod pallet {
 	pub(super) type TipsBalanceByReference<T: Config> = StorageNMap<
 		_,
 		(
-			NMapKey<Blake2_128Concat, ServerIdOf<T>>,
+			NMapKey<Blake2_128Concat, ServerId>,
 			NMapKey<Blake2_128Concat, ReferenceType>,
 			NMapKey<Blake2_128Concat, ReferenceId>,
 			NMapKey<Blake2_128Concat, FtIdentifier>,
@@ -209,7 +207,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::send_tip((*amount).saturated_into::<u32>()))]
 		pub fn send_tip(
 			origin: OriginFor<T>,
-			tips_balance_info: TipsBalanceInfoOf<T>,
+			tips_balance_info: TipsBalanceInfo,
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
@@ -227,7 +225,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::claim_tip())]
 		pub fn claim_tip(
 			origin: OriginFor<T>,
-			tips_balance_info: TipsBalanceInfoOf<T>,
+			tips_balance_info: TipsBalanceInfo,
 		) -> DispatchResultWithPostInfo {
 			let sender = Self::tipping_account_id();
 			let receiver = ensure_signed(origin)?;
@@ -244,7 +242,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::claim_reference())]
 		pub fn claim_reference(
 			origin: OriginFor<T>,
-			tips_balance_info: TipsBalanceInfoOf<T>,
+			tips_balance_info: TipsBalanceInfo,
 			reference_type: ReferenceType,
 			reference_id: ReferenceId,
 			account_id: Option<AccountIdOf<T>>,
@@ -271,7 +269,7 @@ pub mod pallet {
 		type Error = Error<T>;
 		type TipsBalance = TipsBalanceOf<T>;
 		type TipsBalances = (TipsBalanceOf<T>, Option<TipsBalanceOf<T>>);
-		type TipsBalanceInfo = TipsBalanceInfoOf<T>;
+		type TipsBalanceInfo = TipsBalanceInfo;
 		type Balance = BalanceOf<T>;
 		type ReferenceId = ReferenceId;
 		type ReferenceType = ReferenceType;
@@ -479,7 +477,7 @@ pub mod pallet {
 			PALLET_ID.into_account()
 		}
 
-		fn get_tips_balance(tips_balance_info: &TipsBalanceInfoOf<T>) -> Option<TipsBalanceOf<T>> {
+		fn get_tips_balance(tips_balance_info: &TipsBalanceInfo) -> Option<TipsBalanceOf<T>> {
 			let reference_type = tips_balance_info.get_reference_type();
 			let reference_id = tips_balance_info.get_reference_id();
 			let server_id = tips_balance_info.get_server_id();
@@ -494,7 +492,7 @@ pub mod pallet {
 		}
 
 		fn create_tips_balance(
-			tips_balance_info: &TipsBalanceInfoOf<T>,
+			tips_balance_info: &TipsBalanceInfo,
 			account_id: &Option<AccountIdOf<T>>,
 			amount: &Option<BalanceOf<T>>,
 		) -> TipsBalanceOf<T> {
@@ -529,7 +527,7 @@ pub mod pallet {
 		}
 
 		fn default_tips_balances(
-			tips_balance_info: &TipsBalanceInfoOf<T>,
+			tips_balance_info: &TipsBalanceInfo,
 		) -> (TipsBalanceOf<T>, Option<TipsBalanceOf<T>>) {
 			(TipsBalance::new(tips_balance_info, &None, &Zero::zero()), None)
 		}

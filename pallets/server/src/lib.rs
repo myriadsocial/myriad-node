@@ -18,25 +18,23 @@ pub use weights::WeightInfo;
 pub mod pallet {
 	use super::*;
 
-	use frame_support::{
-		dispatch::DispatchResultWithPostInfo, pallet_prelude::*, sp_runtime::traits::Hash,
-	};
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 
 	use sp_std::vec::Vec;
 
 	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
-	pub struct Server<AccountId, Hash> {
-		pub id: Hash,
+	pub struct Server<AccountId> {
+		pub id: Vec<u8>,
 		pub owner: AccountId,
 		pub name: Vec<u8>,
 	}
-	impl<AccountId: Clone, Hash> Server<AccountId, Hash> {
-		pub fn new(id: Hash, owner: &AccountId, name: &[u8]) -> Self {
-			Self { id, owner: owner.clone(), name: name.to_vec() }
+	impl<AccountId: Clone> Server<AccountId> {
+		pub fn new(id: &[u8], owner: &AccountId, name: &[u8]) -> Self {
+			Self { id: id.to_vec(), owner: owner.clone(), name: name.to_vec() }
 		}
 
-		pub fn get_id(&self) -> &Hash {
+		pub fn get_id(&self) -> &Vec<u8> {
 			&self.id
 		}
 
@@ -56,11 +54,11 @@ pub mod pallet {
 			self.name = name.to_vec();
 		}
 	}
-	impl<T, AccountId: Clone, Hash> ServerInfo<T> for Server<AccountId, Hash>
+	impl<T, AccountId: Clone> ServerInfo<T> for Server<AccountId>
 	where
-		T: frame_system::Config<AccountId = AccountId, Hash = Hash>,
+		T: frame_system::Config<AccountId = AccountId>,
 	{
-		fn get_id(&self) -> &Hash {
+		fn get_id(&self) -> &Vec<u8> {
 			self.get_id()
 		}
 
@@ -74,9 +72,8 @@ pub mod pallet {
 	}
 
 	pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
-	pub type HashOf<T> = <T as frame_system::Config>::Hash;
-	pub type ServerOf<T> = Server<AccountIdOf<T>, HashOf<T>>;
-	pub type ServerIdOf<T> = HashOf<T>;
+	pub type ServerOf<T> = Server<AccountIdOf<T>>;
+	pub type ServerId = Vec<u8>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -113,7 +110,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn server_by_id)]
-	pub(super) type ServerById<T: Config> = StorageMap<_, Blake2_128Concat, HashOf<T>, ServerOf<T>>;
+	pub(super) type ServerById<T: Config> = StorageMap<_, Blake2_128Concat, ServerId, ServerOf<T>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -121,11 +118,11 @@ pub mod pallet {
 		/// Register server success. [server]
 		Registered(ServerOf<T>),
 		/// Name updated success. [name, server_id]
-		NameUpdated(Vec<u8>, T::Hash),
+		NameUpdated(Vec<u8>, ServerId),
 		/// Owner transferred success. [new_owner, server_id]
-		OwnerTransferred(T::AccountId, T::Hash),
+		OwnerTransferred(T::AccountId, ServerId),
 		/// Unregister server success. [server_id]
-		Unregistered(ServerIdOf<T>),
+		Unregistered(ServerId),
 		/// Transfer admin key [current_admin_key, new_admin_key]
 		AdminKeyTransferred(T::AccountId, T::AccountId),
 		/// Set admin key [new_admin_key]
@@ -134,6 +131,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		AlreadyExists,
 		NotExists,
 		Unauthorized,
 	}
@@ -147,23 +145,27 @@ pub mod pallet {
 		pub fn register(
 			origin: OriginFor<T>,
 			account_id: AccountIdOf<T>,
+			server_id: Vec<u8>,
 			name: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
 			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
 
-			let server = <Self as ServerInterface<T>>::register(&account_id, &name);
-
-			Self::deposit_event(Event::Registered(server));
-			Ok(().into())
+			match <Self as ServerInterface<T>>::register(&server_id, &account_id, &name) {
+				Ok(server) => {
+					Self::deposit_event(Event::Registered(server));
+					Ok(().into())
+				},
+				Err(error) => Err(error.into()),
+			}
 		}
 
 		#[pallet::weight(T::WeightInfo::transfer_owner())]
 		pub fn transfer_owner(
 			origin: OriginFor<T>,
 			account_id: AccountIdOf<T>,
-			server_id: HashOf<T>,
+			server_id: Vec<u8>,
 			new_owner: AccountIdOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
@@ -184,7 +186,7 @@ pub mod pallet {
 		pub fn update_name(
 			origin: OriginFor<T>,
 			account_id: AccountIdOf<T>,
-			server_id: HashOf<T>,
+			server_id: Vec<u8>,
 			new_name: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
@@ -204,7 +206,7 @@ pub mod pallet {
 		pub fn unregister(
 			origin: OriginFor<T>,
 			account_id: AccountIdOf<T>,
-			server_id: ServerIdOf<T>,
+			server_id: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
@@ -250,38 +252,31 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> Pallet<T> {
-		pub fn generate_server_id(owner: &T::AccountId, name: &[u8]) -> HashOf<T> {
-			let mut seed = owner.encode();
-			let account_info = frame_system::Pallet::<T>::account(owner);
-
-			seed.append(&mut account_info.nonce.encode());
-			seed.append(&mut name.encode());
-
-			T::Hashing::hash(&seed)
-		}
-	}
-
 	impl<T: Config> ServerInterface<T> for Pallet<T> {
 		type Error = Error<T>;
 		type Server = ServerOf<T>;
-		type Name = Vec<u8>;
 
-		fn get_by_id(server_id: &T::Hash) -> Option<Self::Server> {
+		fn get_by_id(server_id: &[u8]) -> Option<Self::Server> {
 			Self::server_by_id(server_id)
 		}
 
-		fn register(account_id: &T::AccountId, name: &Self::Name) -> Self::Server {
-			let id = Self::generate_server_id(account_id, name);
-			let server = Server::new(id, account_id, name);
+		fn register(
+			server_id: &[u8],
+			account_id: &T::AccountId,
+			name: &[u8],
+		) -> Result<Self::Server, Self::Error> {
+			if ServerById::<T>::contains_key(server_id) {
+				return Err(Error::<T>::AlreadyExists)
+			}
+			let server = Server::new(server_id, account_id, name);
 
-			ServerById::<T>::insert(id, server.clone());
+			ServerById::<T>::insert(server_id, server.clone());
 
-			server
+			Ok(server)
 		}
 
 		fn transfer_owner(
-			server_id: &T::Hash,
+			server_id: &[u8],
 			account_id: &T::AccountId,
 			new_owner: &T::AccountId,
 		) -> Result<(), Self::Error> {
@@ -308,9 +303,9 @@ pub mod pallet {
 		}
 
 		fn update_name(
-			server_id: &T::Hash,
+			server_id: &[u8],
 			account_id: &T::AccountId,
-			new_name: &Self::Name,
+			new_name: &[u8],
 		) -> Result<(), Self::Error> {
 			if !ServerById::<T>::contains_key(server_id) {
 				return Err(Error::<T>::NotExists)
@@ -329,7 +324,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn unregister(server_id: &T::Hash, account_id: &T::AccountId) -> Result<(), Self::Error> {
+		fn unregister(server_id: &[u8], account_id: &T::AccountId) -> Result<(), Self::Error> {
 			if !ServerById::<T>::contains_key(server_id) {
 				return Err(Error::<T>::NotExists)
 			}
@@ -353,7 +348,7 @@ pub mod pallet {
 		type Error = Error<T>;
 		type Server = ServerOf<T>;
 
-		fn get_by_id(id: &T::Hash) -> Option<ServerOf<T>> {
+		fn get_by_id(id: &[u8]) -> Option<ServerOf<T>> {
 			<Self as ServerInterface<T>>::get_by_id(id)
 		}
 	}
