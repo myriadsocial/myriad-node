@@ -15,7 +15,8 @@ benchmarks! {
 		let s in 1 .. 100;
 		let caller: T::AccountId = AdminKey::<T>::get();
 		let account_id: T::AccountId = whitelisted_caller();
-	}: _(RawOrigin::Signed(caller), account_id, vec![s as u8], "myriad".as_bytes().to_vec())
+		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
+	}: _(RawOrigin::Signed(caller), account_id, vec![s as u8], "myriad".as_bytes().to_vec(), server_api_url)
 
 	update_name {
 		let s in 1 .. 100;
@@ -23,7 +24,20 @@ benchmarks! {
 		let account_id: T::AccountId = whitelisted_caller();
 		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
 		let server_id = "myriad".as_bytes().to_vec();
-		let _server = Server::<T>::register(caller_origin.clone(), account_id.clone(),server_id.clone(), "myriad".as_bytes().to_vec());
+		let server_name = "myriad".as_bytes().to_vec();
+		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
+		let _server = Server::<T>::register(caller_origin.clone(), account_id.clone(),server_id.clone(), server_name, server_api_url);
+	}: _(RawOrigin::Signed(caller),  account_id, server_id, vec![s as u8])
+
+	update_api_url {
+		let s in 1 .. 100;
+		let caller: T::AccountId = AdminKey::<T>::get();
+		let account_id: T::AccountId = whitelisted_caller();
+		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
+		let server_id = "myriad".as_bytes().to_vec();
+		let server_name = "myriad".as_bytes().to_vec();
+		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
+		let _server = Server::<T>::register(caller_origin.clone(), account_id.clone(),server_id.clone(), server_name, server_api_url);
 	}: _(RawOrigin::Signed(caller),  account_id, server_id, vec![s as u8])
 
 	transfer_owner {
@@ -31,7 +45,9 @@ benchmarks! {
 		let account_id: T::AccountId = whitelisted_caller();
 		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
 		let server_id = "myriad".as_bytes().to_vec();
-		let _server = Server::<T>::register(caller_origin.clone(), account_id.clone(), server_id.clone(), "myriad".as_bytes().to_vec());
+		let server_name = "myriad".as_bytes().to_vec();
+		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
+		let _server = Server::<T>::register(caller_origin.clone(), account_id.clone(), server_id.clone(), server_name, server_api_url);
 		let new_owner: T::AccountId = account("new_owner", 0, SEED);
 	}: _(RawOrigin::Signed(caller), account_id, server_id, new_owner)
 
@@ -40,7 +56,9 @@ benchmarks! {
 		let account_id: T::AccountId = whitelisted_caller();
 		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
 		let server_id = "myriad".as_bytes().to_vec();
-		let _server = Server::<T>::register(caller_origin.clone(), account_id.clone(), server_id.clone(), "myriad".as_bytes().to_vec());
+		let server_name = "myriad".as_bytes().to_vec();
+		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
+		let _server = Server::<T>::register(caller_origin.clone(), account_id.clone(), server_id.clone(), server_name, server_api_url);
 	}: _(RawOrigin::Signed(caller), account_id, server_id)
 
 	transfer_admin_key {

@@ -11,7 +11,8 @@ fn send_tip_myria_works() {
 			Origin::signed(5),
 			1,
 			"myriad".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec()
+			"myriad".as_bytes().to_vec(),
+			"https://api.dev.myriad.social".as_bytes().to_vec(),
 		));
 
 		let tips_balance_info = TipsBalanceInfo::new(
@@ -47,7 +48,8 @@ fn claim_reference_works() {
 			Origin::signed(5),
 			1,
 			"myriad".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec()
+			"myriad".as_bytes().to_vec(),
+			"https://api.dev.myriad.social".as_bytes().to_vec(),
 		));
 
 		let mut tips_balance_info = TipsBalanceInfo::new(
@@ -126,7 +128,8 @@ pub fn claim_tip_myria_works() {
 			Origin::signed(5),
 			1,
 			"myriad".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec()
+			"myriad".as_bytes().to_vec(),
+			"https://api.dev.myriad.social".as_bytes().to_vec(),
 		));
 
 		let mut tips_balance_info = TipsBalanceInfo::new(
@@ -172,7 +175,8 @@ fn cant_send_tip_myria_when_insufficient_balance() {
 			Origin::signed(5),
 			1,
 			"myriad".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec()
+			"myriad".as_bytes().to_vec(),
+			"https://api.dev.myriad.social".as_bytes().to_vec(),
 		));
 
 		let tips_balance_info = TipsBalanceInfo::new(
@@ -255,7 +259,8 @@ fn cant_claim_reference_when_not_as_server_owner() {
 			Origin::signed(5),
 			1,
 			"myriad".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec()
+			"myriad".as_bytes().to_vec(),
+			"https://api.dev.myriad.social".as_bytes().to_vec(),
 		));
 
 		let tips_balance_info = TipsBalanceInfo::new(
@@ -287,7 +292,8 @@ fn cant_claim_reference_when_receiver_not_exists() {
 			Origin::signed(5),
 			1,
 			"myriad".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec()
+			"myriad".as_bytes().to_vec(),
+			"https://api.dev.myriad.social".as_bytes().to_vec(),
 		));
 
 		let mut tips_balance_info = TipsBalanceInfo::new(
@@ -337,7 +343,8 @@ fn cant_claim_tip_balance_when_nothing_to_claimed() {
 			Origin::signed(5),
 			1,
 			"myriad".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec()
+			"myriad".as_bytes().to_vec(),
+			"https://api.dev.myriad.social".as_bytes().to_vec(),
 		));
 
 		let tips_balance_info = TipsBalanceInfo::new(
@@ -365,7 +372,8 @@ fn cant_claim_tip_balance_when_unauthorized() {
 			Origin::signed(5),
 			1,
 			"myriad".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec()
+			"myriad".as_bytes().to_vec(),
+			"https://api.dev.myriad.social".as_bytes().to_vec(),
 		));
 
 		let tips_balance_info = TipsBalanceInfo::new(
@@ -401,7 +409,8 @@ fn call_event_should_work() {
 			Origin::signed(5),
 			1,
 			"myriad".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec()
+			"myriad".as_bytes().to_vec(),
+			"https://api.dev.myriad.social".as_bytes().to_vec(),
 		));
 
 		let mut tips_balance_info = TipsBalanceInfo::new(

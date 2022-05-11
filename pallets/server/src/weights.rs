@@ -31,6 +31,7 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
 	fn register(s: u32, ) -> Weight;
 	fn update_name(s: u32, ) -> Weight;
+	fn update_api_url(s: u32, ) -> Weight;
 	fn transfer_owner() -> Weight;
 	fn unregister() -> Weight;
 	fn transfer_admin_key() -> Weight;
@@ -50,6 +51,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Server AdminKey (r:1 w:0)
 	// Storage: Server ServerById (r:1 w:1)
 	fn update_name(_s: u32, ) -> Weight {
+		34_184_000_u64
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	// Storage: Server AdminKey (r:1 w:0)
+	// Storage: Server ServerById (r:1 w:1)
+	fn update_api_url(_s: u32, ) -> Weight {
 		34_184_000_u64
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
@@ -93,6 +101,13 @@ impl WeightInfo for () {
 	// Storage: Server AdminKey (r:1 w:0)
 	// Storage: Server ServerById (r:1 w:1)
 	fn update_name(_s: u32, ) -> Weight {
+		34_184_000_u64
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	// Storage: Server AdminKey (r:1 w:0)
+	// Storage: Server ServerById (r:1 w:1)
+	fn update_api_url(_s: u32, ) -> Weight {
 		34_184_000_u64
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
