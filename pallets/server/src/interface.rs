@@ -5,6 +5,7 @@ pub trait ServerInfo<T: frame_system::Config> {
 	fn get_owner(&self) -> &T::AccountId;
 	fn get_name(&self) -> &Vec<u8>;
 	fn get_api_url(&self) -> &Vec<u8>;
+	fn get_web_url(&self) -> &Vec<u8>;
 }
 
 pub trait ServerProvider<T: frame_system::Config> {
@@ -25,6 +26,7 @@ pub trait ServerInterface<T: frame_system::Config> {
 		account_id: &T::AccountId,
 		name: &[u8],
 		api_url: &[u8],
+		web_url: &[u8],
 	) -> Result<Self::Server, Self::Error>;
 
 	fn transfer_owner(
@@ -43,6 +45,12 @@ pub trait ServerInterface<T: frame_system::Config> {
 		server_id: &[u8],
 		account_id: &T::AccountId,
 		new_api_url: &[u8],
+	) -> Result<(), Self::Error>;
+
+	fn update_web_url(
+		server_id: &[u8],
+		account_id: &T::AccountId,
+		new_web_url: &[u8],
 	) -> Result<(), Self::Error>;
 
 	fn unregister(server_id: &[u8], account_id: &T::AccountId) -> Result<(), Self::Error>;
