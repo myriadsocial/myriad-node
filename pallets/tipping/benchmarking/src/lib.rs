@@ -29,7 +29,8 @@ benchmarks! {
 		let admin_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(admin));
 		let server_id = "server".as_bytes().to_vec();
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let _server = Server::<T>::register(admin_origin, server_account, server_id.clone(), server_name, server_api_url);
+		let server_web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
+		let _server = Server::<T>::register(admin_origin, server_account, server_id.clone(), server_name, server_api_url, server_web_url);
 
 		let reference_id = "people_id".as_bytes().to_vec();
 		let reference_type = "people".as_bytes().to_vec();
@@ -45,7 +46,8 @@ benchmarks! {
 		let server_name = "myriad".as_bytes().to_vec();
 		let server_id = "server".as_bytes().to_vec();
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let _server = Server::<T>::register(admin_origin, caller.clone(), server_id.clone(), server_name, server_api_url);
+		let server_web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
+		let _server = Server::<T>::register(admin_origin, caller.clone(), server_id.clone(), server_name, server_api_url, server_web_url);
 
 		let reference_id = "people_id".as_bytes().to_vec();
 		let reference_type = "people".as_bytes().to_vec();
@@ -68,8 +70,9 @@ benchmarks! {
 		let server_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(server_account.clone()));
 		let server_id = "server".as_bytes().to_vec();
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
+		let server_web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
-		let _ = Server::<T>::register(admin_origin, server_account, server_id.clone(), "myriad".as_bytes().to_vec(), server_api_url);
+		let _ = Server::<T>::register(admin_origin, server_account, server_id.clone(), "myriad".as_bytes().to_vec(), server_api_url, server_web_url);
 
 		// Send Tipping
 		let account_1: T::AccountId = account("account", 0, SEED);

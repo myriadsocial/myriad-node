@@ -29,14 +29,22 @@ pub mod pallet {
 		pub owner: AccountId,
 		pub name: Vec<u8>,
 		pub api_url: Vec<u8>,
+		pub web_url: Vec<u8>,
 	}
 	impl<AccountId: Clone> Server<AccountId> {
-		pub fn new(id: &[u8], owner: &AccountId, name: &[u8], api_url: &[u8]) -> Self {
+		pub fn new(
+			id: &[u8],
+			owner: &AccountId,
+			name: &[u8],
+			api_url: &[u8],
+			web_url: &[u8],
+		) -> Self {
 			Self {
 				id: id.to_vec(),
 				owner: owner.clone(),
 				name: name.to_vec(),
 				api_url: api_url.to_vec(),
+				web_url: web_url.to_vec(),
 			}
 		}
 
@@ -56,6 +64,10 @@ pub mod pallet {
 			&self.api_url
 		}
 
+		pub fn get_web_url(&self) -> &Vec<u8> {
+			&self.web_url
+		}
+
 		pub fn set_owner(&mut self, account_id: &AccountId) {
 			self.owner = account_id.clone();
 		}
@@ -67,7 +79,12 @@ pub mod pallet {
 		pub fn set_api_url(&mut self, api_url: &[u8]) {
 			self.api_url = api_url.to_vec();
 		}
+
+		pub fn set_web_url(&mut self, web_url: &[u8]) {
+			self.web_url = web_url.to_vec();
+		}
 	}
+
 	impl<T, AccountId: Clone> ServerInfo<T> for Server<AccountId>
 	where
 		T: frame_system::Config<AccountId = AccountId>,
@@ -86,6 +103,10 @@ pub mod pallet {
 
 		fn get_api_url(&self) -> &Vec<u8> {
 			self.get_api_url()
+		}
+
+		fn get_web_url(&self) -> &Vec<u8> {
+			self.get_web_url()
 		}
 	}
 
@@ -139,6 +160,8 @@ pub mod pallet {
 		NameUpdated(Vec<u8>, ServerId),
 		/// Api url updated success. [api_url, server_id]
 		ApiUrlUpdated(Vec<u8>, ServerId),
+		/// Web url updated success. [web_url, server_id]
+		WebUrlUpdated(Vec<u8>, ServerId),
 		/// Owner transferred success. [new_owner, server_id]
 		OwnerTransferred(T::AccountId, ServerId),
 		/// Unregister server success. [server_id]
@@ -168,12 +191,19 @@ pub mod pallet {
 			server_id: Vec<u8>,
 			name: Vec<u8>,
 			api_url: Vec<u8>,
+			web_url: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
 			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
 
-			match <Self as ServerInterface<T>>::register(&server_id, &account_id, &name, &api_url) {
+			match <Self as ServerInterface<T>>::register(
+				&server_id,
+				&account_id,
+				&name,
+				&api_url,
+				&web_url,
+			) {
 				Ok(server) => {
 					Self::deposit_event(Event::Registered(server));
 					Ok(().into())
@@ -247,6 +277,30 @@ pub mod pallet {
 			}
 		}
 
+		#[pallet::weight(T::WeightInfo::update_web_url(new_web_url.len() as u32))]
+		pub fn update_web_url(
+			origin: OriginFor<T>,
+			account_id: AccountIdOf<T>,
+			server_id: Vec<u8>,
+			new_web_url: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let admin = ensure_signed(origin)?;
+
+			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+
+			match <Self as ServerInterface<T>>::update_web_url(
+				&server_id,
+				&account_id,
+				&new_web_url,
+			) {
+				Ok(_) => {
+					Self::deposit_event(Event::WebUrlUpdated(new_web_url, server_id));
+					Ok(().into())
+				},
+				Err(error) => Err(error.into()),
+			}
+		}
+
 		#[pallet::weight(T::WeightInfo::unregister())]
 		pub fn unregister(
 			origin: OriginFor<T>,
@@ -310,11 +364,12 @@ pub mod pallet {
 			account_id: &T::AccountId,
 			name: &[u8],
 			api_url: &[u8],
+			web_url: &[u8],
 		) -> Result<Self::Server, Self::Error> {
 			if ServerById::<T>::contains_key(server_id) {
 				return Err(Error::<T>::AlreadyExists)
 			}
-			let server = Server::new(server_id, account_id, name, api_url);
+			let server = Server::new(server_id, account_id, name, api_url, web_url);
 
 			ServerById::<T>::insert(server_id, server.clone());
 
@@ -386,6 +441,28 @@ pub mod pallet {
 			}
 
 			server.set_api_url(new_api_url);
+
+			ServerById::<T>::insert(server_id, server);
+
+			Ok(())
+		}
+
+		fn update_web_url(
+			server_id: &[u8],
+			account_id: &T::AccountId,
+			new_web_url: &[u8],
+		) -> Result<(), Self::Error> {
+			if !ServerById::<T>::contains_key(server_id) {
+				return Err(Error::<T>::NotExists)
+			}
+
+			let mut server = <Self as ServerInterface<T>>::get_by_id(server_id).unwrap();
+
+			if server.get_owner() != account_id {
+				return Err(Error::<T>::Unauthorized)
+			}
+
+			server.set_web_url(new_web_url);
 
 			ServerById::<T>::insert(server_id, server);
 
