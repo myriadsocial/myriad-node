@@ -14,6 +14,11 @@ pub mod weights;
 pub use crate::interface::TippingInterface;
 pub use weights::WeightInfo;
 
+use frame_support::traits::StorageVersion;
+
+/// The current storage version.
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -158,6 +163,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
