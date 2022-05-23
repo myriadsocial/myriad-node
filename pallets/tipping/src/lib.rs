@@ -79,12 +79,12 @@ pub mod pallet {
 		SendTip(T::AccountId, T::AccountId, TipsBalanceOf<T>),
 		/// Claim tip success. [pot, who, amount, ft_identifier]
 		ClaimTip(T::AccountId, T::AccountId, BalanceOf<T>, FtIdentifier),
-		/// Claim balance success. [tips_balance, tips_balance]
+		/// Claim balance success. [tips_balance, Option<tips_balance>]
 		ClaimReference(TipsBalanceOf<T>, Option<TipsBalanceOf<T>>),
-		/// Verify social media
-		VerifyingSocialMedia,
-		/// Delete social media
-		DeletingSocialMedia,
+		/// Verify social media [status, Option<user_social_media>]
+		VerifyingSocialMedia(Status, Option<UserSocialMediaInfo>),
+		/// Delete social media [status]
+		DeletingSocialMedia(Status),
 	}
 
 	#[pallet::error]
@@ -218,7 +218,7 @@ pub mod pallet {
 				&ft_identifier,
 			) {
 				Ok(()) => {
-					Self::deposit_event(Event::VerifyingSocialMedia);
+					Self::deposit_event(Event::VerifyingSocialMedia(Status::default(), None));
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),
@@ -226,7 +226,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn submit_delete_social_media(
+		pub fn submit_delete_social_media_unsigned(
 			origin: OriginFor<T>,
 			_block_number: T::BlockNumber,
 			server_id: Vec<u8>,
@@ -235,17 +235,30 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
-			match <Self as TippingInterface<T>>::submit_delete_social_media(
+			match <Self as TippingInterface<T>>::submit_delete_social_media_unsigned(
 				&server_id,
 				&access_token,
 				&user_social_media_id,
 			) {
 				Ok(()) => {
-					Self::deposit_event(Event::DeletingSocialMedia);
+					Self::deposit_event(Event::DeletingSocialMedia(Status::OnProgress));
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),
 			}
+		}
+
+		#[pallet::weight(0)]
+		pub fn call_event_unsigned(
+			origin: OriginFor<T>,
+			_block_number: T::BlockNumber,
+			event: Event<T>,
+		) -> DispatchResultWithPostInfo {
+			ensure_none(origin)?;
+
+			Self::deposit_event(event);
+
+			Ok(().into())
 		}
 	}
 
@@ -265,15 +278,20 @@ pub mod pallet {
 					block_number,
 					"pallet_tipping::claim_reference",
 				),
-				Call::submit_delete_social_media {
+				Call::submit_delete_social_media_unsigned {
 					block_number,
 					server_id: _,
 					access_token: _,
 					user_social_media_id: _,
 				} => Self::validate_transaction_parameters(
 					block_number,
-					"pallet_tipping::submit_delete_social_media",
+					"pallet_tipping::submit_delete_social_media_unsigned",
 				),
+				Call::call_event_unsigned { block_number, event: _ } =>
+					Self::validate_transaction_parameters(
+						block_number,
+						"pallet_tipping::call_event_unsigned",
+					),
 				_ => InvalidTransaction::Call.into(),
 			}
 		}

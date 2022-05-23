@@ -97,12 +97,6 @@ impl<T: Config> Pallet<T> {
 		let body = response.body().collect::<Vec<u8>>();
 		let body_str = str::from_utf8(&body).map_err(|_| http::Error::Unknown)?;
 		let user_social_media = Self::parse_user_social_media(body_str);
-
-		if user_social_media.is_none() {
-			return Err(http::Error::Unknown)
-		}
-
-		let user_social_media = user_social_media.unwrap();
 		let tips_balance_info = TipsBalanceInfo::new(
 			server_id,
 			"people".as_bytes(),
@@ -124,15 +118,46 @@ impl<T: Config> Pallet<T> {
 		let data = Self::get_indexing_data(block_number);
 
 		if data.is_none() {
-			return Err(http::Error::Unknown)
+			return Ok(None)
 		}
 
 		let payload = data.unwrap().1;
 		let payload_type = payload.get_payload_type();
 
 		match payload_type {
-			PayloadType::Create => Self::verify_social_media(payload),
-			PayloadType::Delete => Self::delete_social_media(payload),
+			PayloadType::Create => {
+				let verified = Self::verify_social_media(payload);
+				let event: Event<T> = if verified.is_ok() {
+					let user_social_media = verified.clone().unwrap().unwrap().2;
+					let user_social_media_info = UserSocialMediaInfo::new(&user_social_media);
+
+					Event::<T>::VerifyingSocialMedia(Status::Success, Some(user_social_media_info))
+				} else {
+					Event::<T>::VerifyingSocialMedia(Status::Failed, None)
+				};
+
+				let _ = Self::submit_unsigned_transaction(Call::call_event_unsigned {
+					block_number,
+					event,
+				});
+
+				verified
+			},
+			PayloadType::Delete => {
+				let deleted = Self::delete_social_media(payload);
+				let event: Event<T> = if deleted.is_ok() {
+					Event::<T>::DeletingSocialMedia(Status::Success)
+				} else {
+					Event::<T>::DeletingSocialMedia(Status::Failed)
+				};
+
+				let _ = Self::submit_unsigned_transaction(Call::call_event_unsigned {
+					block_number,
+					event,
+				});
+
+				deleted
+			},
 		}
 	}
 
@@ -140,48 +165,46 @@ impl<T: Config> Pallet<T> {
 		block_number: T::BlockNumber,
 	) -> Result<(), &'static str> {
 		let result = Self::handle_myriad_api(block_number);
-
 		if result.is_err() {
-			return Err("Failed to verify social media")
+			return Err("Failed call api")
 		}
 
 		let social_media = result.unwrap();
 		if social_media.is_none() {
-			return Err("Nothing to verified")
+			return Err("Failed to delete")
 		}
 
-		let (account_id, tips_balance_info, user_social_media, access_token) =
-			social_media.unwrap();
-		let user_id = user_social_media.get_user_id();
+		let social_media = social_media.unwrap();
+		let reference_type = "user".as_bytes().to_vec();
+		let reference_id = social_media.2.get_user_id().as_bytes().to_vec();
+		let account_id = Some(social_media.0);
+		let tips_balance_info = social_media.1.clone();
+
 		let call = Call::claim_reference_unsigned {
 			block_number,
-			tips_balance_info: tips_balance_info.clone(),
-			reference_type: "user".as_bytes().to_vec(),
-			reference_id: user_id.as_bytes().to_vec(),
-			account_id: Some(account_id),
+			tips_balance_info,
+			reference_type,
+			reference_id,
+			account_id,
 		};
 
-		let result = match SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err("Failed in offchain_unsigned_tx"),
-		};
-
+		let result = Self::submit_unsigned_transaction(call);
 		if result.is_ok() {
 			return Ok(())
 		}
 
-		let call = Call::submit_delete_social_media {
+		let server_id = social_media.1.get_server_id().to_vec();
+		let access_token = social_media.3.as_bytes().to_vec();
+		let user_social_media_id = social_media.2.get_id().as_bytes().to_vec();
+
+		let call = Call::submit_delete_social_media_unsigned {
 			block_number,
-			server_id: tips_balance_info.get_server_id().to_vec(),
-			access_token: access_token.as_bytes().to_vec(),
-			user_social_media_id: user_social_media.get_id().as_bytes().to_vec(),
+			server_id,
+			access_token,
+			user_social_media_id,
 		};
 
-		match SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into()) {
-			Ok(_) => Ok(()),
-			Err(_) => Err("Failed in offchain_unsigned_tx"),
-		}
+		Self::submit_unsigned_transaction(call)
 	}
 
 	pub fn delete_social_media(
@@ -198,11 +221,18 @@ impl<T: Config> Pallet<T> {
 
 		let response = pending.wait().map_err(|_| http::Error::Unknown)?;
 
-		if response.code != 204 {
+		if response.code != 200 {
 			return Err(http::Error::Unknown)
 		}
 
 		Ok(None)
+	}
+
+	pub fn submit_unsigned_transaction(call: Call<T>) -> Result<(), &'static str> {
+		match SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into()) {
+			Ok(_) => Ok(()),
+			Err(_) => Err("Failed in offchain_unsigned_tx"),
+		}
 	}
 
 	pub fn validate_transaction_parameters(
@@ -285,15 +315,15 @@ impl<T: Config> Pallet<T> {
 		Err(Error::<T>::ServerNotRegister)
 	}
 
-	pub fn parse_user_social_media(data: &str) -> Option<UserSocialMedia> {
+	pub fn parse_user_social_media(data: &str) -> UserSocialMedia {
 		let data = str::replace(data, "createdAt", "created_at");
 		let data = str::replace(&data, "updatedAt", "updated_at");
 		let data = str::replace(&data, "peopleId", "people_id");
 		let data = str::replace(&data, "userId", "user_id");
 
 		match serde_json::from_str::<UserSocialMedia>(&data) {
-			Ok(result) => Some(result),
-			Err(_) => None,
+			Ok(result) => result,
+			Err(_) => UserSocialMedia::default(),
 		}
 	}
 

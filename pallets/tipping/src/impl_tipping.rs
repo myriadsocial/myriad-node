@@ -258,7 +258,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		}
 	}
 
-	fn submit_delete_social_media(
+	fn submit_delete_social_media_unsigned(
 		server_id: &[u8],
 		access_token: &[u8],
 		user_social_media_id: &[u8],

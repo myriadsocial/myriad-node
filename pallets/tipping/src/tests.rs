@@ -345,12 +345,12 @@ fn cant_claim_tip_balance_when_nothing_to_claimed() {
 		assert_noop!(
 			Tipping::claim_tip(
 				Origin::signed(account_key("alice")),
-				TipsBalanceInfo {
-					reference_id: "user_id".as_bytes().to_vec(),
-					reference_type: "user".as_bytes().to_vec(),
-					server_id: "myriad".as_bytes().to_vec(),
-					ft_identifier: "native".as_bytes().to_vec(),
-				},
+				TipsBalanceInfo::new(
+					"myriad".as_bytes(),
+					"user".as_bytes(),
+					"user_id".as_bytes(),
+					"native".as_bytes()
+				),
 			),
 			Error::<Test>::NotExists,
 		);
