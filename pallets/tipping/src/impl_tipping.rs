@@ -7,7 +7,7 @@ use frame_support::{
 };
 use serde_json::json;
 use sp_io::offchain_index;
-use sp_std::str;
+use sp_std::{str, vec::Vec};
 
 impl<T: Config> TippingInterface<T> for Pallet<T> {
 	type Error = Error<T>;
@@ -249,6 +249,41 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 				);
 				let key = Self::derived_key(<frame_system::Pallet<T>>::block_number());
 				let data = IndexingData(b"submit_payload_unsigned".to_vec(), payload);
+
+				offchain_index::set(&key, &data.encode());
+
+				Ok(())
+			},
+			Err(err) => Err(err),
+		}
+	}
+
+	fn submit_delete_social_media(
+		server_id: &[u8],
+		access_token: &[u8],
+		user_social_media_id: &[u8],
+	) -> Result<(), Self::Error> {
+		let result = str::from_utf8(user_social_media_id);
+		if result.is_err() {
+			return Err(Error::<T>::WrongFormat)
+		}
+
+		let mut endpoint = String::from("/user-social-medias/");
+		endpoint.push_str(result.unwrap());
+
+		match Self::get_api_url(server_id, &endpoint) {
+			Ok(api_url) => {
+				let payload = Payload::new(
+					&api_url,
+					access_token,
+					&Vec::new(),
+					&Self::tipping_account_id(),
+					server_id,
+					&Vec::new(),
+					&PayloadType::Delete,
+				);
+				let key = Self::derived_key(<frame_system::Pallet<T>>::block_number());
+				let data = IndexingData(b"submit_delete_unsigned".to_vec(), payload);
 
 				offchain_index::set(&key, &data.encode());
 

@@ -36,4 +36,10 @@ pub trait TippingInterface<T: frame_system::Config> {
 		platform: &[u8],
 		ft_identifier: &[u8],
 	) -> Result<(), Self::Error>;
+
+	fn submit_delete_social_media(
+		server_id: &[u8],
+		access_token: &[u8],
+		user_social_media_id: &[u8],
+	) -> Result<(), Self::Error>;
 }

@@ -83,6 +83,8 @@ pub mod pallet {
 		ClaimReference(TipsBalanceOf<T>, Option<TipsBalanceOf<T>>),
 		/// Verify social media
 		VerifyingSocialMedia,
+		/// Delete social media
+		DeletingSocialMedia,
 	}
 
 	#[pallet::error]
@@ -222,6 +224,29 @@ pub mod pallet {
 				Err(error) => Err(error.into()),
 			}
 		}
+
+		#[pallet::weight(0)]
+		pub fn submit_delete_social_media(
+			origin: OriginFor<T>,
+			_block_number: T::BlockNumber,
+			server_id: Vec<u8>,
+			access_token: Vec<u8>,
+			user_social_media_id: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			ensure_none(origin)?;
+
+			match <Self as TippingInterface<T>>::submit_delete_social_media(
+				&server_id,
+				&access_token,
+				&user_social_media_id,
+			) {
+				Ok(()) => {
+					Self::deposit_event(Event::DeletingSocialMedia);
+					Ok(().into())
+				},
+				Err(error) => Err(error.into()),
+			}
+		}
 	}
 
 	#[pallet::validate_unsigned]
@@ -239,6 +264,15 @@ pub mod pallet {
 				} => Self::validate_transaction_parameters(
 					block_number,
 					"pallet_tipping::claim_reference",
+				),
+				Call::submit_delete_social_media {
+					block_number,
+					server_id: _,
+					access_token: _,
+					user_social_media_id: _,
+				} => Self::validate_transaction_parameters(
+					block_number,
+					"pallet_tipping::submit_delete_social_media",
 				),
 				_ => InvalidTransaction::Call.into(),
 			}

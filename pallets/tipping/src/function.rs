@@ -132,7 +132,7 @@ impl<T: Config> Pallet<T> {
 
 		match payload_type {
 			PayloadType::Create => Self::verify_social_media(payload),
-			PayloadType::Delete => Ok(None),
+			PayloadType::Delete => Self::delete_social_media(payload),
 		}
 	}
 
@@ -150,20 +150,59 @@ impl<T: Config> Pallet<T> {
 			return Err("Nothing to verified")
 		}
 
-		let (account_id, tips_balance_info, user_social_media, _) = social_media.unwrap();
+		let (account_id, tips_balance_info, user_social_media, access_token) =
+			social_media.unwrap();
 		let user_id = user_social_media.get_user_id();
 		let call = Call::claim_reference_unsigned {
 			block_number,
-			tips_balance_info,
+			tips_balance_info: tips_balance_info.clone(),
 			reference_type: "user".as_bytes().to_vec(),
 			reference_id: user_id.as_bytes().to_vec(),
 			account_id: Some(account_id),
+		};
+
+		let result = match SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err("Failed in offchain_unsigned_tx"),
+		};
+
+		if result.is_ok() {
+			return Ok(())
+		}
+
+		let call = Call::submit_delete_social_media {
+			block_number,
+			server_id: tips_balance_info.get_server_id().to_vec(),
+			access_token: access_token.as_bytes().to_vec(),
+			user_social_media_id: user_social_media.get_id().as_bytes().to_vec(),
 		};
 
 		match SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into()) {
 			Ok(_) => Ok(()),
 			Err(_) => Err("Failed in offchain_unsigned_tx"),
 		}
+	}
+
+	pub fn delete_social_media(
+		payload: Payload<AccountIdOf<T>>,
+	) -> Result<Option<APIResult<T>>, http::Error> {
+		let api_url = str::from_utf8(payload.get_api_url()).unwrap_or("error");
+		let access_token = str::from_utf8(payload.get_access_token()).unwrap_or("error");
+		let request = http::Request::<Vec<Vec<u8>>>::new(api_url)
+			.method(http::Method::Delete)
+			.add_header("Authorization", access_token)
+			.add_header("content-type", "application/json");
+
+		let pending = request.send().map_err(|_| http::Error::IoError)?;
+
+		let response = pending.wait().map_err(|_| http::Error::Unknown)?;
+
+		if response.code != 204 {
+			return Err(http::Error::Unknown)
+		}
+
+		Ok(None)
 	}
 
 	pub fn validate_transaction_parameters(
