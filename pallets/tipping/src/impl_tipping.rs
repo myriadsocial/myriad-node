@@ -1,9 +1,13 @@
 use super::*;
 
+use codec::Encode;
 use frame_support::{
 	sp_runtime::traits::Zero,
 	traits::{Currency, ExistenceRequirement, WithdrawReasons},
 };
+use serde_json::json;
+use sp_io::offchain_index;
+use sp_std::str;
 
 impl<T: Config> TippingInterface<T> for Pallet<T> {
 	type Error = Error<T>;
@@ -203,5 +207,54 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		}
 
 		Ok(tips_balances)
+	}
+
+	fn submit_social_media_payload(
+		sender: &T::AccountId,
+		server_id: &[u8],
+		access_token: &[u8],
+		username: &[u8],
+		platform: &[u8],
+		ft_identifier: &[u8],
+	) -> Result<(), Self::Error> {
+		if !Self::is_integer(ft_identifier) {
+			return Err(Error::<T>::WrongFormat)
+		}
+
+		if ft_identifier != "native".as_bytes() {
+			return Err(Error::<T>::FtNotExists)
+		}
+
+		match Self::get_api_url(server_id, "/user-social-medias/verify") {
+			Ok(api_url) => {
+				let mut bearer = "Bearer ".as_bytes().to_vec();
+				bearer.append(&mut access_token.to_vec());
+
+				let mut address = String::from("0x");
+				address.push_str(&hex::encode(&sender.encode()));
+
+				let user_verification = json!({
+					"address": &address,
+					"username": str::from_utf8(username).unwrap(),
+					"platform": str::from_utf8(platform).unwrap(),
+				});
+				let payload = Payload::new(
+					&api_url,
+					&bearer,
+					user_verification.to_string().as_bytes(),
+					&sender,
+					server_id,
+					ft_identifier,
+					&PayloadType::Create,
+				);
+				let key = Self::derived_key(<frame_system::Pallet<T>>::block_number());
+				let data = IndexingData(b"submit_payload_unsigned".to_vec(), payload);
+
+				offchain_index::set(&key, &data.encode());
+
+				Ok(())
+			},
+			Err(err) => Err(err),
+		}
 	}
 }

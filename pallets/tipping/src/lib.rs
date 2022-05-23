@@ -32,6 +32,7 @@ pub mod pallet {
 		traits::Currency,
 	};
 	use frame_system::pallet_prelude::*;
+	use sp_std::vec::Vec;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -68,6 +69,8 @@ pub mod pallet {
 		ClaimTip(T::AccountId, T::AccountId, BalanceOf<T>, FtIdentifier),
 		/// Claim balance success. [tips_balance, tips_balance]
 		ClaimReference(TipsBalanceOf<T>, Option<TipsBalanceOf<T>>),
+		/// Verify social media
+		VerifyingSocialMedia,
 	}
 
 	#[pallet::error]
@@ -171,6 +174,33 @@ pub mod pallet {
 			) {
 				Ok(tips_balances) => {
 					Self::deposit_event(Event::ClaimReference(tips_balances.0, tips_balances.1));
+					Ok(().into())
+				},
+				Err(error) => Err(error.into()),
+			}
+		}
+
+		#[pallet::weight(T::WeightInfo::claim_reference())]
+		pub fn submit_social_media_payload(
+			origin: OriginFor<T>,
+			server_id: Vec<u8>,
+			access_token: Vec<u8>,
+			username: Vec<u8>,
+			platform: Vec<u8>,
+			ft_identifier: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+
+			match <Self as TippingInterface<T>>::submit_social_media_payload(
+				&who,
+				&server_id,
+				&access_token,
+				&username,
+				&platform,
+				&ft_identifier,
+			) {
+				Ok(()) => {
+					Self::deposit_event(Event::VerifyingSocialMedia);
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),

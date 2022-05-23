@@ -27,4 +27,13 @@ pub trait TippingInterface<T: frame_system::Config> {
 		account_id: &Option<T::AccountId>,
 		verify_owner: bool,
 	) -> Result<Self::TipsBalances, Self::Error>;
+
+	fn submit_social_media_payload(
+		sender: &T::AccountId,
+		server_id: &[u8],
+		access_token: &[u8],
+		username: &[u8],
+		platform: &[u8],
+		ft_identifier: &[u8],
+	) -> Result<(), Self::Error>;
 }

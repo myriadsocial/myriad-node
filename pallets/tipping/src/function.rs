@@ -1,16 +1,31 @@
 use super::*;
 
+use codec::Encode;
 use frame_support::{
 	sp_runtime::traits::{AccountIdConversion, Zero},
 	PalletId,
 };
+use sp_std::vec::Vec;
 
 const PALLET_ID: PalletId = PalletId(*b"Tipping!");
+const ONCHAIN_TX_KEY: &[u8] = b"pallet_tipping::indexing";
 
 impl<T: Config> Pallet<T> {
 	/// The account ID that holds tipping's funds
 	pub fn tipping_account_id() -> T::AccountId {
 		PALLET_ID.into_account()
+	}
+
+	pub fn derived_key(block_number: T::BlockNumber) -> Vec<u8> {
+		block_number.using_encoded(|encoded_bn| {
+			ONCHAIN_TX_KEY
+				.to_vec()
+				.iter()
+				.chain(b"/".iter())
+				.chain(encoded_bn)
+				.copied()
+				.collect::<Vec<u8>>()
+		})
 	}
 
 	pub fn verify_server(
@@ -89,6 +104,21 @@ impl<T: Config> Pallet<T> {
 		tips_balance_info: &TipsBalanceInfo,
 	) -> (TipsBalanceOf<T>, Option<TipsBalanceOf<T>>) {
 		(TipsBalance::new(tips_balance_info, &None, &Zero::zero()), None)
+	}
+
+	pub fn get_api_url(server_id: &[u8], endpoint: &str) -> Result<Vec<u8>, Error<T>> {
+		let server = T::Server::get_by_id(server_id);
+
+		if let Some(server_info) = server {
+			let mut api_url = server_info.get_api_url().to_vec();
+			let mut endpoint = endpoint.as_bytes().to_vec();
+
+			api_url.append(&mut endpoint);
+
+			return Ok(api_url)
+		}
+
+		Err(Error::<T>::ServerNotRegister)
 	}
 
 	pub fn is_integer(ft_identifier: &[u8]) -> bool {
