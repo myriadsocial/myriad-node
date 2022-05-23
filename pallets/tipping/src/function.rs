@@ -2,10 +2,15 @@ use super::*;
 
 use codec::Encode;
 use frame_support::{
-	sp_runtime::traits::{AccountIdConversion, Zero},
+	sp_runtime::{
+		offchain::{http, storage::StorageValueRef},
+		traits::{AccountIdConversion, Zero},
+		transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
+	},
 	PalletId,
 };
-use sp_std::vec::Vec;
+use frame_system::{self as system, offchain::SubmitTransaction};
+use sp_std::{str, vec, vec::Vec};
 
 const PALLET_ID: PalletId = PalletId(*b"Tipping!");
 const ONCHAIN_TX_KEY: &[u8] = b"pallet_tipping::indexing";
@@ -14,18 +19,6 @@ impl<T: Config> Pallet<T> {
 	/// The account ID that holds tipping's funds
 	pub fn tipping_account_id() -> T::AccountId {
 		PALLET_ID.into_account()
-	}
-
-	pub fn derived_key(block_number: T::BlockNumber) -> Vec<u8> {
-		block_number.using_encoded(|encoded_bn| {
-			ONCHAIN_TX_KEY
-				.to_vec()
-				.iter()
-				.chain(b"/".iter())
-				.chain(encoded_bn)
-				.copied()
-				.collect::<Vec<u8>>()
-		})
 	}
 
 	pub fn verify_server(
@@ -54,6 +47,138 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Ok(())
+	}
+
+	pub fn derived_key(block_number: T::BlockNumber) -> Vec<u8> {
+		block_number.using_encoded(|encoded_bn| {
+			ONCHAIN_TX_KEY
+				.to_vec()
+				.iter()
+				.chain(b"/".iter())
+				.chain(encoded_bn)
+				.copied()
+				.collect::<Vec<u8>>()
+		})
+	}
+
+	pub fn get_indexing_data(block_number: T::BlockNumber) -> Option<IndexingData<AccountIdOf<T>>> {
+		let key = Self::derived_key(block_number);
+		let storage_ref = StorageValueRef::persistent(&key);
+
+		match storage_ref.get::<IndexingData<AccountIdOf<T>>>() {
+			Ok(data) => data,
+			Err(_) => None,
+		}
+	}
+
+	pub fn verify_social_media(
+		payload: Payload<AccountIdOf<T>>,
+	) -> Result<Option<APIResult<T>>, http::Error> {
+		let api_url = str::from_utf8(payload.get_api_url()).unwrap_or("error");
+		let access_token = str::from_utf8(payload.get_access_token()).unwrap_or("error");
+		let user_verification = payload.get_user_verification();
+		let account_id = payload.get_account_id();
+		let server_id = payload.get_server_id();
+		let ft_identifier = payload.get_ft_identifier();
+		let request_body = vec![user_verification];
+		let request = http::Request::post(api_url, request_body.clone())
+			.add_header("Authorization", access_token)
+			.add_header("content-type", "application/json");
+
+		let pending =
+			request.body(request_body.clone()).send().map_err(|_| http::Error::IoError)?;
+
+		let response = pending.wait().map_err(|_| http::Error::IoError)?;
+
+		if response.code != 200 {
+			return Err(http::Error::Unknown)
+		}
+
+		let body = response.body().collect::<Vec<u8>>();
+		let body_str = str::from_utf8(&body).map_err(|_| http::Error::Unknown)?;
+		let user_social_media = Self::parse_user_social_media(body_str);
+
+		if user_social_media.is_none() {
+			return Err(http::Error::Unknown)
+		}
+
+		let user_social_media = user_social_media.unwrap();
+		let tips_balance_info = TipsBalanceInfo::new(
+			server_id,
+			"people".as_bytes(),
+			user_social_media.get_people_id().as_bytes(),
+			ft_identifier,
+		);
+
+		Ok(Some((
+			account_id.clone(),
+			tips_balance_info,
+			user_social_media,
+			access_token.to_string(),
+		)))
+	}
+
+	pub fn handle_myriad_api(
+		block_number: T::BlockNumber,
+	) -> Result<Option<APIResult<T>>, http::Error> {
+		let data = Self::get_indexing_data(block_number);
+
+		if data.is_none() {
+			return Err(http::Error::Unknown)
+		}
+
+		let payload = data.unwrap().1;
+		let payload_type = payload.get_payload_type();
+
+		match payload_type {
+			PayloadType::Create => Self::verify_social_media(payload),
+			PayloadType::Delete => Ok(None),
+		}
+	}
+
+	pub fn verify_social_media_and_send_unsigned(
+		block_number: T::BlockNumber,
+	) -> Result<(), &'static str> {
+		let result = Self::handle_myriad_api(block_number);
+
+		if result.is_err() {
+			return Err("Failed to verify social media")
+		}
+
+		let social_media = result.unwrap();
+		if social_media.is_none() {
+			return Err("Nothing to verified")
+		}
+
+		let (account_id, tips_balance_info, user_social_media, _) = social_media.unwrap();
+		let user_id = user_social_media.get_user_id();
+		let call = Call::claim_reference_unsigned {
+			block_number,
+			tips_balance_info,
+			reference_type: "user".as_bytes().to_vec(),
+			reference_id: user_id.as_bytes().to_vec(),
+			account_id: Some(account_id),
+		};
+
+		match SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into()) {
+			Ok(_) => Ok(()),
+			Err(_) => Err("Failed in offchain_unsigned_tx"),
+		}
+	}
+
+	pub fn validate_transaction_parameters(
+		block_number: &T::BlockNumber,
+		tag: &'static str,
+	) -> TransactionValidity {
+		let current_block = <system::Pallet<T>>::block_number();
+		if &current_block < block_number {
+			return InvalidTransaction::Future.into()
+		}
+
+		ValidTransaction::with_tag_prefix(tag)
+			.and_provides(block_number)
+			.propagate(true)
+			.build()
 	}
 
 	pub fn get_tips_balance(tips_balance_info: &TipsBalanceInfo) -> Option<TipsBalanceOf<T>> {
@@ -119,6 +244,18 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Err(Error::<T>::ServerNotRegister)
+	}
+
+	pub fn parse_user_social_media(data: &str) -> Option<UserSocialMedia> {
+		let data = str::replace(data, "createdAt", "created_at");
+		let data = str::replace(&data, "updatedAt", "updated_at");
+		let data = str::replace(&data, "peopleId", "people_id");
+		let data = str::replace(&data, "userId", "user_id");
+
+		match serde_json::from_str::<UserSocialMedia>(&data) {
+			Ok(result) => Some(result),
+			Err(_) => None,
+		}
 	}
 
 	pub fn is_integer(ft_identifier: &[u8]) -> bool {

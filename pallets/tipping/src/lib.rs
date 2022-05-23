@@ -10,6 +10,7 @@ pub use pallet::*;
 pub use pallet_server::interface::{ServerInfo, ServerProvider};
 pub use scale_info::{prelude::string::*, TypeInfo};
 
+pub mod crypto;
 pub mod function;
 pub mod impl_tipping;
 pub mod interface;
@@ -28,14 +29,25 @@ pub mod pallet {
 	use super::*;
 
 	use frame_support::{
-		dispatch::DispatchResultWithPostInfo, pallet_prelude::*, sp_runtime::SaturatedConversion,
+		dispatch::DispatchResultWithPostInfo,
+		pallet_prelude::*,
+		sp_runtime::{
+			transaction_validity::{InvalidTransaction, TransactionValidity},
+			SaturatedConversion,
+		},
 		traits::Currency,
 	};
-	use frame_system::pallet_prelude::*;
+	use frame_system::{
+		offchain::{AppCrypto, CreateSignedTransaction},
+		pallet_prelude::*,
+	};
 	use sp_std::vec::Vec;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: CreateSignedTransaction<Call<Self>> + frame_system::Config {
+		/// The identifier type for an offchain worker.
+		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+		type Call: From<Call<Self>>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type Currency: Currency<<Self as frame_system::Config>::AccountId>;
 		type Server: ServerProvider<Self>;
@@ -88,7 +100,11 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn offchain_worker(block_number: T::BlockNumber) {
+			let _ = Self::verify_social_media_and_send_unsigned(block_number);
+		}
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -204,6 +220,27 @@ pub mod pallet {
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),
+			}
+		}
+	}
+
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			match call {
+				Call::claim_reference_unsigned {
+					block_number,
+					tips_balance_info: _,
+					reference_type: _,
+					reference_id: _,
+					account_id: _,
+				} => Self::validate_transaction_parameters(
+					block_number,
+					"pallet_tipping::claim_reference",
+				),
+				_ => InvalidTransaction::Call.into(),
 			}
 		}
 	}

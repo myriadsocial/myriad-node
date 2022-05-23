@@ -64,6 +64,9 @@ use pallet_transaction_payment::{
 	ChargeTransactionPayment, CurrencyAdapter, Multiplier, TargetedFeeAdjustment,
 };
 
+// Local pallet
+pub use pallet_tipping;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
@@ -661,6 +664,8 @@ impl pallet_server::Config for Runtime {
 }
 
 impl pallet_tipping::Config for Runtime {
+	type AuthorityId = pallet_tipping::crypto::TestAuthId;
+	type Call = Call;
 	type Event = Event;
 	type Currency = Balances;
 	type Server = Server;
@@ -697,7 +702,7 @@ construct_runtime!(
 
 		// Local pallets
 		Server: pallet_server::{Call, Event<T>, Config<T>, Pallet, Storage},
-		Tipping: pallet_tipping::{Call, Event<T>, Pallet, Storage},
+		Tipping: pallet_tipping::{Call, Event<T>, Pallet, Storage, ValidateUnsigned},
 	}
 );
 

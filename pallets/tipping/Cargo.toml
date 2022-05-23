@@ -22,6 +22,7 @@ hex = { version = "0.4", default-features = false }
 ## Substrate Primitive Dependencies
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.13', default-features = false }
 sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.13', default-features = false }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.13', default-features = false }
 
 ## Substrate Frame Dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.13', default-features = false }
@@ -41,7 +42,6 @@ hex-literal = { version = '0.3.4', default-features = false }
 
 # Substrate Dependencies
 ## Substrate Primitive Dependencies
-sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.13', default-features = false }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.13', default-features = false }
 
 [features]

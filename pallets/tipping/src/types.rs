@@ -1,5 +1,6 @@
 use super::*;
 use frame_support::{pallet_prelude::*, traits::Currency};
+use serde::{Deserialize, Serialize};
 use sp_std::vec::Vec;
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
@@ -180,9 +181,35 @@ impl<AccountId: Clone> Payload<AccountId> {
 	}
 }
 
+#[derive(Serialize, Deserialize, RuntimeDebug)]
+pub struct UserSocialMedia {
+	pub(super) id: String,
+	pub(super) verified: bool,
+	pub(super) platform: String,
+	pub(super) primary: bool,
+	pub(super) created_at: String,
+	pub(super) updated_at: String,
+	pub(super) user_id: String,
+	pub(super) people_id: String,
+}
+impl UserSocialMedia {
+	pub fn get_id(&self) -> &str {
+		&self.id
+	}
+
+	pub fn get_user_id(&self) -> &str {
+		&self.user_id
+	}
+
+	pub fn get_people_id(&self) -> &str {
+		&self.people_id
+	}
+}
+
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub struct IndexingData<AccountId>(pub(super) Vec<u8>, pub(super) Payload<AccountId>);
 
+pub(super) type APIResult<T> = (AccountIdOf<T>, TipsBalanceInfo, UserSocialMedia, String);
 pub(super) type FtIdentifier = Vec<u8>;
 pub(super) type ReferenceId = Vec<u8>;
 pub(super) type ReferenceType = Vec<u8>;
