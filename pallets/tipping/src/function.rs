@@ -14,7 +14,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn verify_server(
-		sender: &T::AccountId,
+		sender: &Option<T::AccountId>,
 		server_id: &[u8],
 		verify_owner: bool,
 	) -> Result<(), Error<T>> {
@@ -25,10 +25,15 @@ impl<T: Config> Pallet<T> {
 		}
 
 		if verify_owner {
+			if sender.is_none() {
+				return Err(Error::<T>::Unauthorized)
+			}
+
+			let sender = sender.clone().unwrap();
 			let server = server.unwrap();
 			let server_owner = server.get_owner();
 
-			if sender != server_owner {
+			if &sender != server_owner {
 				return Err(Error::<T>::Unauthorized)
 			}
 		}

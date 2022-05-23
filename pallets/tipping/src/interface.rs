@@ -20,7 +20,7 @@ pub trait TippingInterface<T: frame_system::Config> {
 	) -> Result<(Self::Balance, Self::FtIdentifier), Self::Error>;
 
 	fn claim_reference(
-		sender: &T::AccountId,
+		sender: &Option<T::AccountId>,
 		tips_balance_info: &Self::TipsBalanceInfo,
 		reference_type: &Self::ReferenceType,
 		reference_id: &Self::ReferenceId,

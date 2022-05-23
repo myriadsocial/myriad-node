@@ -122,7 +122,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 	}
 
 	fn claim_reference(
-		sender: &T::AccountId,
+		sender: &Option<T::AccountId>,
 		tips_balance_info: &Self::TipsBalanceInfo,
 		reference_type: &Self::ReferenceType,
 		reference_id: &Self::ReferenceId,

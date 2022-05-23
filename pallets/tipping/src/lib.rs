@@ -135,12 +135,39 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			match <Self as TippingInterface<T>>::claim_reference(
-				&who,
+				&Some(who),
 				&tips_balance_info,
 				&reference_type,
 				&reference_id,
 				&account_id,
 				true,
+			) {
+				Ok(tips_balances) => {
+					Self::deposit_event(Event::ClaimReference(tips_balances.0, tips_balances.1));
+					Ok(().into())
+				},
+				Err(error) => Err(error.into()),
+			}
+		}
+
+		#[pallet::weight(T::WeightInfo::claim_reference())]
+		pub fn claim_reference_unsigned(
+			origin: OriginFor<T>,
+			_block_number: T::BlockNumber,
+			tips_balance_info: TipsBalanceInfo,
+			reference_type: ReferenceType,
+			reference_id: ReferenceId,
+			account_id: Option<AccountIdOf<T>>,
+		) -> DispatchResultWithPostInfo {
+			ensure_none(origin)?;
+
+			match <Self as TippingInterface<T>>::claim_reference(
+				&None,
+				&tips_balance_info,
+				&reference_type,
+				&reference_id,
+				&account_id,
+				false,
 			) {
 				Ok(tips_balances) => {
 					Self::deposit_event(Event::ClaimReference(tips_balances.0, tips_balances.1));
