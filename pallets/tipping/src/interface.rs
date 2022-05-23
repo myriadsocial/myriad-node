@@ -25,5 +25,6 @@ pub trait TippingInterface<T: frame_system::Config> {
 		reference_type: &Self::ReferenceType,
 		reference_id: &Self::ReferenceId,
 		account_id: &Option<T::AccountId>,
+		verify_owner: bool,
 	) -> Result<Self::TipsBalances, Self::Error>;
 }

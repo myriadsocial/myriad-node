@@ -5,16 +5,20 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+pub use frame_support::traits::StorageVersion;
 pub use pallet::*;
 pub use pallet_server::interface::{ServerInfo, ServerProvider};
 pub use scale_info::{prelude::string::*, TypeInfo};
 
+pub mod function;
+pub mod impl_tipping;
 pub mod interface;
+pub mod types;
 pub mod weights;
-pub use crate::interface::TippingInterface;
-pub use weights::WeightInfo;
 
-use frame_support::traits::StorageVersion;
+pub use crate::interface::TippingInterface;
+pub use types::*;
+pub use weights::WeightInfo;
 
 /// The current storage version.
 const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -22,137 +26,12 @@ const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use sp_std::vec::Vec;
 
 	use frame_support::{
-		dispatch::DispatchResultWithPostInfo,
-		pallet_prelude::*,
-		sp_runtime::{
-			traits::{AccountIdConversion, Zero},
-			SaturatedConversion,
-		},
-		traits::{Currency, ExistenceRequirement, WithdrawReasons},
-		PalletId,
+		dispatch::DispatchResultWithPostInfo, pallet_prelude::*, sp_runtime::SaturatedConversion,
+		traits::Currency,
 	};
 	use frame_system::pallet_prelude::*;
-
-	const PALLET_ID: PalletId = PalletId(*b"Tipping!");
-
-	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
-	pub struct TipsBalance<Balance, AccountId> {
-		pub tips_balance_info: TipsBalanceInfo,
-		pub account_id: Option<AccountId>,
-		pub amount: Balance,
-	}
-	impl<Balance: Clone, AccountId: Clone> TipsBalance<Balance, AccountId> {
-		pub fn new(
-			tips_balance_info: &TipsBalanceInfo,
-			account_id: &Option<AccountId>,
-			amount: &Balance,
-		) -> Self {
-			Self {
-				tips_balance_info: tips_balance_info.clone(),
-				account_id: account_id.clone(),
-				amount: amount.clone(),
-			}
-		}
-
-		pub fn get_tips_balance_info(&self) -> &TipsBalanceInfo {
-			&self.tips_balance_info
-		}
-
-		pub fn get_amount(&self) -> &Balance {
-			&self.amount
-		}
-
-		pub fn get_reference_id(&self) -> &Vec<u8> {
-			self.tips_balance_info.get_reference_id()
-		}
-
-		pub fn get_reference_type(&self) -> &Vec<u8> {
-			self.tips_balance_info.get_reference_type()
-		}
-
-		pub fn get_server_id(&self) -> &Vec<u8> {
-			self.tips_balance_info.get_server_id()
-		}
-
-		pub fn get_ft_identifier(&self) -> &Vec<u8> {
-			self.tips_balance_info.get_ft_identifier()
-		}
-
-		pub fn get_account_id(&self) -> &Option<AccountId> {
-			&self.account_id
-		}
-
-		pub fn set_tips_balance_info(&mut self, tips_balance_info: &TipsBalanceInfo) {
-			self.tips_balance_info = tips_balance_info.clone();
-		}
-
-		pub fn set_amount(&mut self, amount: Balance) {
-			self.amount = amount;
-		}
-
-		pub fn set_account_id(&mut self, account_id: &Option<AccountId>) {
-			self.account_id = account_id.clone();
-		}
-	}
-
-	#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
-	pub struct TipsBalanceInfo {
-		pub server_id: Vec<u8>,
-		pub reference_type: Vec<u8>,
-		pub reference_id: Vec<u8>,
-		pub ft_identifier: Vec<u8>,
-	}
-	impl TipsBalanceInfo {
-		pub fn new(
-			server_id: &[u8],
-			reference_type: &[u8],
-			reference_id: &[u8],
-			ft_identifier: &[u8],
-		) -> Self {
-			Self {
-				server_id: server_id.to_vec(),
-				reference_type: reference_type.to_vec(),
-				reference_id: reference_id.to_vec(),
-				ft_identifier: ft_identifier.to_vec(),
-			}
-		}
-
-		pub fn get_reference_id(&self) -> &Vec<u8> {
-			&self.reference_id
-		}
-
-		pub fn get_reference_type(&self) -> &Vec<u8> {
-			&self.reference_type
-		}
-
-		pub fn get_server_id(&self) -> &Vec<u8> {
-			&self.server_id
-		}
-
-		pub fn get_ft_identifier(&self) -> &Vec<u8> {
-			&self.ft_identifier
-		}
-
-		pub fn set_reference_id(&mut self, reference_id: &[u8]) {
-			self.reference_id = reference_id.to_vec();
-		}
-
-		pub fn set_reference_type(&mut self, reference_type: &[u8]) {
-			self.reference_type = reference_type.to_vec();
-		}
-	}
-
-	pub type FtIdentifier = Vec<u8>;
-	pub type ReferenceId = Vec<u8>;
-	pub type ReferenceType = Vec<u8>;
-	pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
-	pub type CurrencyOf<T> = <T as self::Config>::Currency;
-	pub type BalanceOf<T> = <CurrencyOf<T> as Currency<AccountIdOf<T>>>::Balance;
-	pub type TipsBalanceOf<T> = TipsBalance<BalanceOf<T>, AccountIdOf<T>>;
-	pub type ServerId = Vec<u8>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -261,6 +140,7 @@ pub mod pallet {
 				&reference_type,
 				&reference_id,
 				&account_id,
+				true,
 			) {
 				Ok(tips_balances) => {
 					Self::deposit_event(Event::ClaimReference(tips_balances.0, tips_balances.1));
@@ -268,287 +148,6 @@ pub mod pallet {
 				},
 				Err(error) => Err(error.into()),
 			}
-		}
-	}
-
-	impl<T: Config> TippingInterface<T> for Pallet<T> {
-		type Error = Error<T>;
-		type TipsBalance = TipsBalanceOf<T>;
-		type TipsBalances = (TipsBalanceOf<T>, Option<TipsBalanceOf<T>>);
-		type TipsBalanceInfo = TipsBalanceInfo;
-		type Balance = BalanceOf<T>;
-		type ReferenceId = ReferenceId;
-		type ReferenceType = ReferenceType;
-		type FtIdentifier = FtIdentifier;
-
-		fn send_tip(
-			sender: &T::AccountId,
-			tips_balance_info: &Self::TipsBalanceInfo,
-			amount: &Self::Balance,
-		) -> Result<Self::TipsBalance, Self::Error> {
-			let server_id = tips_balance_info.get_server_id();
-			let ft_identifier = tips_balance_info.get_ft_identifier();
-			let tip_amount = *amount;
-
-			if T::Server::get_by_id(server_id).is_none() {
-				return Err(Error::<T>::ServerNotRegister)
-			}
-
-			if !Self::is_integer(ft_identifier) {
-				return Err(Error::<T>::WrongFormat)
-			}
-
-			if ft_identifier != "native".as_bytes() {
-				return Err(Error::<T>::FtNotExists)
-			}
-
-			if CurrencyOf::<T>::free_balance(sender) < tip_amount {
-				return Err(Error::<T>::InsufficientBalance)
-			}
-
-			match CurrencyOf::<T>::withdraw(
-				sender,
-				tip_amount,
-				WithdrawReasons::TRANSFER,
-				ExistenceRequirement::KeepAlive,
-			) {
-				Ok(imb) => {
-					let tips_balance = match Self::get_tips_balance(tips_balance_info) {
-						Some(mut result) => {
-							let total_amount = *result.get_amount() + tip_amount;
-
-							result.set_amount(total_amount);
-							Self::update_tips_balance(&result)
-						},
-						None =>
-							Self::create_tips_balance(tips_balance_info, &None, &Some(tip_amount)),
-					};
-					let receiver = Self::tipping_account_id();
-
-					CurrencyOf::<T>::resolve_creating(&receiver, imb);
-
-					Ok(tips_balance)
-				},
-				_ => Err(Error::<T>::BadSignature),
-			}
-		}
-
-		fn claim_tip(
-			receiver: &T::AccountId,
-			tips_balance_info: &Self::TipsBalanceInfo,
-		) -> Result<(Self::Balance, Self::FtIdentifier), Self::Error> {
-			let sender = Self::tipping_account_id();
-			let tips_balance = Self::get_tips_balance(tips_balance_info);
-
-			if tips_balance.is_none() {
-				return Err(Error::<T>::NotExists)
-			}
-
-			let mut tips_balance = tips_balance.unwrap();
-			let ft_identifier = tips_balance.get_ft_identifier().clone();
-			let account_id = tips_balance.get_account_id().as_ref();
-			let amount = *tips_balance.get_amount();
-
-			if amount == Zero::zero() {
-				return Err(Error::<T>::NothingToClaimed)
-			}
-
-			if account_id.is_none() {
-				return Err(Error::<T>::ReceiverNotExists)
-			}
-
-			if account_id.unwrap() != receiver {
-				return Err(Error::<T>::Unauthorized)
-			}
-
-			if !Self::is_integer(&ft_identifier) {
-				return Err(Error::<T>::WrongFormat)
-			}
-
-			if ft_identifier != "native".as_bytes() {
-				return Err(Error::<T>::FtNotExists)
-			}
-
-			tips_balance.set_amount(Zero::zero());
-
-			match CurrencyOf::<T>::withdraw(
-				&sender,
-				amount,
-				WithdrawReasons::TRANSFER,
-				ExistenceRequirement::KeepAlive,
-			) {
-				Ok(imb) => {
-					CurrencyOf::<T>::resolve_creating(receiver, imb);
-
-					let _ = Self::update_tips_balance(&tips_balance);
-
-					Ok((amount, ft_identifier))
-				},
-				_ => Err(Error::<T>::BadSignature),
-			}
-		}
-
-		fn claim_reference(
-			sender: &T::AccountId,
-			tips_balance_info: &Self::TipsBalanceInfo,
-			reference_type: &Self::ReferenceType,
-			reference_id: &Self::ReferenceId,
-			account_id: &Option<T::AccountId>,
-		) -> Result<Self::TipsBalances, Self::Error> {
-			let server_id = tips_balance_info.get_server_id();
-			let server = T::Server::get_by_id(server_id);
-			let ft_identifier = tips_balance_info.get_ft_identifier();
-
-			let mut tips_balances = Self::default_tips_balances(tips_balance_info);
-
-			if server.is_none() {
-				return Err(Error::<T>::ServerNotRegister)
-			}
-
-			if server.unwrap().get_owner() != sender {
-				return Err(Error::<T>::Unauthorized)
-			}
-
-			if ft_identifier != "native".as_bytes() {
-				return Err(Error::<T>::FtNotExists)
-			}
-
-			if tips_balance_info.get_reference_type() == reference_type {
-				if account_id.is_none() {
-					return Err(Error::<T>::ReceiverNotExists)
-				}
-
-				if tips_balance_info.get_reference_id() != reference_id {
-					return Err(Error::<T>::NotExists)
-				}
-
-				tips_balances.0 = match Self::get_tips_balance(tips_balance_info) {
-					Some(mut result) => {
-						result.set_account_id(account_id);
-						Self::update_tips_balance(&result)
-					},
-					None => Self::create_tips_balance(tips_balance_info, account_id, &None),
-				};
-			} else {
-				// Reference from tips balance info
-				let mut initial_balance: BalanceOf<T> = Zero::zero();
-
-				tips_balances.1 = match Self::get_tips_balance(tips_balance_info) {
-					Some(mut result) => {
-						initial_balance += *result.get_amount();
-
-						if !initial_balance.is_zero() {
-							result.set_amount(Zero::zero());
-							Some(Self::update_tips_balance(&result))
-						} else {
-							Some(result)
-						}
-					},
-					None => Some(Self::create_tips_balance(tips_balance_info, &None, &None)),
-				};
-
-				// Create or update reference from param
-				let mut tips_balance_info = tips_balance_info.clone();
-
-				tips_balance_info.set_reference_type(reference_type);
-				tips_balance_info.set_reference_id(reference_id);
-
-				tips_balances.0 = match Self::get_tips_balance(&tips_balance_info) {
-					Some(mut result) => {
-						let total_amount = *result.get_amount() + initial_balance;
-
-						result.set_amount(total_amount);
-
-						if account_id.is_some() {
-							result.set_account_id(account_id);
-						}
-
-						Self::update_tips_balance(&result)
-					},
-					None => Self::create_tips_balance(
-						&tips_balance_info,
-						account_id,
-						&Some(initial_balance),
-					),
-				};
-			}
-
-			Ok(tips_balances)
-		}
-	}
-
-	impl<T: Config> Pallet<T> {
-		/// The account ID that holds tipping's funds
-		pub fn tipping_account_id() -> T::AccountId {
-			PALLET_ID.into_account()
-		}
-
-		fn get_tips_balance(tips_balance_info: &TipsBalanceInfo) -> Option<TipsBalanceOf<T>> {
-			let reference_type = tips_balance_info.get_reference_type();
-			let reference_id = tips_balance_info.get_reference_id();
-			let server_id = tips_balance_info.get_server_id();
-			let ft_identifier = tips_balance_info.get_ft_identifier();
-
-			Self::tips_balance_by_reference((
-				server_id,
-				reference_type,
-				reference_id,
-				ft_identifier,
-			))
-		}
-
-		fn create_tips_balance(
-			tips_balance_info: &TipsBalanceInfo,
-			account_id: &Option<AccountIdOf<T>>,
-			amount: &Option<BalanceOf<T>>,
-		) -> TipsBalanceOf<T> {
-			let server_id = tips_balance_info.get_server_id();
-			let reference_type = tips_balance_info.get_reference_type();
-			let reference_id = tips_balance_info.get_reference_id();
-			let ft_identifier = tips_balance_info.get_ft_identifier();
-			let amount = if amount.is_some() { amount.unwrap() } else { Zero::zero() };
-			let tips_balance = TipsBalance::new(tips_balance_info, account_id, &amount);
-
-			TipsBalanceByReference::<T>::insert(
-				(server_id, reference_type, reference_id, ft_identifier),
-				tips_balance.clone(),
-			);
-
-			tips_balance
-		}
-
-		fn update_tips_balance(tips_balance: &TipsBalanceOf<T>) -> TipsBalanceOf<T> {
-			let tips_balance_info = tips_balance.get_tips_balance_info();
-			let server_id = tips_balance_info.get_server_id();
-			let reference_type = tips_balance_info.get_reference_type();
-			let reference_id = tips_balance_info.get_reference_id();
-			let ft_identifier = tips_balance_info.get_ft_identifier();
-
-			TipsBalanceByReference::<T>::insert(
-				(server_id, reference_type, reference_id, ft_identifier),
-				tips_balance.clone(),
-			);
-
-			tips_balance.clone()
-		}
-
-		fn default_tips_balances(
-			tips_balance_info: &TipsBalanceInfo,
-		) -> (TipsBalanceOf<T>, Option<TipsBalanceOf<T>>) {
-			(TipsBalance::new(tips_balance_info, &None, &Zero::zero()), None)
-		}
-
-		fn is_integer(ft_identifier: &[u8]) -> bool {
-			if ft_identifier == "native".as_bytes() {
-				return true
-			};
-
-			let str_num = match String::from_utf8(ft_identifier.to_vec()) {
-				Ok(res) => res,
-				Err(err) => err.to_string(),
-			};
-
-			str_num.parse::<u16>().is_ok()
 		}
 	}
 }
