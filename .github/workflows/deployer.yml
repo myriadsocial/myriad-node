@@ -93,31 +93,32 @@ jobs:
           username: ${{ steps.secrets.outputs.SSH_USERNAME }}
           key: ${{ steps.secrets.outputs.SSH_KEY }}
           script: |
+            ./connect.sh
             helm repo add myriadsocial https://charts.myriad.social
             helm repo update
             helm upgrade myriad-node myriadsocial/myriad-node \
               --install \
               --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }} \
               --set-string config.chain=dev-testnet \
-              --set-string config.nodes[0].name=full1 \
+              --set-string config.nodes[0].name=${{ github.event.repository.name }}-full1 \
               --set config.nodes[0].bootnode=true \
               --set config.nodes[0].archive=false \
               --set config.nodes[0].validator=false \
               --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
               --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set-string config.nodes[1].name=archive1 \
+              --set-string config.nodes[1].name=${{ github.event.repository.name }}-archive1 \
               --set config.nodes[1].bootnode=true \
               --set config.nodes[1].archive=true \
               --set config.nodes[1].validator=false \
               --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
               --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set-string config.nodes[2].name=validator1 \
+              --set-string config.nodes[2].name=${{ github.event.repository.name }}-validator1 \
               --set config.nodes[2].bootnode=true \
               --set config.nodes[2].archive=false \
               --set config.nodes[2].validator=true \
               --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
               --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
-              --set-string config.nodes[3].name=validator2 \
+              --set-string config.nodes[3].name=${{ github.event.repository.name }}-validator2 \
               --set config.nodes[3].bootnode=true \
               --set config.nodes[3].archive=false \
               --set config.nodes[3].validator=true \
@@ -283,8 +284,11 @@ jobs:
             NODE_KEY_PUBLIC_1:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
             NODE_KEY_PRIVATE_2:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
             NODE_KEY_PUBLIC_2:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
+            NODE_KEY_PRIVATE_3:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_3
+            NODE_KEY_PUBLIC_3:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_3
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_TELEMETRY_URL:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_TELEMETRY_URL
             NODE_RPC_WS_DNS:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
       - name: Deploy
         if: "${{ env.DEPLOY == 'true' }}"
@@ -295,27 +299,35 @@ jobs:
           username: ${{ steps.secrets.outputs.SSH_USERNAME }}
           key: ${{ steps.secrets.outputs.SSH_KEY }}
           script: |
+            ./connect.sh
             helm repo add myriadsocial https://charts.myriad.social
             helm repo update
             helm upgrade myriad-node myriadsocial/myriad-node \
               --install \
               --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
               --set-string config.chain=testnet \
-              --set-string config.nodes[0].name=full1 \
+              --set-string config.nodes[0].name=${{ github.event.repository.name }}-full1 \
               --set config.nodes[0].bootnode=true \
+              --set config.nodes[0].archive=false \
               --set config.nodes[0].validator=false \
               --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
               --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set-string config.nodes[1].name=full2 \
+              --set-string config.nodes[0].telemetry=true \
+              --set-string config.nodes[1].name=${{ github.event.repository.name }}-full2 \
               --set config.nodes[1].bootnode=true \
+              --set config.nodes[1].archive=false \
               --set config.nodes[1].validator=false \
               --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
               --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set-string config.nodes[2].name=validator1 \
+              --set-string config.nodes[1].telemetry=true \
+              --set-string config.nodes[2].name=${{ github.event.repository.name }}-archive1 \
               --set config.nodes[2].bootnode=true \
-              --set config.nodes[2].validator=true \
-              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
-              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+              --set config.nodes[2].archive=true \
+              --set config.nodes[2].validator=false \
+              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_3 }} \
+              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_3 }} \
+              --set-string config.nodes[2].telemetry=true \
+              --set-string config.telemetryUrl="${{ steps.secrets.outputs.NODE_TELEMETRY_URL }}" \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
@@ -374,8 +386,11 @@ jobs:
             NODE_KEY_PUBLIC_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
             NODE_KEY_PRIVATE_2:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
             NODE_KEY_PUBLIC_2:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
+            NODE_KEY_PRIVATE_3:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_3
+            NODE_KEY_PUBLIC_3:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_3
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_TELEMETRY_URL:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_TELEMETRY_URL
             NODE_RPC_WS_DNS:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
       - name: Deploy
         if: "${{ env.DEPLOY == 'true' }}"
@@ -386,27 +401,35 @@ jobs:
           username: ${{ steps.secrets.outputs.SSH_USERNAME }}
           key: ${{ steps.secrets.outputs.SSH_KEY }}
           script: |
+            ./connect.sh
             helm repo add myriadsocial https://charts.myriad.social
             helm repo update
             helm upgrade myriad-node myriadsocial/myriad-node \
               --install \
               --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
               --set-string config.chain=mainnet \
-              --set-string config.nodes[0].name=full1 \
+              --set-string config.nodes[0].name=${{ github.event.repository.name }}-full1 \
               --set config.nodes[0].bootnode=true \
+              --set config.nodes[0].archive=false \
               --set config.nodes[0].validator=false \
               --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
               --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set-string config.nodes[1].name=full2 \
+              --set-string config.nodes[0].telemetry=true \
+              --set-string config.nodes[1].name=${{ github.event.repository.name }}-full2 \
               --set config.nodes[1].bootnode=true \
+              --set config.nodes[1].archive=false \
               --set config.nodes[1].validator=false \
               --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
               --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set-string config.nodes[2].name=validator1 \
+              --set-string config.nodes[1].telemetry=true \
+              --set-string config.nodes[2].name=${{ github.event.repository.name }}-archive1 \
               --set config.nodes[2].bootnode=true \
-              --set config.nodes[2].validator=true \
-              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
-              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+              --set config.nodes[2].archive=true \
+              --set config.nodes[2].validator=false \
+              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_3 }} \
+              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_3 }} \
+              --set-string config.nodes[2].telemetry=true \
+              --set-string config.telemetryUrl="${{ steps.secrets.outputs.NODE_TELEMETRY_URL }}" \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
@@ -465,8 +488,11 @@ jobs:
             NODE_KEY_PUBLIC_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
             NODE_KEY_PRIVATE_2:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
             NODE_KEY_PUBLIC_2:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
+            NODE_KEY_PRIVATE_3:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_3
+            NODE_KEY_PUBLIC_3:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_3
             NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
             NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
+            NODE_TELEMETRY_URL:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_TELEMETRY_URL
             NODE_RPC_WS_DNS:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
       - name: Deploy
         if: "${{ env.DEPLOY == 'true' }}"
@@ -477,27 +503,35 @@ jobs:
           username: ${{ steps.secrets.outputs.SSH_USERNAME }}
           key: ${{ steps.secrets.outputs.SSH_KEY }}
           script: |
+            ./connect.sh
             helm repo add myriadsocial https://charts.myriad.social
             helm repo update
             helm upgrade myriad-node myriadsocial/myriad-node \
               --install \
               --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
               --set-string config.chain=mainnet \
-              --set-string config.nodes[0].name=full1 \
+              --set-string config.nodes[0].name=${{ github.event.repository.name }}-full1 \
               --set config.nodes[0].bootnode=true \
+              --set config.nodes[0].archive=false \
               --set config.nodes[0].validator=false \
               --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
               --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set-string config.nodes[1].name=full2 \
+              --set-string config.nodes[0].telemetry=true \
+              --set-string config.nodes[1].name=${{ github.event.repository.name }}-full2 \
               --set config.nodes[1].bootnode=true \
+              --set config.nodes[1].archive=false \
               --set config.nodes[1].validator=false \
               --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
               --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set-string config.nodes[2].name=validator1 \
+              --set-string config.nodes[1].telemetry=true \
+              --set-string config.nodes[2].name=${{ github.event.repository.name }}-archive1 \
               --set config.nodes[2].bootnode=true \
-              --set config.nodes[2].validator=true \
-              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
-              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
+              --set config.nodes[2].archive=true \
+              --set config.nodes[2].validator=false \
+              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_3 }} \
+              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_3 }} \
+              --set-string config.nodes[2].telemetry=true \
+              --set-string config.telemetryUrl="${{ steps.secrets.outputs.NODE_TELEMETRY_URL }}" \
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
