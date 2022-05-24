@@ -2,11 +2,14 @@ use crate as pallet_tipping;
 use frame_support::{construct_runtime, parameter_types, traits::Everything};
 use frame_system as system;
 use pallet_balances::AccountData;
-use sp_core::H256;
+use sp_core::{
+	sr25519::{self as sr25519, Signature},
+	Pair, H256,
+};
 use sp_io::TestExternalities;
 use sp_runtime::{
-	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	testing::{Header, TestXt},
+	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -42,7 +45,7 @@ impl system::Config for Test {
 	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = sp_core::sr25519::Public;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type Event = Event;
@@ -79,6 +82,8 @@ impl pallet_balances::Config for Test {
 }
 
 impl pallet_tipping::Config for Test {
+	type AuthorityId = pallet_tipping::crypto::TestAuthId;
+	type Call = Call;
 	type Event = Event;
 	type Currency = Balances;
 	type Server = Server;
@@ -90,6 +95,42 @@ impl pallet_server::Config for Test {
 	type WeightInfo = ();
 }
 
+type Extrinsic = TestXt<Call, ()>;
+type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+
+impl frame_system::offchain::SigningTypes for Test {
+	type Public = <Signature as Verify>::Signer;
+	type Signature = Signature;
+}
+
+impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
+where
+	Call: From<LocalCall>,
+{
+	type OverarchingCall = Call;
+	type Extrinsic = Extrinsic;
+}
+
+impl<LocalCall> system::offchain::CreateSignedTransaction<LocalCall> for Test
+where
+	Call: From<LocalCall>,
+{
+	fn create_transaction<C: system::offchain::AppCrypto<Self::Public, Self::Signature>>(
+		call: Call,
+		_public: <Signature as Verify>::Signer,
+		_account: AccountId,
+		nonce: u64,
+	) -> Option<(Call, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
+		Some((call, (nonce, ())))
+	}
+}
+
+pub fn account_key(s: &str) -> sr25519::Public {
+	sr25519::Pair::from_string(&format!("//{}", s), None)
+		.expect("static values are valud; qed")
+		.public()
+}
+
 pub struct ExternalityBuilder {
 	existential_deposit: u64,
 }
@@ -97,8 +138,21 @@ pub struct ExternalityBuilder {
 impl ExternalityBuilder {
 	pub fn build(&self) -> TestExternalities {
 		let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+		let alice_public = account_key("alice");
+		let bob_public = account_key("bob");
+		let john_public = account_key("john");
+		let satoshi_public = account_key("satoshi");
+		let admin_public = account_key("admin");
+
 		pallet_balances::GenesisConfig::<Test> {
-			balances: vec![(1, 10), (2, 20), (3, 30), (4, 40), (5, 50), (6, 60)],
+			balances: vec![
+				(alice_public, 10),
+				(bob_public, 20),
+				(john_public, 30),
+				(satoshi_public, 40),
+				(admin_public, 50),
+			],
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();

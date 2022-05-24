@@ -5,11 +5,11 @@ use pallet_server::AdminKey;
 #[test]
 fn send_tip_myria_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		AdminKey::<Test>::put(5);
+		AdminKey::<Test>::put(account_key("admin"));
 
 		assert_ok!(Server::register(
-			Origin::signed(5),
-			1,
+			Origin::signed(account_key("admin")),
+			account_key("alice"),
 			"myriad".as_bytes().to_vec(),
 			"myriad".as_bytes().to_vec(),
 			"https://api.dev.myriad.social".as_bytes().to_vec(),
@@ -24,7 +24,7 @@ fn send_tip_myria_works() {
 		);
 		let tips_balance = TipsBalance::new(&tips_balance_info, &None, &1);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info, 1));
+		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info, 1));
 
 		assert_eq!(
 			Tipping::tips_balance_by_reference((
@@ -36,18 +36,18 @@ fn send_tip_myria_works() {
 			Some(tips_balance)
 		);
 
-		assert_eq!(Balances::free_balance(2), 19);
+		assert_eq!(Balances::free_balance(account_key("bob")), 19);
 	})
 }
 
 #[test]
 fn claim_reference_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		AdminKey::<Test>::put(5);
+		AdminKey::<Test>::put(account_key("admin"));
 
 		assert_ok!(Server::register(
-			Origin::signed(5),
-			1,
+			Origin::signed(account_key("admin")),
+			account_key("alice"),
 			"myriad".as_bytes().to_vec(),
 			"myriad".as_bytes().to_vec(),
 			"https://api.dev.myriad.social".as_bytes().to_vec(),
@@ -62,10 +62,14 @@ fn claim_reference_works() {
 		);
 		let mut tips_balance = TipsBalance::new(&tips_balance_info, &None, &1);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
+		assert_ok!(Tipping::send_tip(
+			Origin::signed(account_key("bob")),
+			tips_balance_info.clone(),
+			1
+		));
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(1),
+			Origin::signed(account_key("alice")),
 			tips_balance_info.clone(),
 			"user".as_bytes().to_vec(),
 			"user_id".as_bytes().to_vec(),
@@ -100,14 +104,14 @@ fn claim_reference_works() {
 		);
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(1),
+			Origin::signed(account_key("alice")),
 			tips_balance_info.clone(),
 			"user".as_bytes().to_vec(),
 			"user_id".as_bytes().to_vec(),
-			Some(3),
+			Some(account_key("john")),
 		));
 
-		tips_balance.set_account_id(&Some(3));
+		tips_balance.set_account_id(&Some(account_key("john")));
 
 		assert_eq!(
 			Tipping::tips_balance_by_reference((
@@ -124,11 +128,11 @@ fn claim_reference_works() {
 #[test]
 pub fn claim_tip_myria_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		AdminKey::<Test>::put(5);
+		AdminKey::<Test>::put(account_key("admin"));
 
 		assert_ok!(Server::register(
-			Origin::signed(5),
-			1,
+			Origin::signed(account_key("admin")),
+			account_key("alice"),
 			"myriad".as_bytes().to_vec(),
 			"myriad".as_bytes().to_vec(),
 			"https://api.dev.myriad.social".as_bytes().to_vec(),
@@ -142,10 +146,14 @@ pub fn claim_tip_myria_works() {
 			"native".as_bytes(),
 		);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
+		assert_ok!(Tipping::send_tip(
+			Origin::signed(account_key("bob")),
+			tips_balance_info.clone(),
+			1
+		));
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(1),
+			Origin::signed(account_key("alice")),
 			tips_balance_info.clone(),
 			"user".as_bytes().to_vec(),
 			"user_id".as_bytes().to_vec(),
@@ -156,27 +164,27 @@ pub fn claim_tip_myria_works() {
 		tips_balance_info.set_reference_id("user_id".as_bytes());
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(1),
+			Origin::signed(account_key("alice")),
 			tips_balance_info.clone(),
 			"user".as_bytes().to_vec(),
 			"user_id".as_bytes().to_vec(),
-			Some(3),
+			Some(account_key("john")),
 		));
 
-		assert_ok!(Tipping::claim_tip(Origin::signed(3), tips_balance_info,));
+		assert_ok!(Tipping::claim_tip(Origin::signed(account_key("john")), tips_balance_info,));
 
-		assert_eq!(Balances::free_balance(3), 31);
+		assert_eq!(Balances::free_balance(account_key("john")), 31);
 	})
 }
 
 #[test]
 fn cant_send_tip_myria_when_insufficient_balance() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		AdminKey::<Test>::put(5);
+		AdminKey::<Test>::put(account_key("admin"));
 
 		assert_ok!(Server::register(
-			Origin::signed(5),
-			1,
+			Origin::signed(account_key("admin")),
+			account_key("alice"),
 			"myriad".as_bytes().to_vec(),
 			"myriad".as_bytes().to_vec(),
 			"https://api.dev.myriad.social".as_bytes().to_vec(),
@@ -191,7 +199,7 @@ fn cant_send_tip_myria_when_insufficient_balance() {
 		);
 
 		assert_noop!(
-			Tipping::send_tip(Origin::signed(2), tips_balance_info, 21,),
+			Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info, 21),
 			Error::<Test>::InsufficientBalance
 		);
 	})
@@ -208,7 +216,7 @@ fn cant_send_tip_myria_when_server_id_not_register() {
 		);
 
 		assert_noop!(
-			Tipping::send_tip(Origin::signed(2), tips_balance_info, 1,),
+			Tipping::send_tip(Origin::signed(account_key("alice")), tips_balance_info, 1),
 			Error::<Test>::ServerNotRegister
 		);
 	})
@@ -225,7 +233,7 @@ fn cant_send_tip_myria_when_ft_identifier_exists() {
 		);
 
 		assert_noop!(
-			Tipping::send_tip(Origin::signed(2), tips_balance_info, 1,),
+			Tipping::send_tip(Origin::signed(account_key("alice")), tips_balance_info, 1,),
 			Error::<Test>::ServerNotRegister
 		);
 	})
@@ -243,7 +251,7 @@ fn cant_claim_reference_when_server_not_registered() {
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(1),
+				Origin::signed(account_key("alice")),
 				tips_balance_info,
 				"user".as_bytes().to_vec(),
 				"user_id".as_bytes().to_vec(),
@@ -257,11 +265,11 @@ fn cant_claim_reference_when_server_not_registered() {
 #[test]
 fn cant_claim_reference_when_not_as_server_owner() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		AdminKey::<Test>::put(5);
+		AdminKey::<Test>::put(account_key("admin"));
 
 		assert_ok!(Server::register(
-			Origin::signed(5),
-			1,
+			Origin::signed(account_key("admin")),
+			account_key("alice"),
 			"myriad".as_bytes().to_vec(),
 			"myriad".as_bytes().to_vec(),
 			"https://api.dev.myriad.social".as_bytes().to_vec(),
@@ -277,7 +285,7 @@ fn cant_claim_reference_when_not_as_server_owner() {
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(2),
+				Origin::signed(account_key("bob")),
 				tips_balance_info,
 				"user".as_bytes().to_vec(),
 				"user_id".as_bytes().to_vec(),
@@ -291,11 +299,11 @@ fn cant_claim_reference_when_not_as_server_owner() {
 #[test]
 fn cant_claim_reference_when_receiver_not_exists() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		AdminKey::<Test>::put(5);
+		AdminKey::<Test>::put(account_key("admin"));
 
 		assert_ok!(Server::register(
-			Origin::signed(5),
-			1,
+			Origin::signed(account_key("admin")),
+			account_key("alice"),
 			"myriad".as_bytes().to_vec(),
 			"myriad".as_bytes().to_vec(),
 			"https://api.dev.myriad.social".as_bytes().to_vec(),
@@ -309,14 +317,18 @@ fn cant_claim_reference_when_receiver_not_exists() {
 			"native".as_bytes(),
 		);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
+		assert_ok!(Tipping::send_tip(
+			Origin::signed(account_key("bob")),
+			tips_balance_info.clone(),
+			1
+		));
 
 		tips_balance_info.set_reference_type("user".as_bytes());
 		tips_balance_info.set_reference_id("user_id".as_bytes());
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(1),
+				Origin::signed(account_key("alice")),
 				tips_balance_info,
 				"user".as_bytes().to_vec(),
 				"user_id".as_bytes().to_vec(),
@@ -332,22 +344,22 @@ fn cant_claim_tip_balance_when_nothing_to_claimed() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		assert_noop!(
 			Tipping::claim_tip(
-				Origin::signed(1),
-				TipsBalanceInfo {
-					reference_id: "user_id".as_bytes().to_vec(),
-					reference_type: "user".as_bytes().to_vec(),
-					server_id: "myriad".as_bytes().to_vec(),
-					ft_identifier: "native".as_bytes().to_vec(),
-				},
+				Origin::signed(account_key("alice")),
+				TipsBalanceInfo::new(
+					"myriad".as_bytes(),
+					"user".as_bytes(),
+					"user_id".as_bytes(),
+					"native".as_bytes()
+				),
 			),
 			Error::<Test>::NotExists,
 		);
 
-		AdminKey::<Test>::put(5);
+		AdminKey::<Test>::put(account_key("admin"));
 
 		assert_ok!(Server::register(
-			Origin::signed(5),
-			1,
+			Origin::signed(account_key("admin")),
+			account_key("alice"),
 			"myriad".as_bytes().to_vec(),
 			"myriad".as_bytes().to_vec(),
 			"https://api.dev.myriad.social".as_bytes().to_vec(),
@@ -361,10 +373,14 @@ fn cant_claim_tip_balance_when_nothing_to_claimed() {
 			"native".as_bytes(),
 		);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 0));
+		assert_ok!(Tipping::send_tip(
+			Origin::signed(account_key("bob")),
+			tips_balance_info.clone(),
+			0
+		));
 
 		assert_noop!(
-			Tipping::claim_tip(Origin::signed(1), tips_balance_info,),
+			Tipping::claim_tip(Origin::signed(account_key("alice")), tips_balance_info,),
 			Error::<Test>::NothingToClaimed,
 		);
 	})
@@ -373,11 +389,11 @@ fn cant_claim_tip_balance_when_nothing_to_claimed() {
 #[test]
 fn cant_claim_tip_balance_when_unauthorized() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		AdminKey::<Test>::put(5);
+		AdminKey::<Test>::put(account_key("admin"));
 
 		assert_ok!(Server::register(
-			Origin::signed(5),
-			1,
+			Origin::signed(account_key("admin")),
+			account_key("alice"),
 			"myriad".as_bytes().to_vec(),
 			"myriad".as_bytes().to_vec(),
 			"https://api.dev.myriad.social".as_bytes().to_vec(),
@@ -391,18 +407,22 @@ fn cant_claim_tip_balance_when_unauthorized() {
 			"native".as_bytes(),
 		);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
+		assert_ok!(Tipping::send_tip(
+			Origin::signed(account_key("bob")),
+			tips_balance_info.clone(),
+			1
+		));
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(1),
+			Origin::signed(account_key("alice")),
 			tips_balance_info.clone(),
 			"user".as_bytes().to_vec(),
 			"user_id".as_bytes().to_vec(),
-			Some(3),
+			Some(account_key("john")),
 		));
 
 		assert_noop!(
-			Tipping::claim_tip(Origin::signed(4), tips_balance_info,),
+			Tipping::claim_tip(Origin::signed(account_key("satoshi")), tips_balance_info,),
 			Error::<Test>::Unauthorized
 		);
 	})
@@ -411,11 +431,11 @@ fn cant_claim_tip_balance_when_unauthorized() {
 #[test]
 fn call_event_should_work() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		AdminKey::<Test>::put(5);
+		AdminKey::<Test>::put(account_key("admin"));
 
 		assert_ok!(Server::register(
-			Origin::signed(5),
-			1,
+			Origin::signed(account_key("admin")),
+			account_key("alice"),
 			"myriad".as_bytes().to_vec(),
 			"myriad".as_bytes().to_vec(),
 			"https://api.dev.myriad.social".as_bytes().to_vec(),
@@ -430,18 +450,22 @@ fn call_event_should_work() {
 		);
 		let mut tips_balance = TipsBalance::new(&tips_balance_info, &None, &1);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(2), tips_balance_info.clone(), 1));
+		assert_ok!(Tipping::send_tip(
+			Origin::signed(account_key("bob")),
+			tips_balance_info.clone(),
+			1
+		));
 
 		let tipping_account_id = Tipping::tipping_account_id();
 
 		System::assert_last_event(Event::Tipping(crate::Event::SendTip(
-			2,
+			account_key("bob"),
 			tipping_account_id,
 			tips_balance.clone(),
 		)));
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(1),
+			Origin::signed(account_key("alice")),
 			tips_balance_info.clone(),
 			"user".as_bytes().to_vec(),
 			"user_id".as_bytes().to_vec(),
@@ -464,25 +488,25 @@ fn call_event_should_work() {
 		)));
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(1),
+			Origin::signed(account_key("alice")),
 			tips_balance_info.clone(),
 			"user".as_bytes().to_vec(),
 			"user_id".as_bytes().to_vec(),
-			Some(3),
+			Some(account_key("john")),
 		));
 
-		tips_balance_1.set_account_id(&Some(3));
+		tips_balance_1.set_account_id(&Some(account_key("john")));
 
 		System::assert_last_event(Event::Tipping(crate::Event::ClaimReference(
 			tips_balance_1,
 			None,
 		)));
 
-		assert_ok!(Tipping::claim_tip(Origin::signed(3), tips_balance_info,));
+		assert_ok!(Tipping::claim_tip(Origin::signed(account_key("john")), tips_balance_info,));
 
 		System::assert_last_event(Event::Tipping(crate::Event::ClaimTip(
 			tipping_account_id,
-			3,
+			account_key("john"),
 			1,
 			"native".as_bytes().to_vec(),
 		)));
