@@ -11,14 +11,14 @@ pub use pallet_server::interface::{ServerInfo, ServerProvider};
 pub use scale_info::{prelude::string::*, TypeInfo};
 
 pub mod crypto;
-pub mod function;
+pub mod functions;
 pub mod impl_tipping;
 pub mod interface;
 pub mod types;
 pub mod weights;
 
 pub use crate::interface::TippingInterface;
-pub use types::*;
+pub use types::{api_response::*, payload::*, tips_balance::*};
 pub use weights::WeightInfo;
 
 /// The current storage version.
