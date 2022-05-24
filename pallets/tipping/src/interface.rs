@@ -28,7 +28,7 @@ pub trait TippingInterface<T: frame_system::Config> {
 		verify_owner: bool,
 	) -> Result<Self::TipsBalances, Self::Error>;
 
-	fn submit_social_media_payload(
+	fn verify_social_media(
 		sender: &T::AccountId,
 		server_id: &[u8],
 		access_token: &[u8],
@@ -37,7 +37,7 @@ pub trait TippingInterface<T: frame_system::Config> {
 		ft_identifier: &[u8],
 	) -> Result<(), Self::Error>;
 
-	fn submit_delete_social_media_unsigned(
+	fn remove_user_social_media_unsigned(
 		server_id: &[u8],
 		access_token: &[u8],
 		user_social_media_id: &[u8],

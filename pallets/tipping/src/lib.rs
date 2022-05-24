@@ -199,7 +199,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::claim_reference())]
-		pub fn submit_social_media_payload(
+		pub fn verify_social_media(
 			origin: OriginFor<T>,
 			server_id: Vec<u8>,
 			access_token: Vec<u8>,
@@ -209,7 +209,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 
-			match <Self as TippingInterface<T>>::submit_social_media_payload(
+			match <Self as TippingInterface<T>>::verify_social_media(
 				&who,
 				&server_id,
 				&access_token,
@@ -226,7 +226,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn submit_delete_social_media_unsigned(
+		pub fn remove_user_social_media_unsigned(
 			origin: OriginFor<T>,
 			_block_number: T::BlockNumber,
 			server_id: Vec<u8>,
@@ -235,7 +235,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
-			match <Self as TippingInterface<T>>::submit_delete_social_media_unsigned(
+			match <Self as TippingInterface<T>>::remove_user_social_media_unsigned(
 				&server_id,
 				&access_token,
 				&user_social_media_id,
@@ -276,16 +276,16 @@ pub mod pallet {
 					account_id: _,
 				} => Self::validate_transaction_parameters(
 					block_number,
-					"pallet_tipping::claim_reference",
+					"pallet_tipping::claim_reference_unsigned",
 				),
-				Call::submit_delete_social_media_unsigned {
+				Call::remove_user_social_media_unsigned {
 					block_number,
 					server_id: _,
 					access_token: _,
 					user_social_media_id: _,
 				} => Self::validate_transaction_parameters(
 					block_number,
-					"pallet_tipping::submit_delete_social_media_unsigned",
+					"pallet_tipping::remove_user_social_media_unsigned",
 				),
 				Call::call_event_unsigned { block_number, event: _ } =>
 					Self::validate_transaction_parameters(

@@ -209,7 +209,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		Ok(tips_balances)
 	}
 
-	fn submit_social_media_payload(
+	fn verify_social_media(
 		sender: &T::AccountId,
 		server_id: &[u8],
 		access_token: &[u8],
@@ -258,7 +258,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		}
 	}
 
-	fn submit_delete_social_media_unsigned(
+	fn remove_user_social_media_unsigned(
 		server_id: &[u8],
 		access_token: &[u8],
 		user_social_media_id: &[u8],
