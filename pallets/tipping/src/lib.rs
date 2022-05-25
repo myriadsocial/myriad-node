@@ -83,8 +83,10 @@ pub mod pallet {
 		ClaimReference(TipsBalanceOf<T>, Option<TipsBalanceOf<T>>),
 		/// Verify social media [status, Option<user_social_media>]
 		VerifyingSocialMedia(Status, Option<UserSocialMediaInfo>),
-		/// Delete social media [status]
-		DeletingSocialMedia(Status),
+		/// Connect account [status, Option<wallet>]
+		ConnectingAccount(Status, Option<WalletInfo>),
+		/// Delete social media [status, type, id]
+		Deleting(Status, DataType, Id),
 	}
 
 	#[pallet::error]
@@ -171,7 +173,7 @@ pub mod pallet {
 			}
 		}
 
-		#[pallet::weight(T::WeightInfo::claim_reference())]
+		#[pallet::weight(0)]
 		pub fn claim_reference_unsigned(
 			origin: OriginFor<T>,
 			_block_number: T::BlockNumber,
@@ -203,8 +205,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			server_id: Vec<u8>,
 			access_token: Vec<u8>,
-			username: Vec<u8>,
-			platform: Vec<u8>,
+			social_media_credential: SocialMediaCredential,
 			ft_identifier: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
@@ -213,8 +214,7 @@ pub mod pallet {
 				&who,
 				&server_id,
 				&access_token,
-				&username,
-				&platform,
+				&social_media_credential,
 				&ft_identifier,
 			) {
 				Ok(()) => {
@@ -225,23 +225,50 @@ pub mod pallet {
 			}
 		}
 
+		#[pallet::weight(T::WeightInfo::claim_reference())]
+		pub fn connect_account(
+			origin: OriginFor<T>,
+			server_id: Vec<u8>,
+			access_token: Vec<u8>,
+			user_credential: UserCredential,
+			ft_identifier: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+
+			match <Self as TippingInterface<T>>::connect_account(
+				&who,
+				&server_id,
+				&access_token,
+				&user_credential,
+				&ft_identifier,
+			) {
+				Ok(()) => {
+					Self::deposit_event(Event::ConnectingAccount(Status::default(), None));
+					Ok(().into())
+				},
+				Err(error) => Err(error.into()),
+			}
+		}
+
 		#[pallet::weight(0)]
-		pub fn remove_user_social_media_unsigned(
+		pub fn remove_data_unsigned(
 			origin: OriginFor<T>,
 			_block_number: T::BlockNumber,
 			server_id: Vec<u8>,
 			access_token: Vec<u8>,
-			user_social_media_id: Vec<u8>,
+			data_id: Vec<u8>,
+			data_type: DataType,
 		) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
-			match <Self as TippingInterface<T>>::remove_user_social_media_unsigned(
+			match <Self as TippingInterface<T>>::remove_data_unsigned(
 				&server_id,
 				&access_token,
-				&user_social_media_id,
+				&data_id,
+				&data_type,
 			) {
 				Ok(()) => {
-					Self::deposit_event(Event::DeletingSocialMedia(Status::OnProgress));
+					Self::deposit_event(Event::Deleting(Status::OnProgress, data_type, data_id));
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),
@@ -278,14 +305,15 @@ pub mod pallet {
 					block_number,
 					"pallet_tipping::claim_reference_unsigned",
 				),
-				Call::remove_user_social_media_unsigned {
+				Call::remove_data_unsigned {
 					block_number,
 					server_id: _,
 					access_token: _,
-					user_social_media_id: _,
+					data_id: _,
+					data_type: _,
 				} => Self::validate_transaction_parameters(
 					block_number,
-					"pallet_tipping::remove_user_social_media_unsigned",
+					"pallet_tipping::remove_data_unsigned",
 				),
 				Call::call_event_unsigned { block_number, event: _ } =>
 					Self::validate_transaction_parameters(

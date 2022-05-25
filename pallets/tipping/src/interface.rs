@@ -2,11 +2,17 @@ pub trait TippingInterface<T: frame_system::Config> {
 	type Error;
 	type TipsBalanceInfo;
 	type Balance;
-	type ReferenceId;
-	type ReferenceType;
 	type TipsBalance;
 	type TipsBalances;
+	type UserCredential;
+	type SocialMediaCredential;
+	type ServerId;
+	type ReferenceType;
+	type ReferenceId;
 	type FtIdentifier;
+	type AccessToken;
+	type DataId;
+	type DataType;
 
 	fn send_tip(
 		sender: &T::AccountId,
@@ -30,16 +36,24 @@ pub trait TippingInterface<T: frame_system::Config> {
 
 	fn verify_social_media(
 		sender: &T::AccountId,
-		server_id: &[u8],
-		access_token: &[u8],
-		username: &[u8],
-		platform: &[u8],
-		ft_identifier: &[u8],
+		server_id: &Self::ServerId,
+		access_token: &Self::AccessToken,
+		social_media_credential: &Self::SocialMediaCredential,
+		ft_identifier: &Self::FtIdentifier,
 	) -> Result<(), Self::Error>;
 
-	fn remove_user_social_media_unsigned(
-		server_id: &[u8],
-		access_token: &[u8],
-		user_social_media_id: &[u8],
+	fn connect_account(
+		sender: &T::AccountId,
+		server_id: &Self::ServerId,
+		access_token: &Self::AccessToken,
+		user_credential: &Self::UserCredential,
+		ft_identifier: &Self::FtIdentifier,
+	) -> Result<(), Self::Error>;
+
+	fn remove_data_unsigned(
+		server_id: &Self::ServerId,
+		access_token: &Self::AccessToken,
+		data_id: &Self::DataId,
+		data_type: &Self::DataType,
 	) -> Result<(), Self::Error>;
 }

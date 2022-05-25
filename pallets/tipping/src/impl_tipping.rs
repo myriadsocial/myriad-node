@@ -15,9 +15,15 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 	type TipsBalances = (TipsBalanceOf<T>, Option<TipsBalanceOf<T>>);
 	type TipsBalanceInfo = TipsBalanceInfo;
 	type Balance = BalanceOf<T>;
-	type ReferenceId = ReferenceId;
+	type UserCredential = UserCredential;
+	type SocialMediaCredential = SocialMediaCredential;
+	type ServerId = ServerId;
 	type ReferenceType = ReferenceType;
+	type ReferenceId = ReferenceId;
 	type FtIdentifier = FtIdentifier;
+	type AccessToken = AccessToken;
+	type DataId = Vec<u8>;
+	type DataType = DataType;
 
 	fn send_tip(
 		sender: &T::AccountId,
@@ -51,6 +57,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 			ExistenceRequirement::KeepAlive,
 		) {
 			Ok(imb) => {
+				let receiver = Self::tipping_account_id();
 				let tips_balance = match Self::get_tips_balance(tips_balance_info) {
 					Some(mut result) => {
 						let total_amount = *result.get_amount() + tip_amount;
@@ -60,7 +67,6 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 					},
 					None => Self::create_tips_balance(tips_balance_info, &None, &Some(tip_amount)),
 				};
-				let receiver = Self::tipping_account_id();
 
 				CurrencyOf::<T>::resolve_creating(&receiver, imb);
 
@@ -134,11 +140,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		verify_owner: bool,
 	) -> Result<Self::TipsBalances, Self::Error> {
 		let server_id = tips_balance_info.get_server_id();
-		let verified = Self::verify_server(sender, server_id, verify_owner);
-
-		if let Err(err) = verified {
-			return Err(err)
-		}
+		let _ = Self::verify_server(sender, server_id, verify_owner)?;
 
 		if tips_balance_info.get_ft_identifier() != "native".as_bytes() {
 			return Err(Error::<T>::FtNotExists)
@@ -211,11 +213,10 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 
 	fn verify_social_media(
 		sender: &T::AccountId,
-		server_id: &[u8],
-		access_token: &[u8],
-		username: &[u8],
-		platform: &[u8],
-		ft_identifier: &[u8],
+		server_id: &Self::ServerId,
+		access_token: &Self::AccessToken,
+		social_media_credential: &Self::SocialMediaCredential,
+		ft_identifier: &Self::FtIdentifier,
 	) -> Result<(), Self::Error> {
 		if !Self::is_integer(ft_identifier) {
 			return Err(Error::<T>::WrongFormat)
@@ -233,22 +234,23 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 				let mut address = String::from("0x");
 				address.push_str(&hex::encode(&sender.encode()));
 
-				let user_verification = json!({
+				let username = social_media_credential.get_username();
+				let platform = social_media_credential.get_platform();
+				let body = json!({
 					"address": &address,
-					"username": str::from_utf8(username).unwrap(),
-					"platform": str::from_utf8(platform).unwrap(),
-				});
-				let payload = Payload::new(
-					&api_url,
-					&bearer,
-					user_verification.to_string().as_bytes(),
-					&sender,
-					server_id,
-					ft_identifier,
-					&PayloadType::Create,
-				);
+					"username": str::from_utf8(username).unwrap_or("error"),
+					"platform": str::from_utf8(platform).unwrap_or("error"),
+				})
+				.to_string();
+
+				let payload = Payload::<AccountIdOf<T>>::init(server_id, &api_url, &bearer)
+					.set_body(body.as_bytes())
+					.set_account_id(sender)
+					.set_ft_identifier(ft_identifier)
+					.set_payload_type(PayloadType::Create);
+
 				let key = Self::derived_key(<frame_system::Pallet<T>>::block_number());
-				let data = IndexingData(b"submit_payload_unsigned".to_vec(), payload);
+				let data = IndexingData::init(b"verify_social_media", payload);
 
 				offchain_index::set(&key, &data.encode());
 
@@ -258,32 +260,96 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		}
 	}
 
-	fn remove_user_social_media_unsigned(
-		server_id: &[u8],
-		access_token: &[u8],
-		user_social_media_id: &[u8],
+	fn connect_account(
+		sender: &T::AccountId,
+		server_id: &Self::ServerId,
+		access_token: &Self::AccessToken,
+		user_credential: &Self::UserCredential,
+		ft_identifier: &Self::FtIdentifier,
 	) -> Result<(), Self::Error> {
-		let result = str::from_utf8(user_social_media_id);
+		if !Self::is_integer(ft_identifier) {
+			return Err(Error::<T>::WrongFormat)
+		}
+
+		if ft_identifier != "native".as_bytes() {
+			return Err(Error::<T>::FtNotExists)
+		}
+
+		let user_id = user_credential.get_user_id();
+		let result = str::from_utf8(user_id);
 		if result.is_err() {
 			return Err(Error::<T>::WrongFormat)
 		}
 
-		let mut endpoint = String::from("/user-social-medias/");
+		let mut endpoint = String::from("/users/");
+		endpoint.push_str(result.unwrap());
+		endpoint.push_str("/wallets");
+
+		match Self::get_api_url(server_id, &endpoint) {
+			Ok(api_url) => {
+				let mut bearer = "Bearer ".as_bytes().to_vec();
+				bearer.append(&mut access_token.to_vec());
+
+				let mut address = String::from("0x");
+				address.push_str(&hex::encode(&sender.encode()));
+
+				let nonce = *user_credential.get_nonce();
+				let mut signature = "0x".as_bytes().to_vec();
+				signature.append(&mut user_credential.get_signature().to_vec());
+
+				let body = json!({
+					"nonce": nonce,
+					"publicAddress": &address,
+					"signature": str::from_utf8(&signature).unwrap_or("signature"),
+					"walletType": "polkadot{.js}",
+					"networkType": "myriad",
+					"data": {
+						"id": &address,
+					},
+				})
+				.to_string();
+
+				let payload = Payload::<AccountIdOf<T>>::init(server_id, &api_url, &bearer)
+					.set_body(body.as_bytes())
+					.set_account_id(sender)
+					.set_ft_identifier(ft_identifier)
+					.set_payload_type(PayloadType::Connect);
+
+				let key = Self::derived_key(<frame_system::Pallet<T>>::block_number());
+				let data = IndexingData::init(b"connect_account", payload);
+
+				offchain_index::set(&key, &data.encode());
+
+				Ok(())
+			},
+			Err(err) => Err(err),
+		}
+	}
+
+	fn remove_data_unsigned(
+		server_id: &Self::ServerId,
+		access_token: &Self::AccessToken,
+		data_id: &Self::DataId,
+		data_type: &Self::DataType,
+	) -> Result<(), Self::Error> {
+		let result = str::from_utf8(data_id);
+		if result.is_err() {
+			return Err(Error::<T>::WrongFormat)
+		}
+
+		let mut endpoint = match data_type {
+			DataType::UserSocialMedia => String::from("/user-social-medias/"),
+			DataType::Wallet => String::from("/wallets/"),
+		};
 		endpoint.push_str(result.unwrap());
 
 		match Self::get_api_url(server_id, &endpoint) {
 			Ok(api_url) => {
-				let payload = Payload::new(
-					&api_url,
-					access_token,
-					&Vec::new(),
-					&Self::tipping_account_id(),
-					server_id,
-					&Vec::new(),
-					&PayloadType::Delete,
-				);
+				let payload = Payload::<AccountIdOf<T>>::init(server_id, &api_url, access_token);
 				let key = Self::derived_key(<frame_system::Pallet<T>>::block_number());
-				let data = IndexingData(b"submit_delete_unsigned".to_vec(), payload);
+				let data = IndexingData::init(b"remove_data_unsigned", payload)
+					.set_data_type(data_type)
+					.set_data_id(data_id);
 
 				offchain_index::set(&key, &data.encode());
 
