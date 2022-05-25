@@ -2,7 +2,6 @@ use crate::*;
 
 use frame_support::sp_runtime::offchain::http;
 use frame_system::offchain::SubmitTransaction;
-use sp_std::str;
 
 impl<T: Config> Pallet<T> {
 	pub fn handle_myriad_api(
@@ -14,44 +13,55 @@ impl<T: Config> Pallet<T> {
 			return Ok(None)
 		}
 
-		let payload = data.unwrap().1;
+		let data = data.unwrap();
+		let payload = data.get_payload();
+		let data_id = data.get_data_id().clone();
+		let data_type = data.get_data_type().clone();
 		let payload_type = payload.get_payload_type();
 
-		match payload_type {
+		let mut event: Option<Event<T>> = None;
+		let result = match payload_type {
 			PayloadType::Create => {
 				let created = Self::create_user_social_media(payload);
-				let event: Event<T> = if created.is_ok() {
-					let user_social_media = created.clone().unwrap().unwrap().2;
-					let user_social_media_info = UserSocialMediaInfo::new(&user_social_media);
 
-					Event::<T>::VerifyingSocialMedia(Status::Success, Some(user_social_media_info))
-				} else {
-					Event::<T>::VerifyingSocialMedia(Status::Failed, None)
-				};
+				if created.is_err() {
+					event = Some(Event::<T>::VerifyingSocialMedia(Status::Failed, None));
+				}
 
-				let _ = Self::submit_unsigned_transaction(Call::call_event_unsigned {
-					block_number,
-					event,
-				});
+				created
+			},
+			PayloadType::Connect => {
+				let created = Self::create_wallet(payload);
+
+				if created.is_err() {
+					event = Some(Event::<T>::ConnectingAccount(Status::Failed, None));
+				}
 
 				created
 			},
 			PayloadType::Delete => {
-				let deleted = Self::delete_user_social_media(payload);
-				let event: Event<T> = if deleted.is_ok() {
-					Event::<T>::DeletingSocialMedia(Status::Success)
-				} else {
-					Event::<T>::DeletingSocialMedia(Status::Failed)
-				};
+				let deleted = Self::delete_data(payload);
+				let data_type = data_type.unwrap();
+				let data_id = data_id.unwrap();
 
-				let _ = Self::submit_unsigned_transaction(Call::call_event_unsigned {
-					block_number,
-					event,
-				});
+				event = if deleted.is_ok() {
+					Some(Event::<T>::Deleting(Status::Success, data_type, data_id))
+				} else {
+					Some(Event::<T>::Deleting(Status::Failed, data_type, data_id))
+				};
 
 				deleted
 			},
+		};
+
+		if let Some(event) = event {
+			let _ = Self::submit_unsigned_transaction(Call::call_event_unsigned {
+				block_number,
+				event,
+			});
 		}
+
+		result
 	}
 
 	pub fn verify_social_media_and_send_unsigned(
@@ -68,10 +78,10 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let api_result = api_result.unwrap();
-		let reference_type = "user".as_bytes().to_vec();
-		let reference_id = api_result.2.get_user_id().as_bytes().to_vec();
-		let account_id = Some(api_result.0);
 		let tips_balance_info = api_result.1.clone();
+		let reference_type = "user".as_bytes().to_vec();
+		let reference_id = api_result.2;
+		let account_id = Some(api_result.3);
 
 		let call = Call::claim_reference_unsigned {
 			block_number,
@@ -83,18 +93,41 @@ impl<T: Config> Pallet<T> {
 
 		let result = Self::submit_unsigned_transaction(call);
 		if result.is_ok() {
-			return Ok(())
+			let event: Event<T> = if api_result.5.is_some() {
+				let user_social_media = api_result.5.unwrap();
+				let user_social_media_info = UserSocialMediaInfo::new(&user_social_media);
+
+				Event::<T>::VerifyingSocialMedia(Status::Success, Some(user_social_media_info))
+			} else {
+				let wallet = api_result.6.unwrap();
+				let wallet_info = WalletInfo::new(&wallet);
+
+				Event::<T>::ConnectingAccount(Status::Success, Some(wallet_info))
+			};
+			return Self::submit_unsigned_transaction(Call::call_event_unsigned {
+				block_number,
+				event,
+			})
 		}
 
+		let data_id = api_result.0;
 		let server_id = api_result.1.get_server_id().to_vec();
-		let access_token = api_result.3.as_bytes().to_vec();
-		let user_social_media_id = api_result.2.get_id().as_bytes().to_vec();
+		let access_token = api_result.4;
+		let data_type = if api_result.5.is_some() { DataType::default() } else { DataType::Wallet };
+		let event: Event<T> = match data_type {
+			DataType::UserSocialMedia => Event::<T>::VerifyingSocialMedia(Status::Failed, None),
+			DataType::Wallet => Event::<T>::ConnectingAccount(Status::Failed, None),
+		};
 
-		let call = Call::remove_user_social_media_unsigned {
+		let _ =
+			Self::submit_unsigned_transaction(Call::call_event_unsigned { block_number, event });
+
+		let call = Call::remove_data_unsigned {
 			block_number,
 			server_id,
 			access_token,
-			user_social_media_id,
+			data_id,
+			data_type,
 		};
 
 		Self::submit_unsigned_transaction(call)
