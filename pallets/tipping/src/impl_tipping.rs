@@ -18,6 +18,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 	type ReferenceId = ReferenceId;
 	type ReferenceType = ReferenceType;
 	type FtIdentifier = FtIdentifier;
+	type SocialMediaCredential = SocialMediaCredential;
 
 	fn send_tip(
 		sender: &T::AccountId,
@@ -213,8 +214,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		sender: &T::AccountId,
 		server_id: &[u8],
 		access_token: &[u8],
-		username: &[u8],
-		platform: &[u8],
+		social_media_credential: &Self::SocialMediaCredential,
 		ft_identifier: &[u8],
 	) -> Result<(), Self::Error> {
 		if !Self::is_integer(ft_identifier) {
@@ -233,10 +233,12 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 				let mut address = String::from("0x");
 				address.push_str(&hex::encode(&sender.encode()));
 
+				let username = social_media_credential.get_username();
+				let platform = social_media_credential.get_platform();
 				let user_verification = json!({
 					"address": &address,
-					"username": str::from_utf8(username).unwrap(),
-					"platform": str::from_utf8(platform).unwrap(),
+					"username": str::from_utf8(username).unwrap_or("username"),
+					"platform": str::from_utf8(platform).unwrap_or("platform"),
 				});
 				let payload = Payload::new(
 					&api_url,

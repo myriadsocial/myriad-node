@@ -7,6 +7,7 @@ pub trait TippingInterface<T: frame_system::Config> {
 	type TipsBalance;
 	type TipsBalances;
 	type FtIdentifier;
+	type SocialMediaCredential;
 
 	fn send_tip(
 		sender: &T::AccountId,
@@ -32,8 +33,7 @@ pub trait TippingInterface<T: frame_system::Config> {
 		sender: &T::AccountId,
 		server_id: &[u8],
 		access_token: &[u8],
-		username: &[u8],
-		platform: &[u8],
+		social_media_credential: &Self::SocialMediaCredential,
 		ft_identifier: &[u8],
 	) -> Result<(), Self::Error>;
 
