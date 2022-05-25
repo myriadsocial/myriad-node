@@ -203,8 +203,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			server_id: Vec<u8>,
 			access_token: Vec<u8>,
-			username: Vec<u8>,
-			platform: Vec<u8>,
+			social_media_credential: SocialMediaCredential,
 			ft_identifier: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
@@ -213,8 +212,7 @@ pub mod pallet {
 				&who,
 				&server_id,
 				&access_token,
-				&username,
-				&platform,
+				&social_media_credential,
 				&ft_identifier,
 			) {
 				Ok(()) => {

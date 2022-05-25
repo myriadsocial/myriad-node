@@ -111,6 +111,21 @@ impl TipsBalanceInfo {
 	}
 }
 
+#[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq, TypeInfo, Default)]
+pub struct SocialMediaCredential {
+	username: Vec<u8>,
+	platform: Vec<u8>,
+}
+impl SocialMediaCredential {
+	pub fn get_username(&self) -> &Vec<u8> {
+		&self.username
+	}
+
+	pub fn get_platform(&self) -> &Vec<u8> {
+		&self.platform
+	}
+}
+
 #[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub enum PayloadType {
 	Create,
