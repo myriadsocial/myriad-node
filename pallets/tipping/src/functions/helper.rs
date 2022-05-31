@@ -32,18 +32,20 @@ impl<T: Config> Pallet<T> {
 			return Err(Error::<T>::ServerNotRegister)
 		}
 
-		if verify_owner {
-			if sender.is_none() {
-				return Err(Error::<T>::Unauthorized)
-			}
+		if !verify_owner {
+			return Ok(())
+		}
 
-			let sender = sender.clone().unwrap();
-			let server = server.unwrap();
-			let server_owner = server.get_owner();
+		if sender.is_none() {
+			return Err(Error::<T>::Unauthorized)
+		}
 
-			if &sender != server_owner {
-				return Err(Error::<T>::Unauthorized)
-			}
+		let sender = sender.clone().unwrap();
+		let server = server.unwrap();
+		let server_owner = server.get_owner();
+
+		if &sender != server_owner {
+			return Err(Error::<T>::Unauthorized)
 		}
 
 		Ok(())
@@ -89,16 +91,16 @@ impl<T: Config> Pallet<T> {
 	pub fn get_api_url(server_id: &[u8], endpoint: &str) -> Result<Vec<u8>, Error<T>> {
 		let server = T::Server::get_by_id(server_id);
 
-		if let Some(server_info) = server {
-			let mut api_url = server_info.get_api_url().to_vec();
-			let mut endpoint = endpoint.as_bytes().to_vec();
-
-			api_url.append(&mut endpoint);
-
-			return Ok(api_url)
+		if server.is_none() {
+			return Err(Error::<T>::ServerNotRegister)
 		}
 
-		Err(Error::<T>::ServerNotRegister)
+		let mut api_url = server.unwrap().get_api_url().to_vec();
+		let mut endpoint = endpoint.as_bytes().to_vec();
+
+		api_url.append(&mut endpoint);
+
+		Ok(api_url)
 	}
 
 	pub fn parse_user_social_media(data: &str) -> UserSocialMedia {
@@ -110,6 +112,18 @@ impl<T: Config> Pallet<T> {
 		match serde_json::from_str::<UserSocialMedia>(&data) {
 			Ok(result) => result,
 			Err(_) => UserSocialMedia::default(),
+		}
+	}
+
+	pub fn parse_wallet(data: &str) -> Wallet {
+		let data = str::replace(data, "createdAt", "created_at");
+		let data = str::replace(&data, "updatedAt", "updated_at");
+		let data = str::replace(&data, "networkId", "network_id");
+		let data = str::replace(&data, "userId", "user_id");
+
+		match serde_json::from_str::<Wallet>(&data) {
+			Ok(result) => result,
+			Err(_) => Wallet::default(),
 		}
 	}
 
