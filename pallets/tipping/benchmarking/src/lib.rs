@@ -17,8 +17,9 @@ pub trait Config: TippingConfig + ServerConfig {}
 benchmarks! {
 	send_tip {
 		let s in 1 .. 100;
+		let balance = 1000000000000000000000u128.saturated_into();
 		let caller: T::AccountId = whitelisted_caller();
-		let _ = <T as TippingConfig>::Currency::deposit_creating(&caller, 6000u128.saturated_into());
+		let _ = <T as TippingConfig>::Currency::deposit_creating(&caller, balance);
 
 		let admin: T::AccountId = AdminKey::<T>::get();
 		let server_account: T::AccountId = account("server_account", 0, SEED);
@@ -80,7 +81,7 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let tipping_account_id = Tipping::<T>::tipping_account_id();
 
-		let balance = 6000u128.saturated_into();
+		let balance = 1000000000000000000000u128.saturated_into();
 		let _ = <T as TippingConfig>::Currency::deposit_creating(&caller, balance);
 		let _ = <T as TippingConfig>::Currency::deposit_creating(&tipping_account_id, balance);
 
@@ -113,9 +114,9 @@ benchmarks! {
 			"native".as_bytes()
 		);
 
-		let balance = 6000u128.saturated_into();
+		let balance_2 = 10000000000000000000u128.saturated_into();
 		let _ = <T as TippingConfig>::Currency::deposit_creating(&account_1, balance);
-		let _ = Tipping::<T>::send_tip(account_1_origin, tips_balance_info.clone(), balance);
+		let _ = Tipping::<T>::send_tip(account_1_origin, tips_balance_info.clone(), balance_2);
 
 		// Claim Reference
 		let tips_balance_info_user = TipsBalanceInfo::new(
