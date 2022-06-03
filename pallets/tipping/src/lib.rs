@@ -105,7 +105,15 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: T::BlockNumber) {
-			let _ = Self::verify_social_media_and_send_unsigned(block_number);
+			let result = Self::verify_social_media_and_send_unsigned(block_number);
+
+			if result.is_ok() {
+				log::info!("Verify social media succeed");
+			}
+
+			if let Err(err) = result {
+				log::info!("Failed to verify: {:?}", err);
+			}
 		}
 	}
 
