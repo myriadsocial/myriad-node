@@ -105,7 +105,15 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: T::BlockNumber) {
-			let _ = Self::verify_social_media_and_send_unsigned(block_number);
+			let result = Self::verify_social_media_and_send_unsigned(block_number);
+
+			if result.is_ok() {
+				log::info!("Verify social media succeed");
+			}
+
+			if let Err(err) = result {
+				log::info!("Failed to verify: {:?}", err);
+			}
 		}
 	}
 
@@ -333,6 +341,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
+			log::info!("Event is called");
+
 			Self::deposit_event(event);
 
 			Ok(().into())
@@ -348,12 +358,12 @@ pub mod pallet {
 				Call::claim_reference_unsigned { block_number, api_response: _ } =>
 					Self::validate_transaction_parameters(
 						block_number,
-						"pallet_tipping::claim_reference_unsigned",
+						b"submit_claim_reference_unsigned",
 					),
 				Call::call_event_unsigned { block_number, event: _ } =>
 					Self::validate_transaction_parameters(
 						block_number,
-						"pallet_tipping::call_event_unsigned",
+						b"submit_call_event_unsigned",
 					),
 				_ => InvalidTransaction::Call.into(),
 			}

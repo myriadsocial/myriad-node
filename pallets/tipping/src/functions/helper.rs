@@ -14,6 +14,7 @@ use sp_std::{str, vec::Vec};
 
 const PALLET_ID: PalletId = PalletId(*b"Tipping!");
 const ONCHAIN_TX_KEY: &[u8] = b"pallet_tipping::indexing";
+const UNSIGNED_TXS_PRIORITY: u64 = 100;
 
 impl<T: Config> Pallet<T> {
 	/// The account ID that holds tipping's funds
@@ -75,17 +76,23 @@ impl<T: Config> Pallet<T> {
 
 	pub fn validate_transaction_parameters(
 		block_number: &T::BlockNumber,
-		tag: &'static str,
+		provide: &[u8],
 	) -> TransactionValidity {
 		let current_block = <system::Pallet<T>>::block_number();
 		if &current_block < block_number {
 			return InvalidTransaction::Future.into()
 		}
 
-		ValidTransaction::with_tag_prefix(tag)
-			.and_provides(block_number)
-			.propagate(true)
-			.build()
+		let valid_tx = |provide| {
+			ValidTransaction::with_tag_prefix("pallet_tipping")
+				.priority(UNSIGNED_TXS_PRIORITY)
+				.and_provides([&provide])
+				.longevity(5)
+				.propagate(true)
+				.build()
+		};
+
+		valid_tx(provide.to_vec())
 	}
 
 	pub fn get_api_url(server_id: &[u8], endpoint: &str) -> Result<Vec<u8>, Error<T>> {
