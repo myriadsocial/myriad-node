@@ -41,8 +41,7 @@ pub mod pallet {
 		offchain::{AppCrypto, CreateSignedTransaction},
 		pallet_prelude::*,
 	};
-	use sp_io::offchain_index;
-	use sp_std::{str, vec::Vec};
+	use sp_std::vec::Vec;
 
 	#[pallet::config]
 	pub trait Config: CreateSignedTransaction<Call<Self>> + frame_system::Config {
@@ -83,9 +82,9 @@ pub mod pallet {
 		/// Claim balance success. [tips_balance, Option<tips_balance>]
 		ClaimReference(TipsBalanceOf<T>, Option<TipsBalanceOf<T>>),
 		/// Verify social media [status, Option<user_social_media>]
-		VerifyingSocialMedia(Status, Option<UserSocialMediaInfo>),
+		VerifyingSocialMedia(Status, Option<UserSocialMedia>),
 		/// Connect account [status, Option<wallet>]
-		ConnectingAccount(Status, Option<WalletInfo>),
+		ConnectingAccount(Status, Option<Wallet>),
 	}
 
 	#[pallet::error]
@@ -105,14 +104,14 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: T::BlockNumber) {
-			let result = Self::verify_social_media_and_send_unsigned(block_number);
+			let verified = Self::verify_social_media_and_send_unsigned(block_number);
 
-			if result.is_ok() {
-				log::info!("Verify social media succeed");
+			if let Ok(Some(log_info)) = verified {
+				log::info!("Log: {} in blocknumber {:?}", log_info, block_number);
 			}
 
-			if let Err(err) = result {
-				log::info!("Failed to verify: {:?}", err);
+			if let Err(err) = verified {
+				log::info!("Error: {:?} in blocknumber {:?}", err, block_number);
 			}
 		}
 	}
@@ -184,19 +183,36 @@ pub mod pallet {
 		pub fn claim_reference_unsigned(
 			origin: OriginFor<T>,
 			_block_number: T::BlockNumber,
+			payload_type: PayloadType,
 			api_response: APIResult<AccountIdOf<T>>,
 		) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
+
+			if api_response.get_data_type().is_none() {
+				let event: Option<Event<T>> = match payload_type {
+					PayloadType::Create =>
+						Some(Event::<T>::VerifyingSocialMedia(Status::Failed, None)),
+					PayloadType::Connect =>
+						Some(Event::<T>::ConnectingAccount(Status::Failed, None)),
+					PayloadType::Delete => None,
+				};
+
+				if let Some(failed_event) = event {
+					Self::deposit_event(failed_event);
+				}
+
+				return Ok(().into())
+			}
 
 			let server_id = api_response.get_server_id();
 			let ft_identifier = api_response.get_ft_identifier();
 			let access_token = api_response.get_access_token();
 			let account_id = api_response.get_account_id();
-			let data_type = api_response.get_data_type().clone().unwrap_or_default();
+			let data_type = api_response.get_data_type().as_ref().unwrap();
 
 			let reference_type: ReferenceType;
 			let reference_id: ReferenceId;
-			let tips_balance_info = match data_type.clone() {
+			let tips_balance_info = match data_type {
 				DataType::UserSocialMedia(user_social_media_info) => {
 					reference_type = "user".as_bytes().to_vec();
 					reference_id = user_social_media_info.get_user_id().to_vec();
@@ -216,70 +232,55 @@ pub mod pallet {
 				},
 			};
 
-			let result: Result<(), Error<T>> = match <Self as TippingInterface<T>>::claim_reference(
-				&None,
-				&tips_balance_info,
-				&reference_type,
-				&reference_id,
-				account_id,
-				false,
-			) {
-				Ok(tips_balances) => {
-					Self::deposit_event(Event::ClaimReference(tips_balances.0, tips_balances.1));
-					Self::deposit_event(match data_type.clone() {
-						DataType::UserSocialMedia(user_social_media_info) =>
-							Event::<T>::VerifyingSocialMedia(
+			let result: Result<Event<T>, Error<T>> =
+				match <Self as TippingInterface<T>>::claim_reference(
+					&None,
+					&tips_balance_info,
+					&reference_type,
+					&reference_id,
+					account_id,
+					false,
+				) {
+					Ok(tips_balances) => {
+						Self::deposit_event(Event::ClaimReference(
+							tips_balances.0,
+							tips_balances.1,
+						));
+
+						let succes_event = match data_type {
+							DataType::UserSocialMedia(user_social_media_info) =>
+								Event::<T>::VerifyingSocialMedia(
+									Status::Success,
+									Some(user_social_media_info.clone()),
+								),
+							DataType::Wallet(wallet_info) => Event::<T>::ConnectingAccount(
 								Status::Success,
-								Some(user_social_media_info),
+								Some(wallet_info.clone()),
 							),
-						DataType::Wallet(wallet_info) =>
-							Event::<T>::ConnectingAccount(Status::Success, Some(wallet_info)),
-					});
+						};
 
-					Ok(())
-				},
-				Err(error) => Err(error),
-			};
+						Ok(succes_event)
+					},
+					Err(error) => Err(error),
+				};
 
-			if result.is_ok() {
-				return Ok(().into())
-			}
-
-			let endpoint = match data_type {
-				DataType::UserSocialMedia(user_social_media_info) => {
-					Self::deposit_event(Event::<T>::VerifyingSocialMedia(Status::Failed, None));
-
-					let mut endpoint = String::from("/user-social-medias/");
-					let id = str::from_utf8(user_social_media_info.get_id()).unwrap_or("id");
-
-					endpoint.push_str(id);
-
-					endpoint
-				},
-				DataType::Wallet(wallet_info) => {
-					Self::deposit_event(Event::<T>::ConnectingAccount(Status::Failed, None));
-
-					let mut endpoint = String::from("/wallets/");
-					let id = str::from_utf8(wallet_info.get_id()).unwrap_or("id");
-
-					endpoint.push_str(id);
-
-					endpoint
-				},
-			};
-
-			match Self::get_api_url(server_id, &endpoint) {
-				Ok(api_url) => {
-					let payload =
-						Payload::<AccountIdOf<T>>::init(server_id, &api_url, access_token);
-					let key = Self::derived_key(<frame_system::Pallet<T>>::block_number());
-					let data = IndexingData::init(b"remove_data_unsigned", payload);
-
-					offchain_index::set(&key, &data.encode());
-
+			match result {
+				Ok(success_event) => {
+					Self::deposit_event(success_event);
 					Ok(().into())
 				},
-				Err(err) => Err(err.into()),
+				Err(_) => {
+					let stored = Self::store_deleted_payload(server_id, access_token, data_type);
+
+					log::info!("Deleted data");
+
+					if let Err(err) = stored {
+						log::info!("{:?}", err);
+						Err(err.into())
+					} else {
+						Ok(().into())
+					}
+				},
 			}
 		}
 
@@ -332,21 +333,6 @@ pub mod pallet {
 				Err(error) => Err(error.into()),
 			}
 		}
-
-		#[pallet::weight(0)]
-		pub fn call_event_unsigned(
-			origin: OriginFor<T>,
-			_block_number: T::BlockNumber,
-			event: Event<T>,
-		) -> DispatchResultWithPostInfo {
-			ensure_none(origin)?;
-
-			log::info!("Event is called");
-
-			Self::deposit_event(event);
-
-			Ok(().into())
-		}
 	}
 
 	#[pallet::validate_unsigned]
@@ -355,16 +341,14 @@ pub mod pallet {
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			match call {
-				Call::claim_reference_unsigned { block_number, api_response: _ } =>
-					Self::validate_transaction_parameters(
-						block_number,
-						b"submit_claim_reference_unsigned",
-					),
-				Call::call_event_unsigned { block_number, event: _ } =>
-					Self::validate_transaction_parameters(
-						block_number,
-						b"submit_call_event_unsigned",
-					),
+				Call::claim_reference_unsigned {
+					block_number,
+					payload_type: _,
+					api_response: _,
+				} => Self::validate_transaction_parameters(
+					block_number,
+					b"submit_claim_reference_unsigned",
+				),
 				_ => InvalidTransaction::Call.into(),
 			}
 		}

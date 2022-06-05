@@ -7,12 +7,12 @@ pub type AccessToken = Vec<u8>;
 
 #[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub enum DataType {
-	UserSocialMedia(UserSocialMediaInfo),
-	Wallet(WalletInfo),
+	UserSocialMedia(UserSocialMedia),
+	Wallet(Wallet),
 }
 impl Default for DataType {
 	fn default() -> Self {
-		DataType::UserSocialMedia(UserSocialMediaInfo::default())
+		DataType::UserSocialMedia(UserSocialMedia::default())
 	}
 }
 

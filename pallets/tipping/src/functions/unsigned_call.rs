@@ -1,77 +1,57 @@
 use crate::*;
 
-use frame_support::sp_runtime::offchain::http;
+use frame_support::sp_runtime::offchain::http::Method;
 use frame_system::offchain::SubmitTransaction;
 
 impl<T: Config> Pallet<T> {
-	pub fn call_myriad_api(
-		block_number: T::BlockNumber,
-	) -> Result<Option<APIResult<AccountIdOf<T>>>, http::Error> {
-		let data = Self::get_indexing_data(block_number);
-
-		if data.is_none() {
-			return Ok(None)
-		}
-
-		let data = data.unwrap();
-		let payload = data.get_payload();
-		let payload_type = payload.get_payload_type();
-
-		let mut event: Option<Event<T>> = None;
-		let result = match payload_type {
-			PayloadType::Create => {
-				let created = Self::create_user_social_media(payload);
-
-				if created.is_err() {
-					event = Some(Event::<T>::VerifyingSocialMedia(Status::Failed, None));
-				}
-
-				created
-			},
-			PayloadType::Connect => {
-				let created = Self::create_wallet(payload);
-
-				if created.is_err() {
-					event = Some(Event::<T>::ConnectingAccount(Status::Failed, None));
-				}
-
-				created
-			},
-			PayloadType::Delete => Self::delete_data(payload),
-		};
-
-		if let Some(event) = event {
-			let _ = Self::submit_unsigned_transaction(Call::call_event_unsigned {
-				block_number,
-				event,
-			});
-		}
-
-		result
-	}
-
 	pub fn verify_social_media_and_send_unsigned(
 		block_number: T::BlockNumber,
-	) -> Result<(), &'static str> {
-		let result = Self::call_myriad_api(block_number);
-		if result.is_err() {
-			return Err("Failed call api")
-		}
+	) -> Result<Option<&'static str>, &'static str> {
+		let mut log_info: Option<&str> = None;
 
-		let api_result = result.unwrap();
-		if api_result.is_none() {
-			return Ok(())
-		}
+		let data = Self::get_indexing_data(block_number).ok_or("Empty storage")?;
+		let payload = data.get_payload();
+		let payload_type = payload.get_payload_type().clone();
 
-		let api_response = api_result.unwrap();
-		let call = Call::claim_reference_unsigned { block_number, api_response };
+		let body_str = match &payload_type {
+			PayloadType::Create => Self::myriad_api_request(payload, Method::Post),
+			PayloadType::Connect => Self::myriad_api_request(payload, Method::Post),
+			PayloadType::Delete => Self::myriad_api_request(payload, Method::Delete),
+		};
 
-		Self::submit_unsigned_transaction(call)
-	}
+		let init = APIResult::init(
+			payload.get_server_id(),
+			payload.get_ft_identifier(),
+			payload.get_access_token(),
+		);
 
-	pub fn submit_unsigned_transaction(call: Call<T>) -> Result<(), &'static str> {
+		let account_id = payload.get_account_id().clone();
+		let api_response = if let Err(err) = body_str {
+			log_info = Some(err);
+			init
+		} else {
+			let body_str = body_str.unwrap();
+			let data_type = match &payload_type {
+				PayloadType::Create => {
+					let info = Self::parse_user_social_media(&body_str);
+
+					Some(DataType::UserSocialMedia(info))
+				},
+				PayloadType::Connect => {
+					let info = Self::parse_wallet(&body_str);
+
+					Some(DataType::Wallet(info))
+				},
+				PayloadType::Delete => None,
+			};
+
+			init.set_data_type(data_type).set_account_id(account_id)
+		};
+
+		let call = Call::claim_reference_unsigned { block_number, payload_type, api_response };
+
 		match SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into()) {
-			Ok(_) => Ok(()),
+			Ok(_) => Ok(log_info),
 			Err(_) => Err("Failed in offchain_unsigned_tx"),
 		}
 	}
