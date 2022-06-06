@@ -10,6 +10,7 @@ use frame_support::{
 	PalletId,
 };
 use frame_system as system;
+use sp_io::offchain_index;
 use sp_std::{str, vec::Vec};
 
 const PALLET_ID: PalletId = PalletId(*b"Tipping!");
@@ -66,10 +67,13 @@ impl<T: Config> Pallet<T> {
 
 	pub fn get_indexing_data(block_number: T::BlockNumber) -> Option<IndexingData<AccountIdOf<T>>> {
 		let key = Self::derived_key(block_number);
-		let storage_ref = StorageValueRef::persistent(&key);
+		let mut storage_ref = StorageValueRef::persistent(&key);
 
 		match storage_ref.get::<IndexingData<AccountIdOf<T>>>() {
-			Ok(data) => data,
+			Ok(data) => {
+				storage_ref.clear();
+				data
+			},
 			Err(_) => None,
 		}
 	}
@@ -108,6 +112,48 @@ impl<T: Config> Pallet<T> {
 		api_url.append(&mut endpoint);
 
 		Ok(api_url)
+	}
+
+	pub fn store_deleted_payload(
+		server_id: &[u8],
+		access_token: &[u8],
+		data_type: &DataType,
+	) -> Result<(), Error<T>> {
+		let endpoint = match data_type {
+			DataType::UserSocialMedia(user_social_media_info) => {
+				Self::deposit_event(Event::<T>::VerifyingSocialMedia(Status::Failed, None));
+
+				let mut endpoint = String::from("/user-social-medias/");
+				let id = str::from_utf8(user_social_media_info.get_id()).unwrap_or("id");
+
+				endpoint.push_str(id);
+
+				endpoint
+			},
+			DataType::Wallet(wallet_info) => {
+				Self::deposit_event(Event::<T>::ConnectingAccount(Status::Failed, None));
+
+				let mut endpoint = String::from("/wallets/");
+				let id = str::from_utf8(wallet_info.get_id()).unwrap_or("id");
+
+				endpoint.push_str(id);
+
+				endpoint
+			},
+		};
+
+		match Self::get_api_url(server_id, &endpoint) {
+			Ok(api_url) => {
+				let payload = Payload::<AccountIdOf<T>>::init(server_id, &api_url, access_token);
+				let key = Self::derived_key(<frame_system::Pallet<T>>::block_number());
+				let data = IndexingData::init(b"remove_data_unsigned", payload);
+
+				offchain_index::set(&key, &data.encode());
+
+				Ok(())
+			},
+			Err(err) => Err(err),
+		}
 	}
 
 	pub fn parse_user_social_media(data: &str) -> UserSocialMedia {
