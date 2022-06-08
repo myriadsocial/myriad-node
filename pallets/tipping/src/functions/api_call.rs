@@ -1,12 +1,12 @@
 use crate::*;
 
-use frame_support::sp_runtime::offchain::http;
+use frame_support::sp_runtime::offchain::http::{Method, Request, Response};
 use sp_std::{str, vec, vec::Vec};
 
 impl<T: Config> Pallet<T> {
 	pub fn myriad_api_request(
 		payload: &Payload<AccountIdOf<T>>,
-		method: http::Method,
+		method: Method,
 	) -> Result<String, &'static str> {
 		let api_url_str = str::from_utf8(payload.get_api_url());
 		let access_token_str = str::from_utf8(payload.get_access_token());
@@ -15,13 +15,13 @@ impl<T: Config> Pallet<T> {
 		let api_url = api_url_str.map_err(|_| "Failed to format api url")?;
 		let body = payload.get_body();
 		let request_body = vec![body.clone()];
-		let init_request = http::Request::<Vec<Vec<u8>>>::new(api_url)
+		let init_request = Request::<Vec<Vec<u8>>>::new(api_url)
 			.method(method.clone())
 			.add_header("Authorization", access_token)
 			.add_header("content-type", "application/json");
 
 		let request = match method {
-			http::Method::Delete => init_request,
+			Method::Delete => init_request,
 			_ => init_request.body(request_body),
 		};
 
@@ -29,17 +29,26 @@ impl<T: Config> Pallet<T> {
 		let response = pending.wait().map_err(|_| "Failed to response")?;
 
 		if response.code != 200 {
-			log::info!("Status code error: {}", response.code);
+			let body_str = Self::parse_body_reponse(response)?;
+
+			log::info!("{}", body_str);
+
 			return Err("Status code error")
 		}
 
-		if method == http::Method::Delete {
+		if method == Method::Delete {
 			return Ok(String::new())
 		}
 
-		let body = response.body().collect::<Vec<u8>>();
-		let body_str = str::from_utf8(&body).map_err(|_| "Failed to format response")?;
+		Self::parse_body_reponse(response)
+	}
 
-		Ok(body_str.to_string())
+	pub fn parse_body_reponse(response: Response) -> Result<String, &'static str> {
+		let body = response.body().collect::<Vec<u8>>();
+
+		match str::from_utf8(&body) {
+			Ok(result) => Ok(result.to_string()),
+			Err(_) => Err("Failed to parse body"),
+		}
 	}
 }
