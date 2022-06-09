@@ -156,27 +156,27 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	pub fn parse_user_social_media(data: &str) -> UserSocialMedia {
+	pub fn parse_user_social_media(data: &str) -> Option<DataType> {
 		let data = str::replace(data, "createdAt", "created_at");
 		let data = str::replace(&data, "updatedAt", "updated_at");
 		let data = str::replace(&data, "peopleId", "people_id");
 		let data = str::replace(&data, "userId", "user_id");
 
 		match serde_json::from_str::<UserSocialMedia>(&data) {
-			Ok(result) => result,
-			Err(_) => UserSocialMedia::default(),
+			Ok(result) => Some(DataType::UserSocialMedia(result)),
+			Err(_) => None,
 		}
 	}
 
-	pub fn parse_wallet(data: &str) -> Wallet {
+	pub fn parse_wallet(data: &str) -> Option<DataType> {
 		let data = str::replace(data, "createdAt", "created_at");
 		let data = str::replace(&data, "updatedAt", "updated_at");
 		let data = str::replace(&data, "networkId", "network_id");
 		let data = str::replace(&data, "userId", "user_id");
 
 		match serde_json::from_str::<Wallet>(&data) {
-			Ok(result) => result,
-			Err(_) => Wallet::default(),
+			Ok(result) => Some(DataType::Wallet(result)),
+			Err(_) => None,
 		}
 	}
 

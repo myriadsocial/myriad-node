@@ -32,16 +32,8 @@ impl<T: Config> Pallet<T> {
 		} else {
 			let body_str = body_str.unwrap();
 			let data_type = match &payload_type {
-				PayloadType::Create => {
-					let info = Self::parse_user_social_media(&body_str);
-
-					Some(DataType::UserSocialMedia(info))
-				},
-				PayloadType::Connect => {
-					let info = Self::parse_wallet(&body_str);
-
-					Some(DataType::Wallet(info))
-				},
+				PayloadType::Create => Self::parse_user_social_media(&body_str),
+				PayloadType::Connect => Self::parse_wallet(&body_str),
 				PayloadType::Delete => None,
 			};
 
