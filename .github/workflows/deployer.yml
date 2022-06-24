@@ -127,7 +127,7 @@ jobs:
               --set services.httpRPC.enabled=true \
               --set services.websocketRPC.enabled=true \
               --set ingress.websocketRPC.enabled=true \
-              --set-string ingress.websocketRPC.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.websocketRPC.className=nginx \
               --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
               --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
@@ -140,6 +140,12 @@ jobs:
               --set-string volume.dataSize=50Gi \
               --set-string nodeSelector.pool=blockchain
             kubectl rollout status statefulset/myriad-node-full1
+      - name: Sleuth webhook
+        shell: bash
+        run: |
+          curl -X POST -d api_key=${{ secrets.SLEUTH_API_KEY }} \
+          -d environment=${{ secrets.DEV_SLEUTH_ENVIRONMENT }} \
+          -d sha=$GITHUB_SHA ${{ secrets.NODE_SLEUTH_WEBHOOK }}
 
   deploy-beta-release:
     runs-on: ubuntu-20.04
@@ -185,7 +191,6 @@ jobs:
             NODE_KEY_PRIVATE_3:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_3
             NODE_KEY_PUBLIC_3:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_3
             NODE_TELEMETRY_URL:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_TELEMETRY_URL
-            NODE_RPC_WS_DNS:${{ secrets.TESTNET_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
       - name: Deploy
         if: "${{ env.DEPLOY == 'true' }}"
         uses: appleboy/ssh-action@master
@@ -230,6 +235,12 @@ jobs:
               --set-string volume.dataSize=50Gi \
               --set-string nodeSelector.pool=blockchain
             kubectl rollout status statefulset/myriad-node-full1
+      - name: Sleuth webhook
+        shell: bash
+        run: |
+          curl -X POST -d api_key=${{ secrets.SLEUTH_API_KEY }} \
+          -d environment=${{ secrets.TESTNET_SLEUTH_ENVIRONMENT }} \
+          -d sha=$GITHUB_SHA ${{ secrets.NODE_SLEUTH_WEBHOOK }}
 
   deploy-pre-release:
     runs-on: ubuntu-20.04
@@ -275,7 +286,6 @@ jobs:
             NODE_KEY_PRIVATE_3:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_3
             NODE_KEY_PUBLIC_3:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_3
             NODE_TELEMETRY_URL:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_TELEMETRY_URL
-            NODE_RPC_WS_DNS:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
       - name: Deploy
         if: "${{ env.DEPLOY == 'true' }}"
         uses: appleboy/ssh-action@master
@@ -320,6 +330,12 @@ jobs:
               --set-string volume.dataSize=50Gi \
               --set-string nodeSelector.pool=blockchain
             kubectl rollout status statefulset/myriad-node-full1
+      - name: Sleuth webhook
+        shell: bash
+        run: |
+          curl -X POST -d api_key=${{ secrets.SLEUTH_API_KEY }} \
+          -d environment=${{ secrets.MAINNET_SLEUTH_ENVIRONMENT }} \
+          -d sha=$GITHUB_SHA ${{ secrets.NODE_SLEUTH_WEBHOOK }}
 
   deploy-release:
     if: "startsWith(github.ref, 'refs/tags/') && !github.event.release.prerelease"
@@ -365,7 +381,6 @@ jobs:
             NODE_KEY_PRIVATE_3:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_3
             NODE_KEY_PUBLIC_3:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_3
             NODE_TELEMETRY_URL:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_TELEMETRY_URL
-            NODE_RPC_WS_DNS:${{ secrets.MAINNET_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
       - name: Deploy
         if: "${{ env.DEPLOY == 'true' }}"
         uses: appleboy/ssh-action@master
@@ -410,3 +425,9 @@ jobs:
               --set-string volume.dataSize=50Gi \
               --set-string nodeSelector.pool=blockchain
             kubectl rollout status statefulset/myriad-node-full1
+      - name: Sleuth webhook
+        shell: bash
+        run: |
+          curl -X POST -d api_key=${{ secrets.SLEUTH_API_KEY }} \
+          -d environment=${{ secrets.MAINNET_SLEUTH_ENVIRONMENT }} \
+          -d sha=$GITHUB_SHA ${{ secrets.NODE_SLEUTH_WEBHOOK }}
