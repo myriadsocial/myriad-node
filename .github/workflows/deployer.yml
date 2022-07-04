@@ -38,116 +38,8 @@ jobs:
           echo $version
           echo "::set-output name=latest_tag::$version"
 
-  deploy-dev:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-20.04
-    needs:
-      - compute-build-info
-    env:
-      DEPLOY: ${{ secrets.DEV_DEPLOY }}
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-    steps:
-      - name: Checkout code
-        if: "${{ env.DEPLOY == 'true' }}"
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Authenticate to Google Cloud
-        if: "${{ env.DEPLOY == 'true' }}"
-        id: 'auth'
-        uses: 'google-github-actions/auth@v0'
-        with:
-          workload_identity_provider: ${{ secrets.DEV_GOOGLE_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.DEV_SERVICE_ACCOUNT_EMAIL }}
-          project_id: ${{ secrets.DEV_GCP_PROJECT_ID }}
-      - name: Set up Cloud SDK
-        if: "${{ env.DEPLOY == 'true' }}"
-        uses: google-github-actions/setup-gcloud@v0
-      - name: Get secrets
-        if: "${{ env.DEPLOY == 'true' }}"
-        id: secrets
-        uses: google-github-actions/get-secretmanager-secrets@main
-        with:
-          secrets: |-
-            SSH_HOST:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_HOST
-            SSH_PORT:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_PORT
-            SSH_USERNAME:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_USERNAME
-            SSH_KEY:${{ secrets.DEV_GCP_PROJECT_ID }}/SSH_KEY
-            NODE_KEY_PRIVATE_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_1
-            NODE_KEY_PUBLIC_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_1
-            NODE_KEY_PRIVATE_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_2
-            NODE_KEY_PUBLIC_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_2
-            NODE_KEY_PRIVATE_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_1
-            NODE_KEY_PUBLIC_VALIDATOR_1:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_1
-            NODE_KEY_PRIVATE_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PRIVATE_VALIDATOR_2
-            NODE_KEY_PUBLIC_VALIDATOR_2:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_KEY_PUBLIC_VALIDATOR_2
-            NODE_RPC_WS_DNS:${{ secrets.DEV_GCP_PROJECT_ID }}/NODE_RPC_WS_DNS
-      - name: Deploy
-        if: "${{ env.DEPLOY == 'true' }}"
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ steps.secrets.outputs.SSH_HOST }}
-          port: ${{ steps.secrets.outputs.SSH_PORT }}
-          username: ${{ steps.secrets.outputs.SSH_USERNAME }}
-          key: ${{ steps.secrets.outputs.SSH_KEY }}
-          script: |
-            ./connect.sh
-            helm repo add myriadsocial https://charts.myriad.social
-            helm repo update
-            helm upgrade myriad-node myriadsocial/myriad-node \
-              --install \
-              --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }} \
-              --set-string config.chain=dev-testnet \
-              --set-string config.nodes[0].name=full1 \
-              --set config.nodes[0].bootnode=true \
-              --set config.nodes[0].archive=false \
-              --set config.nodes[0].validator=false \
-              --set-string config.nodes[0].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_1 }} \
-              --set-string config.nodes[0].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_1 }} \
-              --set-string config.nodes[1].name=archive1 \
-              --set config.nodes[1].bootnode=true \
-              --set config.nodes[1].archive=true \
-              --set config.nodes[1].validator=false \
-              --set-string config.nodes[1].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_2 }} \
-              --set-string config.nodes[1].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_2 }} \
-              --set-string config.nodes[2].name=validator1 \
-              --set config.nodes[2].bootnode=true \
-              --set config.nodes[2].archive=false \
-              --set config.nodes[2].validator=true \
-              --set-string config.nodes[2].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_1 }} \
-              --set-string config.nodes[2].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_1 }} \
-              --set-string config.nodes[3].name=validator2 \
-              --set config.nodes[3].bootnode=true \
-              --set config.nodes[3].archive=false \
-              --set config.nodes[3].validator=true \
-              --set-string config.nodes[3].keys.private=${{ steps.secrets.outputs.NODE_KEY_PRIVATE_VALIDATOR_2 }} \
-              --set-string config.nodes[3].keys.public=${{ steps.secrets.outputs.NODE_KEY_PUBLIC_VALIDATOR_2 }} \
-              --set services.httpRPC.enabled=true \
-              --set services.websocketRPC.enabled=true \
-              --set ingress.websocketRPC.enabled=true \
-              --set-string ingress.websocketRPC.className=nginx \
-              --set-string ingress.websocketRPC.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
-              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-read-timeout"="3600" \
-              --set-string ingress.websocketRPC.annotations."nginx\.ingress\.kubernetes\.io/proxy-send-timeout"="3600" \
-              --set-string ingress.websocketRPC.hosts[0].host=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
-              --set-string ingress.websocketRPC.hosts[0].paths[0].path=/ \
-              --set-string ingress.websocketRPC.hosts[0].paths[0].pathType=ImplementationSpecific \
-              --set-string ingress.websocketRPC.tls[0].secretName=myriad-node-websocket-rpc-tls \
-              --set-string ingress.websocketRPC.tls[0].hosts[0]=${{ steps.secrets.outputs.NODE_RPC_WS_DNS }} \
-              --set-string volume.storageClassName=premium-rwo \
-              --set-string volume.dataSize=50Gi \
-              --set-string nodeSelector.pool=blockchain
-            kubectl rollout status statefulset/myriad-node-full1
-      - name: Sleuth webhook
-        shell: bash
-        run: |
-          curl -X POST -d api_key=${{ secrets.SLEUTH_API_KEY }} \
-          -d environment=${{ secrets.DEV_SLEUTH_ENVIRONMENT }} \
-          -d sha=$GITHUB_SHA ${{ secrets.NODE_SLEUTH_WEBHOOK }}
-
   deploy-beta-release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-20.04
     needs:
       - compute-build-info
@@ -156,7 +48,6 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
-    if: "startsWith(github.ref, 'refs/tags/') && github.event.release.prerelease && contains(needs.compute-build-info.outputs.latest_tag, 'beta')"
     steps:
       - name: Checkout code
         if: "${{ env.DEPLOY == 'true' }}"
@@ -205,7 +96,7 @@ jobs:
             helm repo update
             helm upgrade myriad-node-${{ needs.compute-build-info.outputs.sha_short }} myriadsocial/myriad-node \
               --install \
-              --set-string image.tag=${{ needs.compute-build-info.outputs.latest_tag }} \
+              --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }} \
               --set-string config.chain=testnet \
               --set-string config.nodes[0].name=full1 \
               --set config.nodes[0].bootnode=true \
