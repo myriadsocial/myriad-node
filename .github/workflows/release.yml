@@ -98,7 +98,7 @@ jobs:
             helm repo update
             helm upgrade myriad-node myriadsocial/myriad-node \
               --install \
-              --set-string image.tag=${{ needs.release.outputs.release_name }}
+              --set-string image.tag=${{ needs.release.outputs.release_name }} \
               --set-string config.chain=mainnet \
               --set-string config.nodes[0].name=full1 \
               --set config.nodes[0].bootnode=true \
