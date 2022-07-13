@@ -120,6 +120,25 @@ impl TipsBalanceInfo {
 	}
 }
 
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
+pub struct References {
+	reference_type: ReferenceType,
+	reference_ids: Vec<ReferenceId>,
+}
+impl References {
+	pub fn new(reference_type: &[u8], reference_ids: &[Vec<u8>]) -> Self {
+		Self { reference_type: reference_type.to_vec(), reference_ids: reference_ids.to_vec() }
+	}
+
+	pub fn get_reference_type(&self) -> &Vec<u8> {
+		&self.reference_type
+	}
+
+	pub fn get_reference_ids(&self) -> &Vec<Vec<u8>> {
+		&self.reference_ids
+	}
+}
+
 #[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub enum Status {
 	OnProgress,
