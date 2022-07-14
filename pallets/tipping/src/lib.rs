@@ -32,8 +32,8 @@ pub mod pallet {
 		dispatch::DispatchResultWithPostInfo,
 		pallet_prelude::*,
 		sp_runtime::{
+			traits::Zero,
 			transaction_validity::{InvalidTransaction, TransactionValidity},
-			SaturatedConversion,
 		},
 		traits::Currency,
 	};
@@ -79,12 +79,16 @@ pub mod pallet {
 		SendTip(T::AccountId, T::AccountId, TipsBalanceOf<T>),
 		/// Claim tip success. [pot, who, amount, ft_identifier]
 		ClaimTip(T::AccountId, T::AccountId, BalanceOf<T>, FtIdentifier),
-		/// Claim balance success. [tips_balance, Option<tips_balance>]
-		ClaimReference(TipsBalanceOf<T>, Option<TipsBalanceOf<T>>),
+		/// Batch claim tip success [pot, who, Vec<(amount, ft_identifier)>]
+		BatchClaimTip(T::AccountId, T::AccountId, Vec<(BalanceOf<T>, FtIdentifier)>),
+		/// Claim reference success. [Vec<tips_balance>]
+		ClaimReference(Vec<TipsBalanceOf<T>>),
 		/// Verify social media [status, Option<user_social_media>]
 		VerifyingSocialMedia(Status, Option<UserSocialMedia>),
 		/// Connect account [status, Option<wallet>]
 		ConnectingAccount(Status, Option<Wallet>),
+		/// Verify reference [status, Option<wallet>]
+		VerifyingReference(Status),
 	}
 
 	#[pallet::error]
@@ -99,6 +103,7 @@ pub mod pallet {
 		FtMustEmpty,
 		NotExists,
 		WrongFormat,
+		FailedToVerify,
 	}
 
 	#[pallet::hooks]
@@ -118,7 +123,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(T::WeightInfo::send_tip((*amount).saturated_into::<u32>()))]
+		#[pallet::weight(T::WeightInfo::send_tip())]
 		pub fn send_tip(
 			origin: OriginFor<T>,
 			tips_balance_info: TipsBalanceInfo,
@@ -153,6 +158,36 @@ pub mod pallet {
 			}
 		}
 
+		#[pallet::weight(T::WeightInfo::batch_claim_tip())]
+		pub fn batch_claim_tip(
+			origin: OriginFor<T>,
+			server_id: ServerId,
+			reference_type: ReferenceType,
+			reference_id: ReferenceId,
+			ft_identifiers: Vec<FtIdentifier>,
+		) -> DispatchResultWithPostInfo {
+			let sender = Self::tipping_account_id();
+			let receiver = ensure_signed(origin)?;
+			let mut ft_identifiers = ft_identifiers;
+
+			ft_identifiers.sort_unstable();
+			ft_identifiers.dedup();
+
+			match <Self as TippingInterface<T>>::batch_claim_tip(
+				&receiver,
+				&server_id,
+				&reference_type,
+				&reference_id,
+				&ft_identifiers,
+			) {
+				Ok(result) => {
+					Self::deposit_event(Event::BatchClaimTip(sender, receiver, result));
+					Ok(().into())
+				},
+				Err(error) => Err(error.into()),
+			}
+		}
+
 		#[pallet::weight(T::WeightInfo::claim_reference())]
 		pub fn claim_reference(
 			origin: OriginFor<T>,
@@ -160,6 +195,7 @@ pub mod pallet {
 			reference_type: ReferenceType,
 			reference_id: ReferenceId,
 			account_id: Option<AccountIdOf<T>>,
+			tx_fee: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 
@@ -169,10 +205,45 @@ pub mod pallet {
 				&reference_type,
 				&reference_id,
 				&account_id,
+				&tx_fee,
 				true,
 			) {
 				Ok(tips_balances) => {
-					Self::deposit_event(Event::ClaimReference(tips_balances.0, tips_balances.1));
+					Self::deposit_event(Event::ClaimReference(tips_balances));
+					Ok(().into())
+				},
+				Err(error) => Err(error.into()),
+			}
+		}
+
+		#[pallet::weight(T::WeightInfo::batch_claim_reference())]
+		pub fn batch_claim_reference(
+			origin: OriginFor<T>,
+			server_id: ServerId,
+			references: References,
+			main_references: References,
+			ft_identifiers: Vec<FtIdentifier>,
+			account_id: AccountIdOf<T>,
+			tx_fee: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+			let mut ft_identifiers = ft_identifiers;
+
+			ft_identifiers.sort_unstable();
+			ft_identifiers.dedup();
+
+			match <Self as TippingInterface<T>>::batch_claim_reference(
+				&who,
+				&server_id,
+				&references,
+				&main_references,
+				&ft_identifiers,
+				&account_id,
+				&tx_fee,
+				true,
+			) {
+				Ok(tips_balances) => {
+					Self::deposit_event(Event::ClaimReference(tips_balances));
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),
@@ -239,13 +310,11 @@ pub mod pallet {
 					&reference_type,
 					&reference_id,
 					account_id,
+					&Zero::zero(),
 					false,
 				) {
-					Ok(tips_balances) => {
-						Self::deposit_event(Event::ClaimReference(
-							tips_balances.0,
-							tips_balances.1,
-						));
+					Ok(tips_balance) => {
+						Self::deposit_event(Event::ClaimReference(tips_balance));
 
 						let succes_event = match data_type {
 							DataType::UserSocialMedia(user_social_media_info) =>

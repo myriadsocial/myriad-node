@@ -264,7 +264,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			account_id: AccountIdOf<T>,
 		) -> DispatchResultWithPostInfo {
-			let _ = ensure_root(origin)?;
+			ensure_root(origin)?;
 
 			AdminKey::<T>::put(account_id.clone());
 

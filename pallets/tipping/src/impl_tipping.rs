@@ -7,23 +7,27 @@ use frame_support::{
 };
 use serde_json::json;
 use sp_io::offchain_index;
-use sp_std::{str, vec::Vec};
+use sp_std::{str, vec, vec::Vec};
 
 impl<T: Config> TippingInterface<T> for Pallet<T> {
 	type Error = Error<T>;
 	type TipsBalance = TipsBalanceOf<T>;
-	type TipsBalances = (TipsBalanceOf<T>, Option<TipsBalanceOf<T>>);
+	type TipsBalances = Vec<TipsBalanceOf<T>>;
 	type TipsBalanceInfo = TipsBalanceInfo;
 	type Balance = BalanceOf<T>;
 	type UserCredential = UserCredential;
 	type SocialMediaCredential = SocialMediaCredential;
 	type ServerId = ServerId;
+	type References = References;
 	type ReferenceType = ReferenceType;
 	type ReferenceId = ReferenceId;
+	type ReferenceIds = Vec<ReferenceId>;
 	type FtIdentifier = FtIdentifier;
 	type AccessToken = AccessToken;
 	type DataId = Vec<u8>;
 	type DataType = DataType;
+	type FtIdentifiers = Vec<FtIdentifier>;
+	type FtIdentifierBalances = Vec<(BalanceOf<T>, FtIdentifier)>;
 
 	fn send_tip(
 		sender: &T::AccountId,
@@ -131,84 +135,218 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		}
 	}
 
+	fn batch_claim_tip(
+		receiver: &T::AccountId,
+		server_id: &Self::ServerId,
+		reference_type: &Self::ReferenceType,
+		reference_id: &Self::ReferenceId,
+		ft_identifiers: &Self::FtIdentifiers,
+	) -> Result<Self::FtIdentifierBalances, Self::Error> {
+		let tips_balances: Vec<TipsBalanceOf<T>> = (0..ft_identifiers.len())
+			.filter_map(|index| {
+				let ft_identifier = &ft_identifiers[index];
+
+				if ft_identifier != b"native" {
+					return None
+				}
+
+				let tips_balance_info =
+					TipsBalanceInfo::new(server_id, reference_type, reference_id, ft_identifier);
+				let tips_balance = Self::get_tips_balance(&tips_balance_info);
+
+				if let Some(tips_balance) = tips_balance {
+					if tips_balance.get_amount() == &Zero::zero() {
+						return None
+					}
+
+					if tips_balance.get_account_id().is_none() {
+						return None
+					}
+
+					if tips_balance.get_account_id().as_ref().unwrap() != receiver {
+						return None
+					}
+
+					return Some(tips_balance)
+				}
+
+				None
+			})
+			.collect();
+
+		if tips_balances.is_empty() {
+			return Err(Error::<T>::NothingToClaimed)
+		}
+
+		let sender = Self::tipping_account_id();
+		let mut success_claim = Vec::<(BalanceOf<T>, FtIdentifier)>::new();
+
+		for tips_balance in tips_balances.iter() {
+			let ft = tips_balance.get_ft_identifier();
+			let tips_amount = tips_balance.get_amount();
+			let receiver = tips_balance.get_account_id().as_ref().unwrap();
+			let mut tips_balance = tips_balance.clone();
+
+			tips_balance.set_amount(Zero::zero());
+
+			if ft != b"native" {
+				continue
+			}
+
+			if let Ok(imb) = CurrencyOf::<T>::withdraw(
+				&sender,
+				*tips_amount,
+				WithdrawReasons::TRANSFER,
+				ExistenceRequirement::KeepAlive,
+			) {
+				CurrencyOf::<T>::resolve_creating(receiver, imb);
+
+				let _ = Self::update_tips_balance(&tips_balance);
+
+				success_claim.push((*tips_amount, ft.to_vec()));
+			}
+		}
+
+		Ok(success_claim)
+	}
+
 	fn claim_reference(
 		sender: &Option<T::AccountId>,
 		tips_balance_info: &Self::TipsBalanceInfo,
 		reference_type: &Self::ReferenceType,
 		reference_id: &Self::ReferenceId,
 		account_id: &Option<T::AccountId>,
+		tx_fee: &Self::Balance,
 		verify_owner: bool,
 	) -> Result<Self::TipsBalances, Self::Error> {
 		let server_id = tips_balance_info.get_server_id();
-		let _ = Self::verify_server(sender, server_id, verify_owner)?;
+		Self::verify_server(sender, server_id, verify_owner)?;
+
+		if account_id.is_none() {
+			return Err(Error::<T>::ReceiverNotExists)
+		}
 
 		if tips_balance_info.get_ft_identifier() != "native".as_bytes() {
 			return Err(Error::<T>::FtNotExists)
 		}
 
-		let mut tips_balances = Self::default_tips_balances(tips_balance_info);
+		let native_info = TipsBalanceInfo::new(server_id, reference_type, reference_id, b"native");
+		let result = Self::get_tips_balance(&native_info);
 
-		if tips_balance_info.get_reference_type() == reference_type {
-			if account_id.is_none() {
-				return Err(Error::<T>::ReceiverNotExists)
+		if let Some(tips_balance) = result.clone() {
+			let amount = tips_balance.get_amount();
+
+			if amount == &Zero::zero() {
+				return Err(Error::<T>::FailedToVerify)
 			}
 
-			if tips_balance_info.get_reference_id() != reference_id {
-				return Err(Error::<T>::NotExists)
+			if amount < tx_fee {
+				return Err(Error::<T>::FailedToVerify)
 			}
-
-			tips_balances.0 = match Self::get_tips_balance(tips_balance_info) {
-				Some(mut result) => {
-					result.set_account_id(account_id);
-					Self::update_tips_balance(&result)
-				},
-				None => Self::create_tips_balance(tips_balance_info, account_id, &None),
-			};
 		} else {
-			// Reference from tips balance info
-			let mut initial_balance: BalanceOf<T> = Zero::zero();
-
-			tips_balances.1 = match Self::get_tips_balance(tips_balance_info) {
-				Some(mut result) => {
-					initial_balance += *result.get_amount();
-
-					if !initial_balance.is_zero() {
-						result.set_amount(Zero::zero());
-						Some(Self::update_tips_balance(&result))
-					} else {
-						Some(result)
-					}
-				},
-				None => Some(Self::create_tips_balance(tips_balance_info, &None, &None)),
-			};
-
-			// Create or update reference from param
-			let mut tips_balance_info = tips_balance_info.clone();
-
-			tips_balance_info.set_reference_type(reference_type);
-			tips_balance_info.set_reference_id(reference_id);
-
-			tips_balances.0 = match Self::get_tips_balance(&tips_balance_info) {
-				Some(mut result) => {
-					let total_amount = *result.get_amount() + initial_balance;
-
-					result.set_amount(total_amount);
-
-					if account_id.is_some() {
-						result.set_account_id(account_id);
-					}
-
-					Self::update_tips_balance(&result)
-				},
-				None => Self::create_tips_balance(
-					&tips_balance_info,
-					account_id,
-					&Some(initial_balance),
-				),
-			};
+			return Err(Error::<T>::FailedToVerify)
 		}
 
-		Ok(tips_balances)
+		match CurrencyOf::<T>::withdraw(
+			&Self::tipping_account_id(),
+			*tx_fee,
+			WithdrawReasons::TRANSFER,
+			ExistenceRequirement::KeepAlive,
+		) {
+			Ok(imb) => {
+				CurrencyOf::<T>::resolve_creating(sender.as_ref().unwrap(), imb);
+
+				let ref_type = tips_balance_info.get_reference_type();
+				let ref_id = tips_balance_info.get_reference_id();
+				let ft_identifier = tips_balance_info.get_ft_identifier();
+				let ft_identifiers = if "native".as_bytes() == ft_identifier {
+					vec![ft_identifier.to_vec()]
+				} else {
+					vec![b"native".to_vec(), ft_identifier.to_vec()]
+				};
+
+				let tips_balances = Self::update_tips_balances(
+					server_id,
+					&References::new(ref_type, &[ref_id.to_vec()]),
+					&References::new(reference_type, &[reference_id.to_vec()]),
+					&ft_identifiers,
+					&account_id.clone().unwrap(),
+					tx_fee,
+					&result.unwrap(),
+				);
+
+				Ok(tips_balances)
+			},
+			_ => Err(Error::<T>::BadSignature),
+		}
+	}
+
+	fn batch_claim_reference(
+		sender: &T::AccountId,
+		server_id: &Self::ServerId,
+		references: &Self::References,
+		main_references: &Self::References,
+		ft_identifiers: &Self::FtIdentifiers,
+		account_id: &T::AccountId,
+		tx_fee: &Self::Balance,
+		verify_owner: bool,
+	) -> Result<Self::TipsBalances, Self::Error> {
+		if sender == account_id {
+			return Err(Error::<T>::FailedToVerify)
+		}
+
+		Self::verify_server(&Some(sender.clone()), server_id, verify_owner)?;
+
+		if tx_fee == &Zero::zero() {
+			return Err(Error::<T>::FailedToVerify)
+		}
+
+		if main_references.get_reference_ids().len() != 1 {
+			return Err(Error::<T>::FailedToVerify)
+		}
+
+		let ref_type = main_references.get_reference_type();
+		let ref_id = &main_references.get_reference_ids()[0];
+		let native_info = TipsBalanceInfo::new(server_id, ref_type, ref_id, b"native");
+		let result = Self::get_tips_balance(&native_info);
+
+		if let Some(tips_balance) = result.clone() {
+			let amount = tips_balance.get_amount();
+
+			if amount == &Zero::zero() {
+				return Err(Error::<T>::FailedToVerify)
+			}
+
+			if amount < tx_fee {
+				return Err(Error::<T>::FailedToVerify)
+			}
+		} else {
+			return Err(Error::<T>::FailedToVerify)
+		}
+
+		match CurrencyOf::<T>::withdraw(
+			&Self::tipping_account_id(),
+			*tx_fee,
+			WithdrawReasons::TRANSFER,
+			ExistenceRequirement::KeepAlive,
+		) {
+			Ok(imb) => {
+				CurrencyOf::<T>::resolve_creating(sender, imb);
+
+				let tips_balances = Self::update_tips_balances(
+					server_id,
+					references,
+					main_references,
+					ft_identifiers,
+					account_id,
+					tx_fee,
+					&result.unwrap(),
+				);
+
+				Ok(tips_balances)
+			},
+			_ => Err(Error::<T>::BadSignature),
+		}
 	}
 
 	fn verify_social_media(
