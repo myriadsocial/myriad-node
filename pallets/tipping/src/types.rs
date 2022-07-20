@@ -1,12 +1,21 @@
 use crate::*;
 
-use frame_support::{pallet_prelude::*, traits::Currency};
+use frame_support::{pallet_prelude::*, sp_runtime::traits::Saturating, traits::Currency};
 use sp_std::vec::Vec;
 
 pub type ServerId = Vec<u8>;
 pub type FtIdentifier = Vec<u8>;
 pub type ReferenceId = Vec<u8>;
 pub type ReferenceType = Vec<u8>;
+
+pub type TipsBalanceKey = (ServerId, ReferenceType, ReferenceId, FtIdentifier);
+pub type TipsBalanceTuppleOf<T> = (TipsBalanceKey, BalanceOf<T>);
+
+pub type AccountBalancesOf<T> = Vec<(FtIdentifier, AccountIdOf<T>, BalanceOf<T>)>;
+pub type AccountBalancesTuppleOf<T> = (AccountBalancesOf<T>, Option<AccountBalancesOf<T>>);
+
+pub type AssetId = u32;
+pub type AssetBalance = u128;
 
 pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 pub type CurrencyOf<T> = <T as self::Config>::Currency;
@@ -19,17 +28,17 @@ pub struct TipsBalance<Balance, AccountId> {
 	account_id: Option<AccountId>,
 	amount: Balance,
 }
-impl<Balance: Clone, AccountId: Clone> TipsBalance<Balance, AccountId> {
-	pub fn new(
-		tips_balance_info: &TipsBalanceInfo,
-		account_id: &Option<AccountId>,
-		amount: &Balance,
-	) -> Self {
+impl<Balance: Clone + Saturating, AccountId: Clone> TipsBalance<Balance, AccountId> {
+	pub fn new(tips_balance_info: &TipsBalanceInfo, amount: &Balance) -> Self {
 		Self {
 			tips_balance_info: tips_balance_info.clone(),
-			account_id: account_id.clone(),
+			account_id: None,
 			amount: amount.clone(),
 		}
+	}
+
+	pub fn key(&self) -> TipsBalanceKey {
+		self.tips_balance_info.key()
 	}
 
 	pub fn get_tips_balance_info(&self) -> &TipsBalanceInfo {
@@ -68,8 +77,12 @@ impl<Balance: Clone, AccountId: Clone> TipsBalance<Balance, AccountId> {
 		self.amount = amount;
 	}
 
-	pub fn set_account_id(&mut self, account_id: &Option<AccountId>) {
-		self.account_id = account_id.clone();
+	pub fn add_amount(&mut self, amount: Balance) {
+		self.amount = self.amount.clone().saturating_add(amount);
+	}
+
+	pub fn set_account_id(&mut self, account_id: &AccountId) {
+		self.account_id = Some(account_id.clone());
 	}
 }
 
@@ -93,6 +106,15 @@ impl TipsBalanceInfo {
 			reference_id: reference_id.to_vec(),
 			ft_identifier: ft_identifier.to_vec(),
 		}
+	}
+
+	pub fn key(&self) -> TipsBalanceKey {
+		(
+			self.server_id.clone(),
+			self.reference_type.clone(),
+			self.reference_id.clone(),
+			self.ft_identifier.clone(),
+		)
 	}
 
 	pub fn get_reference_id(&self) -> &Vec<u8> {

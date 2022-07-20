@@ -170,7 +170,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 2013,
+	spec_version: 2014,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -664,10 +664,10 @@ impl pallet_server::Config for Runtime {
 }
 
 impl pallet_tipping::Config for Runtime {
-	type AuthorityId = pallet_tipping::crypto::TestAuthId;
 	type Call = Call;
 	type Event = Event;
 	type Currency = Balances;
+	type Assets = OctopusAssets;
 	type Server = Server;
 	type WeightInfo = ();
 }
@@ -702,7 +702,7 @@ construct_runtime!(
 
 		// Local pallets
 		Server: pallet_server::{Call, Event<T>, Config<T>, Pallet, Storage},
-		Tipping: pallet_tipping::{Call, Event<T>, Pallet, Storage, ValidateUnsigned},
+		Tipping: pallet_tipping::{Call, Event<T>, Pallet, Storage},
 	}
 );
 
