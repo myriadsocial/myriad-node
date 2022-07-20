@@ -26,6 +26,7 @@ frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch =
 
 # Substrate Pallet Dependencies
 pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.13', default-features = false }
+pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.13', default-features = false }
 
 # Substrate Local Dependencies
 pallet-server = { path = '../../server', default-features = false }
@@ -56,6 +57,7 @@ std = [
 	'frame-benchmarking/std',
 
 	'pallet-balances/std',
+	'pallet-assets/std',
 
 	'pallet-server/std',
 	'pallet-tipping/std',

@@ -5,8 +5,8 @@ use frame_system as system;
 use pallet_balances::AccountData;
 use sp_core::{sr25519::Signature, H256};
 use sp_runtime::{
-	testing::{Header, TestXt},
-	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
+	testing::Header,
+	traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, Verify},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -22,6 +22,7 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Tipping: pallet_tipping::{Pallet, Call, Storage, Event<T>},
 		Server: pallet_server::{Pallet, Call, Storage, Event<T>},
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -79,11 +80,11 @@ impl pallet_balances::Config for Test {
 }
 
 impl pallet_tipping::Config for Test {
-	type AuthorityId = pallet_tipping::crypto::TestAuthId;
 	type Call = Call;
 	type Event = Event;
 	type Currency = Balances;
 	type Server = Server;
+	type Assets = Assets;
 	type WeightInfo = ();
 }
 
@@ -92,32 +93,31 @@ impl pallet_server::Config for Test {
 	type WeightInfo = ();
 }
 
-type Extrinsic = TestXt<Call, ()>;
+pub type OctopusAssetId = u32;
+pub type OctopusAssetBalance = u128;
+
+parameter_types! {
+	pub const ApprovalDeposit: Balance = 1;
+	pub const AssetDeposit: Balance = 1;
+	pub const MetadataDepositBase: Balance = 1;
+	pub const MetadataDepositPerByte: Balance = 1;
+	pub const StringLimit: u32 = 50;
+}
+
 type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
-impl frame_system::offchain::SigningTypes for Test {
-	type Public = <Signature as Verify>::Signer;
-	type Signature = Signature;
-}
-
-impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-where
-	Call: From<LocalCall>,
-{
-	type OverarchingCall = Call;
-	type Extrinsic = Extrinsic;
-}
-
-impl<LocalCall> system::offchain::CreateSignedTransaction<LocalCall> for Test
-where
-	Call: From<LocalCall>,
-{
-	fn create_transaction<C: system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-		call: Call,
-		_public: <Signature as Verify>::Signer,
-		_account: AccountId,
-		nonce: u64,
-	) -> Option<(Call, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
-		Some((call, (nonce, ())))
-	}
+impl pallet_assets::Config for Test {
+	type Event = Event;
+	type Balance = OctopusAssetBalance;
+	type AssetId = OctopusAssetId;
+	type Currency = Balances;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = ();
 }
