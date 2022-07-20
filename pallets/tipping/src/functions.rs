@@ -87,11 +87,14 @@ impl<T: Config> Pallet<T> {
 		tips_balance: &TipsBalanceOf<T>,
 		set_empty: bool,
 		tx_fee: Option<BalanceOf<T>>,
-	) {
+	) -> BalanceOf<T> {
 		let tips_balance_key = tips_balance.key();
 		let amount = *tips_balance.get_amount();
 		let account_id = tips_balance.get_account_id();
 		let ft_identifier = tips_balance.get_ft_identifier();
+
+		//  Total tip that has been send and claim
+		let mut total_tip: BalanceOf<T> = amount;
 
 		if Self::can_update_balance(&tips_balance_key) {
 			TipsBalanceByReference::<T>::mutate(
@@ -106,6 +109,7 @@ impl<T: Config> Pallet<T> {
 								.saturating_sub(tx_fee.unwrap())
 								.saturating_add(amount);
 							tips_balance.set_amount(final_balance);
+							total_tip = final_balance;
 						} else {
 							tips_balance.add_amount(amount);
 						}
@@ -120,6 +124,8 @@ impl<T: Config> Pallet<T> {
 		} else {
 			TipsBalanceByReference::<T>::insert(tips_balance.key(), tips_balance);
 		}
+
+		total_tip
 	}
 
 	pub fn do_transfer(
@@ -185,7 +191,9 @@ impl<T: Config> Pallet<T> {
 
 			main_balance.set_account_id(account_id);
 
-			Self::do_store_tips_balance(&main_balance, false, Some(*tx_fee));
+			let total_tip = Self::do_store_tips_balance(&main_balance, false, Some(*tx_fee));
+
+			main_balance.set_amount(total_tip);
 			main_tips_balances.push(main_balance);
 		}
 
