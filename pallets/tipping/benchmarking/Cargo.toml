@@ -1,6 +1,6 @@
 [package]
 name = 'pallet-tipping-benchmarking'
-version = '2.1.4'
+version = '2.1.5'
 edition = '2021'
 license = 'AGPL-3.0'
 authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
