@@ -102,7 +102,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		Self::do_server_exist(server_id, Some(receiver))?;
 
 		let sender = Self::tipping_account_id();
-		let ref_id = (&ref_ids[0]).clone();
+		let ref_id = ref_ids[0].clone();
 		let tips_balance_key = (server_id.clone(), ref_type, ref_id, b"native".to_vec());
 
 		Self::can_pay_fee(&tips_balance_key, tx_fee)?;

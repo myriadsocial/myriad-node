@@ -40,31 +40,34 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		pub admin_key: T::AccountId,
+		pub admin_key: Option<T::AccountId>,
 	}
 
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { admin_key: Default::default() }
+			Self { admin_key: None }
 		}
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			AdminKey::<T>::put(&self.admin_key);
+			if let Some(ref admin_key) = self.admin_key {
+				AdminKey::<T>::put(admin_key);
+			}
 		}
 	}
 
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
 	#[pallet::getter(fn admin_key)]
-	pub type AdminKey<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
+	pub type AdminKey<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn server_by_id)]
@@ -118,7 +121,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
-			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+			ensure!(admin == Self::admin_key().unwrap(), Error::<T>::Unauthorized);
 
 			match <Self as ServerInterface<T>>::register(
 				&server_id,
@@ -144,7 +147,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
-			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+			ensure!(admin == Self::admin_key().unwrap(), Error::<T>::Unauthorized);
 
 			match <Self as ServerInterface<T>>::transfer_owner(&server_id, &account_id, &new_owner)
 			{
@@ -165,7 +168,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
-			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+			ensure!(admin == Self::admin_key().unwrap(), Error::<T>::Unauthorized);
 
 			match <Self as ServerInterface<T>>::update_name(&server_id, &account_id, &new_name) {
 				Ok(_) => {
@@ -185,7 +188,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
-			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+			ensure!(admin == Self::admin_key().unwrap(), Error::<T>::Unauthorized);
 
 			match <Self as ServerInterface<T>>::update_api_url(
 				&server_id,
@@ -209,7 +212,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
-			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+			ensure!(admin == Self::admin_key().unwrap(), Error::<T>::Unauthorized);
 
 			match <Self as ServerInterface<T>>::update_web_url(
 				&server_id,
@@ -232,7 +235,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
-			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+			ensure!(admin == Self::admin_key().unwrap(), Error::<T>::Unauthorized);
 
 			match <Self as ServerInterface<T>>::unregister(&server_id, &account_id) {
 				Ok(_) => {
@@ -250,7 +253,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let admin = ensure_signed(origin)?;
 
-			ensure!(admin == AdminKey::<T>::get(), Error::<T>::Unauthorized);
+			ensure!(admin == Self::admin_key().unwrap(), Error::<T>::Unauthorized);
 
 			AdminKey::<T>::put(account_id.clone());
 

@@ -5,12 +5,12 @@ use sc_sync_state_rpc::LightSyncStateExtension;
 
 use beefy_primitives::crypto::AuthorityId as BeefyId;
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use pallet_octopus_appchain::AuthorityId as OctopusId;
+use pallet_octopus_appchain::sr25519::AuthorityId as OctopusId;
 
 use myriad_runtime::{
 	currency::{OCTS, UNITS as MYRIA},
@@ -20,7 +20,6 @@ use myriad_runtime::{
 	BABE_GENESIS_EPOCH_CONFIG, WASM_BINARY,
 };
 
-use hex_literal::hex;
 use serde::{Deserialize, Serialize};
 
 /// Node `ChainSpec` extensions.
@@ -86,12 +85,12 @@ pub fn session_keys(
 
 /// Helper function to generate appchain config
 pub fn appchain_config(
-	relay_contract: &str,
-	asset_id_by_name: &str,
+	anchor_contract: &str,
+	asset_id_by_token_id: &str,
 	premined_amount: Balance,
 	era_payout: Balance,
 ) -> (String, String, Balance, Balance) {
-	(relay_contract.to_string(), asset_id_by_name.to_string(), premined_amount, era_payout)
+	(anchor_contract.to_string(), asset_id_by_token_id.to_string(), premined_amount, era_payout)
 }
 
 /// Helper function to generate an properties
@@ -110,239 +109,6 @@ pub fn mainnet_config() -> Result<ChainSpec, String> {
 
 pub fn testnet_config() -> Result<ChainSpec, String> {
 	ChainSpec::from_json_bytes(&include_bytes!("../res/octopus-testnet.json")[..])
-}
-
-pub fn staging_testnet_config() -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
-	let properties = get_properties("MYRIA", 18, 42);
-
-	Ok(ChainSpec::from_genesis(
-		// Name
-		"Myriad Staging Testnet",
-		// ID
-		"myriad_staging_testnet",
-		ChainType::Live,
-		move || {
-			genesis(
-				// WASM Binary
-				wasm_binary,
-				// Sudo account
-				// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
-				hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"].into(),
-				// Initial PoA authorities
-				vec![
-					(
-						// 5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
-						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"]
-							.into(),
-						// 5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
-						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"]
-							.unchecked_into(),
-						// 5G5ghjBD9fkx9gR59LQLmQvFnayjaRhdBKqpujvNjYjmx4ks
-						hex!["b1b04b436a8772b6429a549ae68d72fd88b8533462d03d83d9acaf9500b3ca00"]
-							.unchecked_into(),
-						// 5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
-						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"]
-							.unchecked_into(),
-						// KW8mwncjSVKxsCbACjDDk2bLHLsq2gkeVw5xjKW4vSLgWimn1
-						hex!["0302c5928b0861672271346c29e30faa2cb5328e024d1c45f2689e886cb12b6de1"]
-							.unchecked_into(),
-						// 5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
-						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"]
-							.unchecked_into(),
-						// Stash amount
-						100 * OCTS,
-					),
-					(
-						// 5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
-						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"]
-							.into(),
-						// 5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
-						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"]
-							.unchecked_into(),
-						// 5Dvf9Qq8rmfFdSLACJwvcDEYJMYYq6wYiKkazZrUmWLqUDEE
-						hex!["52556063e8c72431f643c8eb66ba172d5b0d2a095429a8a6e29b522208e26ccd"]
-							.unchecked_into(),
-						// 5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
-						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"]
-							.unchecked_into(),
-						// KW9uY45eZ65PpHxk21KiXvc8XiTse6amUPKpAWgvxmfhorryw
-						hex!["0334cbe01d6db7bf3d0f4148c468a3a01a5a560f21244d9891c35de23d7c752c24"]
-							.unchecked_into(),
-						// 5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
-						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"]
-							.unchecked_into(),
-						// Stash amount
-						100 * OCTS,
-					),
-				],
-				// Pre-funded accounts
-				vec![
-					(
-						// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
-						hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"]
-							.into(),
-						124_999_980 * MYRIA,
-					),
-					(
-						// 5GhTbhujpv3nZQx6idibYSwYeNCN7ddpqqjPjwZn43xdvYMT
-						hex!["ccf90463ce9ae4cf881c549b09ddeac1960316930e390ca47eeba95741386e5b"]
-							.into(),
-						// Balance amount
-						10 * MYRIA,
-					),
-					(
-						// 5H9RP9sy2g9Jaj1GG2zGaytLdxoBHQnqMaKmqvtFPJpYiRV3
-						hex!["e0c5efc09df70c2e236e32ebba4c89a5ae538dacf25412e2a23e6a175291453a"]
-							.into(),
-						// Balance amount
-						10 * MYRIA,
-					),
-				],
-				// Appchain config
-				appchain_config(
-					// Relay Contract
-					"",
-					// Asset Id by Name
-					"usdc.testnet",
-					// Premined Amount
-					875_000_000 * MYRIA,
-					// Era Payout
-					68_493 * MYRIA,
-				),
-				// Admin key
-				// 5HVgMkXJGoDGQdnTyah4shbhuaiNCmAUdqCyTdYAnr9T9Y1Q
-				hex!["f03941f93b990c271015d3b485f137e117aab80af0a03b557966927caaa7d44f"].into(),
-			)
-		},
-		// Bootnodes
-		vec![],
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("myriad-staging-testnet"),
-		// Properties
-		Some(properties),
-		// Extensions
-		Default::default(),
-	))
-}
-
-pub fn development_testnet_config() -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM not available".to_string())?;
-	let properties = get_properties("MYRIA", 18, 42);
-
-	Ok(ChainSpec::from_genesis(
-		// Name
-		"Myriad Development Testnet",
-		// ID
-		"myriad_development_testnet",
-		ChainType::Live,
-		move || {
-			genesis(
-				// WASM Binary
-				wasm_binary,
-				// Sudo account
-				// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
-				hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"].into(),
-				// Initial PoA authorities
-				vec![
-					(
-						// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
-						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
-							.into(),
-						// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
-						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
-							.unchecked_into(),
-						// 5H83G9CMm7wPYq6FeYqrn7ueVBWBvK37xdZYamtm8re2LYn3
-						hex!["dfb839beaf6fe750ca87b9059161d43f2682a6c3a0ac765f1e5054063ed9903b"]
-							.unchecked_into(),
-						// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
-						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
-							.unchecked_into(),
-						// KW7hbC4ZzNJEjkofpAhxC51PRHxPxSr6RZ8NG4UyerChmQH3E
-						hex!["02d337069cb73bcefafc4e35e5189ad62932e4f2ee3f985b6bbff654cb68017ff1"]
-							.unchecked_into(),
-						// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
-						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
-							.unchecked_into(),
-						// Stash amount
-						100 * OCTS,
-					),
-					(
-						// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
-						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
-							.into(),
-						// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
-						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
-							.unchecked_into(),
-						// 5EKzz5LY1omg6yn7CooEnedQK4HXTz55zVnw7wacPCAnygo1
-						hex!["6422ce120d8acb2fe261be3b230e0e51c29228bf0075db160b5e3c5455c012c5"]
-							.unchecked_into(),
-						// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
-						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
-							.unchecked_into(),
-						// KW9SPz39ZSEGmM4qKak7Le47XhDPXynFiU6jSxtScQ27EDzTx
-						hex!["032019159fdae5d7f0620f0e5f7c9b382b2f74f047c0162c59732b4770897a2bb7"]
-							.unchecked_into(),
-						// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
-						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
-							.unchecked_into(),
-						// Stash amount
-						100 * OCTS,
-					),
-				],
-				// Pre-funded accounts
-				vec![
-					(
-						// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
-						hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"]
-							.into(),
-						// Balance amount
-						124_999_980 * MYRIA,
-					),
-					(
-						// 5Gx1QL5a18H63ofyYdZhjpiTKA9XCgpfoTCztT2dpKsHQE9j
-						hex!["d811839e01e3cc6eeb64e6f312a1eaf2988ae2c5fea9dd0b8ac018c146ca7073"]
-							.into(),
-						// Balance amount
-						10 * MYRIA,
-					),
-					(
-						// 5EUTFtAY8t2wjHeugqs2LH6uUkgkaU7ANZ9dPHXbdu5xcVSx
-						hex!["6a95359ecc0e8ae0cb8396f6e21fba4448ba5a0003ee1e0322352a4d8ba3213f"]
-							.into(),
-						// Balance amount
-						10 * MYRIA,
-					),
-				],
-				// Appchain config
-				appchain_config(
-					// Relay Contract
-					"",
-					// Asset Id by Name
-					"usdc.testnet",
-					// Premined Amount
-					875_000_000 * MYRIA,
-					// Era Payout
-					68_493 * MYRIA,
-				),
-				// Admin key
-				// 5EZYLWe1j3MjuH1vJf6Mc5CxaeGfVeoAQn3DwYuLvABDYU1U
-				hex!["6e768960d4a61b5583eb76ac22ba91dce97ef55fa8ca4b764c774cdb9af93b36"].into(),
-			)
-		},
-		// Bootnodes
-		vec![],
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("myriad-development-testnet"),
-		// Properties
-		Some(properties),
-		// Extensions
-		Default::default(),
-	))
 }
 
 pub fn local_config() -> Result<ChainSpec, String> {
@@ -386,10 +152,10 @@ pub fn local_config() -> Result<ChainSpec, String> {
 				],
 				// Appchain config
 				appchain_config(
-					// Relay Contract
-					"",
-					// Asset Id by Name
-					"usdc.testnet",
+					// Anchor Contract
+					"myriad.registry.test_oct.testnet",
+					// Asset Id by Token Id
+					"usdn.testnet",
 					// Premined Amount
 					875_000_000 * MYRIA,
 					// Era Payout
@@ -406,6 +172,8 @@ pub fn local_config() -> Result<ChainSpec, String> {
 		None,
 		// Protocol ID
 		Some("myriad-local"),
+		// Fork ID
+		None,
 		// Properties
 		Some(properties),
 		// Extensions
@@ -444,10 +212,10 @@ pub fn development_config() -> Result<ChainSpec, String> {
 				)],
 				// Appchain config
 				appchain_config(
-					// Relay Contract
-					"",
-					// Asset Id by Name
-					"usdc.testnet",
+					// Anchor Contract
+					"myriad.registry.test_oct.testnet",
+					// Asset Id by Token Id
+					"usdn.testnet",
 					// Premined Amount
 					875_000_000 * MYRIA,
 					// Era Payout
@@ -464,6 +232,8 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		None,
 		// Protocol ID
 		Some("myriad-development"),
+		// Fork ID
+		None,
 		// Properties
 		Some(properties),
 		// Extensions
@@ -520,13 +290,13 @@ fn genesis(
 		im_online: Default::default(),
 		octopus_appchain: OctopusAppchainConfig {
 			anchor_contract: appchain_config.0,
-			asset_id_by_name: vec![(appchain_config.1, 0)],
+			asset_id_by_token_id: vec![(appchain_config.1, 0)],
 			premined_amount: appchain_config.2,
 			validators: initial_authorities.iter().map(|x| (x.0.clone(), x.6)).collect(),
 		},
 		octopus_lpos: OctopusLposConfig { era_payout: appchain_config.3, ..Default::default() },
 		octopus_assets: Default::default(),
-		sudo: SudoConfig { key: root_key },
-		server: ServerConfig { admin_key },
+		sudo: SudoConfig { key: Some(root_key) },
+		server: ServerConfig { admin_key: Some(admin_key) },
 	}
 }
