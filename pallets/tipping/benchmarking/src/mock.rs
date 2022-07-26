@@ -1,6 +1,9 @@
 #![cfg(test)]
 
-use frame_support::{construct_runtime, parameter_types, traits::Everything};
+use frame_support::{
+	construct_runtime, parameter_types,
+	traits::{ConstU128, ConstU32, Everything},
+};
 use frame_system as system;
 use pallet_balances::AccountData;
 use sp_core::{sr25519::Signature, H256};
@@ -57,6 +60,7 @@ impl system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = ();
+	type MaxConsumers = ConstU32<2>;
 }
 
 type Balance = u128;
@@ -112,6 +116,7 @@ impl pallet_assets::Config for Test {
 	type AssetId = OctopusAssetId;
 	type Currency = Balances;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type AssetAccountDeposit = ConstU128<10>;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;

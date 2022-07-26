@@ -1,5 +1,8 @@
 use crate as pallet_server;
-use frame_support::{construct_runtime, parameter_types, traits::Everything};
+use frame_support::{
+	construct_runtime, parameter_types,
+	traits::{ConstU32, Everything},
+};
 use frame_system as system;
 use sp_core::H256;
 use sp_io::TestExternalities;
@@ -53,6 +56,7 @@ impl system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = ();
+	type MaxConsumers = ConstU32<2>;
 }
 
 impl pallet_server::Config for Test {

@@ -1,5 +1,6 @@
 use super::*;
 use frame_support::pallet_prelude::*;
+use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]

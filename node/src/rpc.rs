@@ -23,7 +23,7 @@ use sc_transaction_pool_api::TransactionPool;
 
 use substrate_frame_rpc_system::{AccountNonceApi, FullSystem, SystemApi};
 
-use beefy_gadget::notification::BeefySignedCommitmentStream;
+use beefy_gadget::notification::{BeefyBestBlockStream, BeefySignedCommitmentStream};
 use beefy_gadget_rpc::{BeefyApi, BeefyRpcHandler};
 use pallet_mmr_rpc::{Mmr, MmrApi, MmrRuntimeApi};
 use pallet_transaction_payment_rpc::{
@@ -62,6 +62,8 @@ pub struct GrandpaDeps<B> {
 pub struct BeefyDeps {
 	/// Receives notifications about signed commitment events from BEEFY.
 	pub beefy_commitment_stream: BeefySignedCommitmentStream<Block>,
+	/// Receives notifications about best block events from BEEFY.
+	pub beefy_best_block_stream: BeefyBestBlockStream<Block>,
 	/// Executor to drive the subscription manager in the BEEFY RPC handler.
 	pub beefy_subscription_executor: SubscriptionTaskExecutor,
 }
@@ -124,7 +126,8 @@ where
 		finality_provider,
 	} = grandpa;
 
-	let BeefyDeps { beefy_commitment_stream, beefy_subscription_executor } = beefy;
+	let BeefyDeps { beefy_commitment_stream, beefy_best_block_stream, beefy_subscription_executor } =
+		beefy;
 
 	let mut io = IoHandler::default();
 
@@ -145,17 +148,18 @@ where
 		subscription_executor,
 		finality_provider,
 	)));
-	io.extend_with(BeefyApi::to_delegate(BeefyRpcHandler::new(
+	let beefy_handler: BeefyRpcHandler<Block> = BeefyRpcHandler::new(
 		beefy_commitment_stream,
+		beefy_best_block_stream,
 		beefy_subscription_executor,
-	)));
+	)?;
+	io.extend_with(BeefyApi::to_delegate(beefy_handler));
 	io.extend_with(MmrApi::to_delegate(Mmr::new(client.clone())));
 	io.extend_with(SyncStateRpcApi::to_delegate(SyncStateRpcHandler::new(
 		chain_spec,
 		client,
 		shared_authority_set,
 		shared_epoch_changes,
-		deny_unsafe,
 	)?));
 
 	Ok(io)

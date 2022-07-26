@@ -22,7 +22,7 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, FixedPointNumber, MultiAddress, MultiSignature, Perbill, Perquintill,
+	ApplyExtrinsicResult, MultiAddress, MultiSignature, Perbill,
 };
 use sp_staking::SessionIndex;
 use sp_std::prelude::*;
@@ -32,7 +32,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Everything, KeyOwnerProofSystem},
+	traits::{ConstU128, ConstU16, ConstU32, Everything, KeyOwnerProofSystem},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -41,8 +41,8 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	offchain, ChainContext, CheckEra, CheckGenesis, CheckNonce, CheckSpecVersion, CheckTxVersion,
-	CheckWeight, EnsureRoot,
+	offchain, ChainContext, CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce,
+	CheckSpecVersion, CheckTxVersion, CheckWeight, EnsureRoot,
 };
 
 use pallet_babe::{
@@ -56,13 +56,11 @@ use pallet_grandpa::{
 };
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_mmr_primitives as mmr;
-use pallet_octopus_appchain::AuthorityId as OctopusId;
+use pallet_octopus_appchain::sr25519::AuthorityId as OctopusId;
 use pallet_octopus_lpos::{EraIndex, ExposureOf};
 use pallet_session::{historical as pallet_session_historical, FindAccountFromAuthorIndex};
 use pallet_session_historical::NoteHistoricalRoot;
-use pallet_transaction_payment::{
-	ChargeTransactionPayment, CurrencyAdapter, Multiplier, TargetedFeeAdjustment,
-};
+use pallet_transaction_payment::{ChargeTransactionPayment, CurrencyAdapter};
 
 // Local pallet
 pub use pallet_tipping;
@@ -90,6 +88,7 @@ pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
+	CheckNonZeroSender<Runtime>,
 	CheckSpecVersion<Runtime>,
 	CheckTxVersion<Runtime>,
 	CheckGenesis<Runtime>,
@@ -103,14 +102,33 @@ pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signatu
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive =
-	frame_executive::Executive<Runtime, Block, ChainContext<Runtime>, Runtime, AllPallets>;
-pub type ClassId = u32;
-pub type InstanceId = u32;
+pub type Executive = frame_executive::Executive<
+	Runtime,
+	Block,
+	ChainContext<Runtime>,
+	Runtime,
+	AllPalletsWithSystem,
+>;
+pub type ClassId = u128;
+pub type InstanceId = u128;
 pub type OctopusAssetId = u32;
 pub type OctopusAssetBalance = u128;
 
 pub struct OctopusAppCrypto;
+
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benches {
+	define_benchmarks!(
+		[frame_benchmarking, BaselineBench::<Runtime>]
+		[frame_system, SystemBench::<Runtime>]
+		[pallet_server, Server]
+		[pallet_tipping, Tipping]
+	);
+}
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -170,10 +188,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 2014,
+	spec_version: 2015,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
+	state_version: 1,
 };
 
 /// Since BABE is probabilistic this is the average expected block time that
@@ -257,7 +276,6 @@ parameter_types! {
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 	pub const BlockHashCount: BlockNumber = 2400;
-	pub const SS58Prefix: u16 = 42;
 	pub const Version: RuntimeVersion = VERSION;
 }
 
@@ -307,9 +325,10 @@ impl frame_system::Config for Runtime {
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = ();
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
-	type SS58Prefix = SS58Prefix;
+	type SS58Prefix = ConstU16<42>;
 	/// The set code logic, just the default since we're not a parachain.
 	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
 }
 
 impl offchain::SigningTypes for Runtime {
@@ -348,6 +367,7 @@ where
 		let current_block = System::block_number().saturated_into::<u64>().saturating_sub(1);
 		let era = generic::Era::mortal(period, current_block);
 		let extra = (
+			CheckNonZeroSender::<Runtime>::new(),
 			CheckSpecVersion::<Runtime>::new(),
 			CheckTxVersion::<Runtime>::new(),
 			CheckGenesis::<Runtime>::new(),
@@ -415,7 +435,7 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Runtime {
-	type AccountStore = System;
+	type AccountStore = frame_system::Pallet<Runtime>;
 	type Balance = Balance;
 	type DustRemoval = ();
 	type Event = Event;
@@ -429,14 +449,10 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
 	pub const OperationalFeeMultiplier: u8 = 5;
 	pub const TransactionByteFee: Balance = currency::BYTE_FEE;
-	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
-	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
-	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000);
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type FeeMultiplierUpdate =
-		TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
+	type FeeMultiplierUpdate = ();
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type TransactionByteFee = TransactionByteFee;
@@ -452,7 +468,7 @@ parameter_types! {
 	pub const ValueLimit: u32 = 256;
 }
 
-impl pallet_uniques::Config for Runtime {
+impl pallet_uniques::Config<pallet_uniques::Instance1> for Runtime {
 	type AttributeDepositBase = MetadataDepositBase;
 	type ClassDeposit = ClassDeposit;
 	type ClassId = ClassId;
@@ -483,6 +499,7 @@ impl pallet_assets::Config<pallet_assets::Instance1> for Runtime {
 	type AssetId = OctopusAssetId;
 	type Currency = Balances;
 	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetAccountDeposit = ConstU128<{ currency::DOLLARS }>;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -504,15 +521,20 @@ impl pallet_octopus_appchain::Config for Runtime {
 	type Assets = OctopusAssets;
 	type AssetBalance = OctopusAssetBalance;
 	type AssetId = OctopusAssetId;
-	type AssetIdByName = OctopusAppchain;
-	type AuthorityId = OctopusAppCrypto;
+	type AssetIdByTokenId = OctopusAppchain;
+	type AuthorityId = OctopusId;
+	type AppCrypto = OctopusAppCrypto;
 	type Call = Call;
+	type ClassId = ClassId;
+	type Convertor = ();
 	type Currency = Balances;
 	type Event = Event;
 	type GracePeriod = GracePeriod;
+	type InstanceId = InstanceId;
 	type LposInterface = OctopusLpos;
 	type PalletId = OctopusAppchainPalletId;
 	type RequestEventLimit = RequestEventLimit;
+	type Uniques = OctopusUniques;
 	type UnsignedPriority = UnsignedPriority;
 	type UpwardMessagesInterface = OctopusUpwardMessages;
 	type WeightInfo = ();
@@ -685,7 +707,7 @@ construct_runtime!(
 		Balances: pallet_balances::{Call, Config<T>, Event<T>, Pallet, Storage},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-		Uniques: pallet_uniques::{Call, Event<T>, Pallet, Storage},
+		OctopusUniques: pallet_uniques::<Instance1>::{Call, Event<T>, Pallet, Storage},
 		OctopusAssets: pallet_assets::<Instance1>::{Call, Config<T>, Event<T>, Pallet, Storage},
 		OctopusAppchain: pallet_octopus_appchain::{Call, Config<T>, Event<T>, Pallet, Storage, ValidateUnsigned},
 		OctopusLpos: pallet_octopus_lpos::{Call, Config, Event<T>, Pallet, Storage},
@@ -841,7 +863,7 @@ impl_runtime_apis! {
 	}
 
 	impl beefy_primitives::BeefyApi<Block> for Runtime {
-		fn validator_set() -> beefy_primitives::ValidatorSet<BeefyId> {
+		fn validator_set() -> Option<beefy_primitives::ValidatorSet<BeefyId>> {
 			Beefy::validator_set()
 		}
 	}
@@ -897,19 +919,12 @@ impl_runtime_apis! {
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
-			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
-			use frame_benchmarking::baseline::Pallet as BaselineBench;
+			use frame_benchmarking::{Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
-
-			use pallet_tipping_benchmarking::Pallet as TippingBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
-			list_benchmark!(list, extra, frame_benchmarking, BaselineBench::<Runtime>);
-
-			// Local Pallets
-			list_benchmark!(list, extra, pallet_server, Server);
-			list_benchmark!(list, extra, pallet_tipping, TippingBench::<Runtime>);
+			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -919,14 +934,7 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{add_benchmark, Benchmarking, BenchmarkBatch, TrackedStorageKey};
-			use frame_benchmarking::baseline::Pallet as BaselineBench;
-
-			use pallet_tipping_benchmarking::Pallet as TippingBench;
-
-			impl frame_benchmarking::baseline::Config for Runtime {}
-
-			impl pallet_tipping_benchmarking::Config for Runtime {}
+			use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
@@ -944,13 +952,24 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			add_benchmark!(params, batches, frame_benchmarking, BaselineBench::<Runtime>);
-
-			// Local Pallets
-			add_benchmark!(params, batches, pallet_server, Server);
-			add_benchmark!(params, batches, pallet_tipping, TippingBench::<Runtime>);
+			add_benchmarks!(params, batches);
 
 			Ok(batches)
+		}
+	}
+
+	#[cfg(feature = "try-runtime")]
+	impl frame_try_runtime::TryRuntime<Block> for Runtime {
+		fn on_runtime_upgrade() -> (Weight, Weight) {
+			// NOTE: intentional unwrap: we don't want to propagate the error backwards, and want to
+			// have a backtrace here. If any of the pre/post migration checks fail, we shall stop
+			// right here and right now.
+			let weight = Executive::try_runtime_upgrade().unwrap();
+			(weight, BlockWeights::get().max_block)
+		}
+
+		fn execute_block_no_check(block: Block) -> Weight {
+			Executive::execute_block_no_check(block)
 		}
 	}
 }

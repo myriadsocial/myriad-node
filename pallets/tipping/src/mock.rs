@@ -1,7 +1,7 @@
 use crate as pallet_tipping;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Everything, GenesisBuild},
+	traits::{ConstU32, ConstU64, Everything, GenesisBuild},
 };
 use frame_system as system;
 use pallet_balances::AccountData;
@@ -63,6 +63,7 @@ impl system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = ();
+	type MaxConsumers = ConstU32<2>;
 }
 
 type Balance = u64;
@@ -118,6 +119,7 @@ impl pallet_assets::Config for Test {
 	type AssetId = OctopusAssetId;
 	type Currency = Balances;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type AssetAccountDeposit = ConstU64<10>;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -170,7 +172,7 @@ impl ExternalityBuilder {
 		.assimilate_storage(&mut t)
 		.unwrap();
 
-		pallet_server::GenesisConfig::<Test> { admin_key: admin_public }
+		pallet_server::GenesisConfig::<Test> { admin_key: Some(admin_public) }
 			.assimilate_storage(&mut t)
 			.unwrap();
 
