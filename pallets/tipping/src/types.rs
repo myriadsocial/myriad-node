@@ -1,6 +1,7 @@
 use crate::*;
 
 use frame_support::{pallet_prelude::*, sp_runtime::traits::Saturating, traits::Currency};
+use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 
 pub type ServerId = Vec<u8>;

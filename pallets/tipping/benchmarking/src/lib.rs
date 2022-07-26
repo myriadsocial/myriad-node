@@ -23,7 +23,7 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let _ = <T as TippingConfig>::Currency::deposit_creating(&caller, balance);
 
-		let admin: T::AccountId = AdminKey::<T>::get();
+		let admin: T::AccountId = AdminKey::<T>::get().unwrap();
 		let server_account: T::AccountId = account("server_account", 0, SEED);
 		let server_name = b"myriad".to_vec();
 		let admin_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(admin));
@@ -58,7 +58,7 @@ benchmarks! {
 		let balance = 1000000000000000000000u128.saturated_into();
 		let _ = <T as TippingConfig>::Currency::deposit_creating(&tipping_account_id, balance);
 
-		let admin: T::AccountId = AdminKey::<T>::get();
+		let admin: T::AccountId = AdminKey::<T>::get().unwrap();
 		let admin_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(admin));
 		let server_name = b"myriad".to_vec();
 		let server_id = b"server".to_vec();
@@ -117,7 +117,7 @@ benchmarks! {
 
 		// Register Server
 		// Server admin => server_account
-		let admin: T::AccountId = AdminKey::<T>::get();
+		let admin: T::AccountId = AdminKey::<T>::get().unwrap();
 		let server_account: T::AccountId = account("server_account", 0, SEED);
 		let admin_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(admin));
 		let server_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(server_account.clone()));

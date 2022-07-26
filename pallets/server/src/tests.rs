@@ -191,7 +191,7 @@ pub fn transfer_admin_key_works() {
 
 		assert_ok!(Server::transfer_admin_key(Origin::signed(1), 2));
 
-		assert_eq!(Server::admin_key(), 2);
+		assert_eq!(Server::admin_key().unwrap(), 2);
 	})
 }
 

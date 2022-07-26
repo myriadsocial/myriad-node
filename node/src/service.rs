@@ -10,7 +10,7 @@ use sp_timestamp::InherentDataProvider;
 use sp_transaction_storage_proof::registration;
 
 use sc_basic_authorship::ProposerFactory;
-use sc_client_api::ExecutorProvider;
+use sc_client_api::{BlockBackend, ExecutorProvider};
 use sc_consensus::{DefaultImportQueue, LongestChain};
 use sc_consensus_babe::{
 	self, BabeBlockImport, BabeLink, BabeParams, Config as BabeConfig, SlotProportion,
@@ -33,7 +33,10 @@ use sc_telemetry::{Error as TelemetryError, Telemetry, TelemetryWorker};
 use sc_transaction_pool::{BasicPool, FullPool};
 
 use beefy_gadget::{
-	notification::{BeefySignedCommitmentSender, BeefySignedCommitmentStream},
+	notification::{
+		BeefyBestBlockSender, BeefyBestBlockStream, BeefySignedCommitmentSender,
+		BeefySignedCommitmentStream,
+	},
 	BeefyParams,
 };
 
@@ -96,7 +99,7 @@ pub fn new_partial(
 				BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
 				BabeLink<Block>,
 				GrandpaLinkHalf<Block, FullClient, FullSelectChain>,
-				BeefySignedCommitmentSender<Block>,
+				(BeefySignedCommitmentSender<Block>, BeefyBestBlockSender<Block>),
 			),
 			impl Fn(DenyUnsafe, SubscriptionTaskExecutor) -> Result<IoHandlerRpcExtension, ServiceError>,
 			SharedVoterState,
@@ -120,6 +123,7 @@ pub fn new_partial(
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
+		config.runtime_cache_size,
 	);
 
 	let (client, backend, keystore_container, task_manager) =
@@ -156,7 +160,7 @@ pub fn new_partial(
 	let justification_import = grandpa_block_import.clone();
 
 	let (block_import, babe_link) = sc_consensus_babe::block_import(
-		BabeConfig::get_or_compute(&*client)?,
+		BabeConfig::get(&*client)?,
 		grandpa_block_import,
 		client.clone(),
 	)?;
@@ -172,8 +176,10 @@ pub fn new_partial(
 		move |_, ()| async move {
 			let timestamp = InherentDataProvider::from_system_time();
 
-			let slot =
-				BabeInherentDataProvider::from_timestamp_and_duration(*timestamp, slot_duration);
+			let slot = BabeInherentDataProvider::from_timestamp_and_slot_duration(
+				*timestamp,
+				slot_duration,
+			);
 
 			let uncles =
 				AuthorshipInherentDataProvider::<<Block as BlockT>::Header>::check_inherents();
@@ -186,9 +192,12 @@ pub fn new_partial(
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let (beefy_link, beefy_commitment_stream) = BeefySignedCommitmentStream::channel();
+	let (beefy_commitment_link, beefy_commitment_stream) =
+		BeefySignedCommitmentStream::<Block>::channel();
+	let (beefy_best_block_link, beefy_best_block_stream) = BeefyBestBlockStream::<Block>::channel();
+	let beefy_links = (beefy_commitment_link, beefy_best_block_link);
 
-	let import_setup = (block_import, babe_link, grandpa_link, beefy_link);
+	let import_setup = (block_import, babe_link, grandpa_link, beefy_links);
 
 	let (rpc_extensions_builder, shared_voter_state) = {
 		let (_, babe_link, grandpa_link, _) = &import_setup;
@@ -233,6 +242,7 @@ pub fn new_partial(
 					},
 					beefy: BeefyDeps {
 						beefy_commitment_stream: beefy_commitment_stream.clone(),
+						beefy_best_block_stream: beefy_best_block_stream.clone(),
 						beefy_subscription_executor: subscription_executor,
 					},
 				};
@@ -274,10 +284,25 @@ pub fn new_full_base(
 		other: (import_setup, rpc_extensions_builder, shared_voter_state, mut telemetry),
 	} = new_partial(&config)?;
 
-	let (block_import, babe_link, grandpa_link, beefy_link) = import_setup;
+	let (block_import, babe_link, grandpa_link, beefy_links) = import_setup;
 
-	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
-	config.network.extra_sets.push(beefy_gadget::beefy_peers_set_config());
+	let grandpa_protocol_name = sc_finality_grandpa::protocol_standard_name(
+		&client.block_hash(0).ok().flatten().expect("Genesis block exists; qed"),
+		&config.chain_spec,
+	);
+	config
+		.network
+		.extra_sets
+		.push(sc_finality_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone()));
+
+	let beefy_protocol_name = beefy_gadget::protocol_standard_name(
+		&client.block_hash(0).ok().flatten().expect("Genesis block exists; qed"),
+		&config.chain_spec,
+	);
+	config
+		.network
+		.extra_sets
+		.push(beefy_gadget::beefy_peers_set_config(beefy_protocol_name.clone()));
 
 	let warp_sync = Arc::new(NetworkProvider::new(
 		backend.clone(),
@@ -359,7 +384,7 @@ pub fn new_full_base(
 
 					let timestamp = InherentDataProvider::from_system_time();
 
-					let slot = BabeInherentDataProvider::from_timestamp_and_duration(
+					let slot = BabeInherentDataProvider::from_timestamp_and_slot_duration(
 						*timestamp,
 						slot_duration,
 					);
@@ -400,6 +425,7 @@ pub fn new_full_base(
 			name: Some(name),
 			keystore: keystore.clone(),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
+			protocol_name: grandpa_protocol_name,
 		};
 
 		// start the full GRANDPA voter
@@ -432,9 +458,11 @@ pub fn new_full_base(
 		backend,
 		key_store: keystore.clone(),
 		network: network.clone(),
-		signed_commitment_sender: beefy_link,
+		signed_commitment_sender: beefy_links.0,
+		beefy_best_block_sender: beefy_links.1,
 		min_block_delta: 8,
 		prometheus_registry,
+		protocol_name: beefy_protocol_name,
 	};
 
 	let beefy = beefy_gadget::start_beefy_gadget::<_, _, _, _>(beefy_params);
