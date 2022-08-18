@@ -1,6 +1,6 @@
 [package]
 name = 'myriad-runtime'
-version = '2.1.5'
+version = '2.1.6'
 edition = '2021'
 license = 'AGPL-3.0'
 authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
@@ -55,6 +55,7 @@ pallet-grandpa = { git = 'https://github.com/paritytech/substrate.git', branch =
 pallet-im-online = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
 pallet-mmr = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
 pallet-mmr-primitives = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
+pallet-offences = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
 pallet-randomness-collective-flip = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
 pallet-session = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false, features = ['historical'] }
 pallet-sudo = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
@@ -65,9 +66,9 @@ pallet-uniques = { git = 'https://github.com/paritytech/substrate.git', branch =
 
 # Octopus Dependencies
 ## Octopus Pallet Dependencies
-pallet-octopus-appchain = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.18', default-features = false }
-pallet-octopus-lpos = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.18', default-features = false }
-pallet-octopus-upward-messages = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.18', default-features = false }
+pallet-octopus-appchain = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.18-2', default-features = false }
+pallet-octopus-lpos = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.18-2', default-features = false }
+pallet-octopus-upward-messages = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.18-2', default-features = false }
 
 # Local Pallet
 pallet-server = { path = '../pallets/server', default-features = false }
@@ -115,6 +116,7 @@ std = [
     'pallet-im-online/std',
     'pallet-mmr-primitives/std',
     'pallet-mmr/std',
+	"pallet-offences/std",
 	'pallet-randomness-collective-flip/std',
     'pallet-session/std',
     'pallet-sudo/std',
