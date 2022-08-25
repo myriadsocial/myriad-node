@@ -1,6 +1,7 @@
 use crate::*;
 
 use frame_support::{
+	dispatch::DispatchError,
 	sp_runtime::traits::{AccountIdConversion, SaturatedConversion, Saturating, Zero},
 	traits::{fungibles, Currency, ExistenceRequirement, WithdrawReasons},
 	PalletId,
@@ -24,20 +25,20 @@ impl<T: Config> Pallet<T> {
 		tx_fee: &BalanceOf<T>,
 	) -> Result<(), Error<T>> {
 		if tx_fee == &Zero::zero() {
-			return Err(Error::<T>::FailedToVerify)
+			return Err(Error::<T>::InsufficientBalance)
 		}
 
 		let tips_balance =
-			Self::tips_balance_by_reference(tips_balance_key).ok_or(Error::<T>::FailedToVerify)?;
+			Self::tips_balance_by_reference(tips_balance_key).ok_or(Error::<T>::NotExists)?;
 
 		let amount = tips_balance.get_amount();
 
 		if amount == &Zero::zero() {
-			return Err(Error::<T>::FailedToVerify)
+			return Err(Error::<T>::InsufficientBalance)
 		}
 
 		if amount < tx_fee {
-			return Err(Error::<T>::FailedToVerify)
+			return Err(Error::<T>::InsufficientBalance)
 		}
 
 		Ok(())
@@ -133,15 +134,14 @@ impl<T: Config> Pallet<T> {
 		sender: &AccountIdOf<T>,
 		receiver: &AccountIdOf<T>,
 		amount: BalanceOf<T>,
-	) -> Result<(), Error<T>> {
+	) -> Result<(), DispatchError> {
 		if ft_identifier == b"native" {
 			let imb = CurrencyOf::<T>::withdraw(
 				sender,
 				amount,
 				WithdrawReasons::TRANSFER,
 				ExistenceRequirement::KeepAlive,
-			)
-			.map_err(|_| Error::<T>::BadSignature)?;
+			)?;
 
 			CurrencyOf::<T>::resolve_creating(receiver, imb);
 		} else {
@@ -151,8 +151,7 @@ impl<T: Config> Pallet<T> {
 				sender,
 				receiver,
 				amount.saturated_into(),
-			)
-			.map_err(|_| Error::<T>::BadSignature)?;
+			)?;
 		}
 
 		Ok(())

@@ -1,5 +1,5 @@
 use crate::{mock::*, Error, References, TipsBalance, TipsBalanceInfo};
-use frame_support::{assert_noop, assert_ok, sp_runtime::traits::Zero};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchError, sp_runtime::traits::Zero};
 
 #[test]
 fn send_tip_myria_works() {
@@ -246,27 +246,6 @@ pub fn claim_tip_works() {
 }
 
 #[test]
-fn cant_send_tip_myria_when_insufficient_balance() {
-	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		assert_ok!(Server::register(
-			Origin::signed(account_key("admin")),
-			account_key("alice"),
-			b"myriad".to_vec(),
-			b"myriad".to_vec(),
-			b"https://api.dev.myriad.social".to_vec(),
-			b"https://app.dev.myriad.social".to_vec(),
-		));
-
-		let tips_balance_info = TipsBalanceInfo::new(b"myriad", b"people", b"people_id", b"native");
-
-		assert_noop!(
-			Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info, 21),
-			Error::<Test>::BadSignature
-		);
-	})
-}
-
-#[test]
 fn cant_send_tip_myria_when_server_id_not_register() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		let tips_balance_info = TipsBalanceInfo::new(b"myriad", b"people", b"people_id", b"native");
@@ -357,7 +336,7 @@ fn cant_claim_reference() {
 				account_key("alice"),
 				1,
 			),
-			Error::<Test>::FailedToVerify,
+			DispatchError::BadOrigin,
 		);
 
 		assert_noop!(
@@ -370,7 +349,7 @@ fn cant_claim_reference() {
 				account_key("john"),
 				0,
 			),
-			Error::<Test>::FailedToVerify,
+			Error::<Test>::InsufficientBalance,
 		);
 
 		assert_noop!(
@@ -383,7 +362,7 @@ fn cant_claim_reference() {
 				account_key("john"),
 				1,
 			),
-			Error::<Test>::FailedToVerify,
+			Error::<Test>::NotExists,
 		);
 
 		assert_noop!(
@@ -396,7 +375,7 @@ fn cant_claim_reference() {
 				account_key("john"),
 				1,
 			),
-			Error::<Test>::FailedToVerify,
+			Error::<Test>::NotExists,
 		);
 
 		let main_tips_balance_info =
@@ -418,7 +397,7 @@ fn cant_claim_reference() {
 				account_key("john"),
 				1,
 			),
-			Error::<Test>::FailedToVerify,
+			Error::<Test>::InsufficientBalance,
 		);
 
 		assert_ok!(Tipping::send_tip(
@@ -437,32 +416,7 @@ fn cant_claim_reference() {
 				account_key("john"),
 				2,
 			),
-			Error::<Test>::FailedToVerify,
-		);
-	})
-}
-
-#[test]
-fn cant_claim_tip_balance_when_nothing_to_claimed() {
-	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
-		assert_ok!(Server::register(
-			Origin::signed(account_key("admin")),
-			account_key("alice"),
-			b"myriad".to_vec(),
-			b"myriad".to_vec(),
-			b"https://api.dev.myriad.social".to_vec(),
-			b"https://app.dev.myriad.social".to_vec(),
-		));
-
-		assert_noop!(
-			Tipping::claim_tip(
-				Origin::signed(account_key("alice")),
-				b"server".to_vec(),
-				b"user".to_vec(),
-				b"user_id".to_vec(),
-				vec![b"native".to_vec()],
-			),
-			Error::<Test>::NothingToClaimed,
+			Error::<Test>::InsufficientBalance,
 		);
 	})
 }
