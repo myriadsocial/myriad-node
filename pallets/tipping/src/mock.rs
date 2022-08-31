@@ -172,10 +172,6 @@ impl ExternalityBuilder {
 		.assimilate_storage(&mut t)
 		.unwrap();
 
-		pallet_server::GenesisConfig::<Test> { admin_key: Some(admin_public) }
-			.assimilate_storage(&mut t)
-			.unwrap();
-
 		pallet_balances::GenesisConfig::<Test> {
 			balances: vec![
 				(alice_public, 10),

@@ -13,6 +13,7 @@ pub use scale_info::{prelude::string::*, TypeInfo};
 pub mod functions;
 pub mod impl_tipping;
 pub mod interface;
+pub mod migrations;
 pub mod types;
 pub mod weights;
 
@@ -21,7 +22,7 @@ pub use types::*;
 pub use weights::WeightInfo;
 
 /// The current storage version.
-const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -89,7 +90,11 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_runtime_upgrade() -> Weight {
+			migrations::migrate::<T>()
+		}
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
