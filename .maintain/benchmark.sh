@@ -30,7 +30,6 @@ cargo +nightly run --release --locked --features=runtime-benchmarks -- benchmark
   --steps=20 \
   --repeat=10 \
   --heap-pages=4096 \
-  --raw \
   --template="./.maintain/pallet-weight-template.hbs" \
   --output="./pallets/${FOLDER}/src/weights.rs"
 
