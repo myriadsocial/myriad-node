@@ -1,4 +1,5 @@
 use super::*;
+use scale_info::prelude::string::ToString;
 
 impl<T: Config> ServerInterface<T> for Pallet<T> {
 	type Error = Error<T>;
@@ -9,127 +10,75 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 	}
 
 	fn register(
-		server_id: &[u8],
-		account_id: &T::AccountId,
+		owner: &T::AccountId,
 		name: &[u8],
 		api_url: &[u8],
 		web_url: &[u8],
 	) -> Result<Self::Server, Self::Error> {
-		if ServerById::<T>::contains_key(server_id) {
-			return Err(Error::<T>::AlreadyExists)
-		}
-		let server = Server::new(server_id, account_id, name, api_url, web_url);
+		let count = Self::server_count();
+		let new_count = count.checked_add(1).ok_or(Error::<T>::Overflow)?;
 
-		ServerById::<T>::insert(server_id, server.clone());
+		let server_id = count.to_string().as_bytes().to_vec();
+		let server = Server::new(&server_id, owner, name, api_url, web_url);
+
+		Self::do_update_server(&server, false, Some(new_count));
 
 		Ok(server)
 	}
 
 	fn transfer_owner(
-		server_id: &[u8],
-		account_id: &T::AccountId,
+		server_id: u64,
+		owner: &T::AccountId,
 		new_owner: &T::AccountId,
 	) -> Result<(), Self::Error> {
-		if !ServerById::<T>::contains_key(server_id) {
-			return Err(Error::<T>::NotExists)
-		}
+		let server = Self::can_update_server(server_id, owner)?.set_owner(new_owner);
 
-		let mut server = <Self as ServerInterface<T>>::get_by_id(server_id).unwrap();
-		let current_owner = server.get_owner();
-
-		if current_owner != account_id {
-			return Err(Error::<T>::Unauthorized)
-		}
-
-		if current_owner == new_owner {
-			return Ok(())
-		}
-
-		server.set_owner(new_owner);
-
-		ServerById::<T>::insert(server_id, server);
+		Self::do_update_server(&server, false, None);
 
 		Ok(())
 	}
 
 	fn update_name(
-		server_id: &[u8],
-		account_id: &T::AccountId,
+		server_id: u64,
+		owner: &T::AccountId,
 		new_name: &[u8],
 	) -> Result<(), Self::Error> {
-		if !ServerById::<T>::contains_key(server_id) {
-			return Err(Error::<T>::NotExists)
-		}
+		let server = Self::can_update_server(server_id, owner)?.set_name(new_name);
 
-		let mut server = <Self as ServerInterface<T>>::get_by_id(server_id).unwrap();
-
-		if server.get_owner() != account_id {
-			return Err(Error::<T>::Unauthorized)
-		}
-
-		server.set_name(new_name);
-
-		ServerById::<T>::insert(server_id, server);
+		Self::do_update_server(&server, false, None);
 
 		Ok(())
 	}
 
 	fn update_api_url(
-		server_id: &[u8],
-		account_id: &T::AccountId,
+		server_id: u64,
+		owner: &T::AccountId,
 		new_api_url: &[u8],
 	) -> Result<(), Self::Error> {
-		if !ServerById::<T>::contains_key(server_id) {
-			return Err(Error::<T>::NotExists)
-		}
+		let server = Self::can_update_server(server_id, owner)?.set_api_url(new_api_url);
 
-		let mut server = <Self as ServerInterface<T>>::get_by_id(server_id).unwrap();
-
-		if server.get_owner() != account_id {
-			return Err(Error::<T>::Unauthorized)
-		}
-
-		server.set_api_url(new_api_url);
-
-		ServerById::<T>::insert(server_id, server);
+		Self::do_update_server(&server, false, None);
 
 		Ok(())
 	}
 
 	fn update_web_url(
-		server_id: &[u8],
-		account_id: &T::AccountId,
+		server_id: u64,
+		owner: &T::AccountId,
 		new_web_url: &[u8],
 	) -> Result<(), Self::Error> {
-		if !ServerById::<T>::contains_key(server_id) {
-			return Err(Error::<T>::NotExists)
-		}
+		let server = Self::can_update_server(server_id, owner)?.set_web_url(new_web_url);
 
-		let mut server = <Self as ServerInterface<T>>::get_by_id(server_id).unwrap();
-
-		if server.get_owner() != account_id {
-			return Err(Error::<T>::Unauthorized)
-		}
-
-		server.set_web_url(new_web_url);
-
-		ServerById::<T>::insert(server_id, server);
+		Self::do_update_server(&server, false, None);
 
 		Ok(())
 	}
 
-	fn unregister(server_id: &[u8], account_id: &T::AccountId) -> Result<(), Self::Error> {
-		if !ServerById::<T>::contains_key(server_id) {
-			return Err(Error::<T>::NotExists)
-		}
+	fn unregister(server_id: u64, owner: &T::AccountId) -> Result<(), Self::Error> {
+		let server = Self::can_update_server(server_id, owner)?;
+		let count = Self::server_count().checked_sub(1).ok_or(Error::<T>::Overflow)?;
 
-		let server = <Self as ServerInterface<T>>::get_by_id(server_id).unwrap();
-
-		if server.get_owner() != account_id {
-			return Err(Error::<T>::Unauthorized)
-		}
-
-		ServerById::<T>::remove(server_id);
+		Self::do_update_server(&server, true, Some(count));
 
 		Ok(())
 	}

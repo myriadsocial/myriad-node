@@ -42,20 +42,28 @@ impl<AccountId: Clone> Server<AccountId> {
 		&self.web_url
 	}
 
-	pub fn set_owner(&mut self, account_id: &AccountId) {
+	pub fn set_id(&mut self, server_id: &[u8]) {
+		self.id = server_id.to_vec();
+	}
+
+	pub fn set_owner(mut self, account_id: &AccountId) -> Self {
 		self.owner = account_id.clone();
+		self
 	}
 
-	pub fn set_name(&mut self, name: &[u8]) {
+	pub fn set_name(mut self, name: &[u8]) -> Self {
 		self.name = name.to_vec();
+		self
 	}
 
-	pub fn set_api_url(&mut self, api_url: &[u8]) {
+	pub fn set_api_url(mut self, api_url: &[u8]) -> Self {
 		self.api_url = api_url.to_vec();
+		self
 	}
 
-	pub fn set_web_url(&mut self, web_url: &[u8]) {
+	pub fn set_web_url(mut self, web_url: &[u8]) -> Self {
 		self.web_url = web_url.to_vec();
+		self
 	}
 }
 
