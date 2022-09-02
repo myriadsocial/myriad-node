@@ -29,7 +29,11 @@ pub struct TipsBalance<Balance, AccountId> {
 	account_id: Option<AccountId>,
 	amount: Balance,
 }
-impl<Balance: Clone + Saturating, AccountId: Clone> TipsBalance<Balance, AccountId> {
+impl<Balance, AccountId> TipsBalance<Balance, AccountId>
+where
+	Balance: Clone + Saturating,
+	AccountId: Clone,
+{
 	pub fn new(tips_balance_info: &TipsBalanceInfo, amount: &Balance) -> Self {
 		Self {
 			tips_balance_info: tips_balance_info.clone(),
@@ -56,10 +60,6 @@ impl<Balance: Clone + Saturating, AccountId: Clone> TipsBalance<Balance, Account
 
 	pub fn get_reference_type(&self) -> &Vec<u8> {
 		self.tips_balance_info.get_reference_type()
-	}
-
-	pub fn get_server_id(&self) -> &Vec<u8> {
-		self.tips_balance_info.get_server_id()
 	}
 
 	pub fn get_ft_identifier(&self) -> &Vec<u8> {
@@ -132,6 +132,11 @@ impl TipsBalanceInfo {
 
 	pub fn get_ft_identifier(&self) -> &Vec<u8> {
 		&self.ft_identifier
+	}
+
+	pub fn set_server_id(mut self, server_id: &[u8]) -> Self {
+		self.server_id = server_id.to_vec();
+		self
 	}
 
 	pub fn set_reference_id(&mut self, reference_id: &[u8]) {

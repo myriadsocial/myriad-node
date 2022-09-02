@@ -16,7 +16,7 @@ use myriad_runtime::{
 	currency::{OCTS, UNITS as MYRIA},
 	opaque::{Block, SessionKeys},
 	AccountId, BabeConfig, Balance, BalancesConfig, GenesisConfig, OctopusAppchainConfig,
-	OctopusLposConfig, ServerConfig, SessionConfig, Signature, SudoConfig, SystemConfig,
+	OctopusLposConfig, SessionConfig, Signature, SudoConfig, SystemConfig,
 	BABE_GENESIS_EPOCH_CONFIG, WASM_BINARY,
 };
 
@@ -161,9 +161,6 @@ pub fn local_config() -> Result<ChainSpec, String> {
 					// Era Payout
 					68_493 * MYRIA,
 				),
-				// Admin key
-				// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		// Bootnodes
@@ -221,9 +218,6 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					// Era Payout
 					68_493 * MYRIA,
 				),
-				// Admin key
-				// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		// Bootnodes
@@ -256,7 +250,6 @@ fn genesis(
 	)>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
 	appchain_config: (String, String, Balance, Balance),
-	admin_key: AccountId,
 ) -> GenesisConfig {
 	GenesisConfig {
 		system: SystemConfig { code: wasm_binary.to_vec() },
@@ -297,6 +290,5 @@ fn genesis(
 		octopus_lpos: OctopusLposConfig { era_payout: appchain_config.3, ..Default::default() },
 		octopus_assets: Default::default(),
 		sudo: SudoConfig { key: Some(root_key) },
-		server: ServerConfig { admin_key: Some(admin_key) },
 	}
 }

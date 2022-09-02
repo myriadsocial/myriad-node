@@ -13,6 +13,7 @@ pub use scale_info::{prelude::string::*, TypeInfo};
 pub mod functions;
 pub mod impl_tipping;
 pub mod interface;
+pub mod migrations;
 pub mod types;
 pub mod weights;
 
@@ -21,7 +22,7 @@ pub use types::*;
 pub use weights::WeightInfo;
 
 /// The current storage version.
-const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -82,16 +83,18 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		InsufficientBalance,
-		BadSignature,
-		NothingToClaimed,
 		Unauthorized,
 		ServerNotRegister,
 		WrongFormat,
-		FailedToVerify,
+		NotExists,
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_runtime_upgrade() -> Weight {
+			migrations::migrate::<T>()
+		}
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -102,14 +105,11 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
+			let (receiver, data) =
+				<Self as TippingInterface<T>>::send_tip(&sender, &tips_balance_info, &amount)?;
 
-			match <Self as TippingInterface<T>>::send_tip(&sender, &tips_balance_info, &amount) {
-				Ok((receiver, data)) => {
-					Self::deposit_event(Event::SendTip(sender, receiver, data));
-					Ok(().into())
-				},
-				Err(error) => Err(error.into()),
-			}
+			Self::deposit_event(Event::SendTip(sender, receiver, data));
+			Ok(().into())
 		}
 
 		#[pallet::weight(T::WeightInfo::claim_tip())]
@@ -127,18 +127,14 @@ pub mod pallet {
 			ft_identifiers.dedup();
 
 			let tips_balance_key = (server_id, reference_type, reference_id, b"".to_vec());
-
-			match <Self as TippingInterface<T>>::claim_tip(
+			let (sender, data) = <Self as TippingInterface<T>>::claim_tip(
 				&receiver,
 				&tips_balance_key,
 				&ft_identifiers,
-			) {
-				Ok((sender, data)) => {
-					Self::deposit_event(Event::ClaimTip(sender, data));
-					Ok(().into())
-				},
-				Err(error) => Err(error.into()),
-			}
+			)?;
+
+			Self::deposit_event(Event::ClaimTip(sender, data));
+			Ok(().into())
 		}
 
 		#[pallet::weight(T::WeightInfo::claim_reference())]
@@ -157,7 +153,7 @@ pub mod pallet {
 			ft_identifiers.sort_unstable();
 			ft_identifiers.dedup();
 
-			match <Self as TippingInterface<T>>::claim_reference(
+			let tips_balances = <Self as TippingInterface<T>>::claim_reference(
 				&who,
 				&server_id,
 				&references,
@@ -165,13 +161,10 @@ pub mod pallet {
 				&ft_identifiers,
 				&account_id,
 				&tx_fee,
-			) {
-				Ok(tips_balances) => {
-					Self::deposit_event(Event::ClaimReference(tips_balances));
-					Ok(().into())
-				},
-				Err(error) => Err(error.into()),
-			}
+			)?;
+
+			Self::deposit_event(Event::ClaimReference(tips_balances));
+			Ok(().into())
 		}
 	}
 }
