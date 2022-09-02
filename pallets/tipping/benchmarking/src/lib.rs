@@ -25,15 +25,8 @@ benchmarks! {
 
 		let server_account: T::AccountId = account("server_account", 0, SEED);
 		let server_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(server_account));
-		let server_name = b"myriad".to_vec();
 		let server_api_url = b"https://api.dev.myriad.social".to_vec();
-		let server_web_url = b"https://app.dev.myriad.social".to_vec();
-		let _server = Server::<T>::register(
-			server_origin,
-			server_name,
-			server_api_url,
-			server_web_url
-		);
+		let _server = Server::<T>::register(server_origin, server_api_url);
 
 		let server_id = b"0".to_vec();
 		let amount = 1000000000000000u128.saturated_into();
@@ -56,15 +49,8 @@ benchmarks! {
 		let _ = <T as TippingConfig>::Currency::deposit_creating(&tipping_account_id, balance);
 
 		let server_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
-		let server_name = b"myriad".to_vec();
 		let server_api_url = b"https://api.dev.myriad.social".to_vec();
-		let server_web_url = b"https://app.dev.myriad.social".to_vec();
-		let _ = Server::<T>::register(
-			server_origin,
-			server_name,
-			server_api_url,
-			server_web_url
-		);
+		let _ = Server::<T>::register(server_origin, server_api_url);
 
 		let server_id = b"0";
 
@@ -114,14 +100,8 @@ benchmarks! {
 		let server_account: T::AccountId = account("server_account", 0, SEED);
 		let server_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(server_account));
 		let server_api_url = b"https://api.dev.myriad.social".to_vec();
-		let server_web_url = b"https://app.dev.myriad.social".to_vec();
 
-		let _ = Server::<T>::register(
-			server_origin.clone(),
-			b"myriad".to_vec(),
-			server_api_url,
-			server_web_url
-		);
+		let _ = Server::<T>::register(server_origin.clone(), server_api_url);
 
 		let server_id = b"0";
 

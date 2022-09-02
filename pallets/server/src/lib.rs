@@ -98,16 +98,11 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(T::WeightInfo::register(name.len() as u32))]
-		pub fn register(
-			origin: OriginFor<T>,
-			name: Vec<u8>,
-			api_url: Vec<u8>,
-			web_url: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
+		#[pallet::weight(T::WeightInfo::register(api_url.len() as u32))]
+		pub fn register(origin: OriginFor<T>, api_url: Vec<u8>) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
-			match <Self as ServerInterface<T>>::register(&account_id, &name, &api_url, &web_url) {
+			match <Self as ServerInterface<T>>::register(&account_id, &api_url) {
 				Ok(server) => {
 					Self::deposit_event(Event::Registered(server));
 					Ok(().into())
@@ -133,23 +128,6 @@ pub mod pallet {
 			}
 		}
 
-		#[pallet::weight(T::WeightInfo::update_name())]
-		pub fn update_name(
-			origin: OriginFor<T>,
-			server_id: u64,
-			new_name: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
-			let account_id = ensure_signed(origin)?;
-
-			match <Self as ServerInterface<T>>::update_name(server_id, &account_id, &new_name) {
-				Ok(_) => {
-					Self::deposit_event(Event::NameUpdated(new_name, server_id));
-					Ok(().into())
-				},
-				Err(error) => Err(error.into()),
-			}
-		}
-
 		#[pallet::weight(T::WeightInfo::update_api_url())]
 		pub fn update_api_url(
 			origin: OriginFor<T>,
@@ -162,24 +140,6 @@ pub mod pallet {
 			{
 				Ok(_) => {
 					Self::deposit_event(Event::ApiUrlUpdated(new_api_url, server_id));
-					Ok(().into())
-				},
-				Err(error) => Err(error.into()),
-			}
-		}
-
-		#[pallet::weight(T::WeightInfo::update_web_url())]
-		pub fn update_web_url(
-			origin: OriginFor<T>,
-			server_id: u64,
-			new_web_url: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
-			let account_id = ensure_signed(origin)?;
-
-			match <Self as ServerInterface<T>>::update_web_url(server_id, &account_id, &new_web_url)
-			{
-				Ok(_) => {
-					Self::deposit_event(Event::WebUrlUpdated(new_web_url, server_id));
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),

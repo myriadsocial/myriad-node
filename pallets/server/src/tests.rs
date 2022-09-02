@@ -8,13 +8,11 @@ fn register_works() {
 		let owner_origin = Origin::signed(owner);
 
 		let server_id = "0".as_bytes().to_vec();
-		let name = "myriad".as_bytes().to_vec();
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
-		let server = pallet_server::Server::new(&server_id, &owner, &name, &api_url, &web_url);
+		let server = pallet_server::Server::new(&server_id, &owner, &api_url);
 
-		assert_ok!(Server::register(owner_origin, name, api_url, web_url));
+		assert_ok!(Server::register(owner_origin, api_url));
 
 		assert_eq!(Server::server_by_id(server_id.clone()), Some(server.clone()));
 		assert_eq!(Server::server_by_owner(owner, server_id), Some(server));
@@ -29,36 +27,13 @@ pub fn transfer_owner_works() {
 		let owner_origin = Origin::signed(owner);
 
 		let server_id = "0".as_bytes().to_vec();
-		let name = "myriad".as_bytes().to_vec();
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
 		let new_owner = 2;
-		let server = pallet_server::Server::new(&server_id, &new_owner, &name, &api_url, &web_url);
+		let server = pallet_server::Server::new(&server_id, &new_owner, &api_url);
 
-		assert_ok!(Server::register(Origin::signed(owner), name, api_url, web_url));
+		assert_ok!(Server::register(Origin::signed(owner), api_url));
 		assert_ok!(Server::transfer_owner(owner_origin, 0, new_owner));
-
-		assert_eq!(Server::server_by_id(server_id), Some(server));
-	})
-}
-
-#[test]
-pub fn change_name_works() {
-	ExternalityBuilder::build().execute_with(|| {
-		let owner = 1;
-		let owner_origin = Origin::signed(owner);
-
-		let server_id = "0".as_bytes().to_vec();
-		let name = "myriad".as_bytes().to_vec();
-		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
-
-		let new_name = "local".as_bytes().to_vec();
-		let server = pallet_server::Server::new(&server_id, &owner, &new_name, &api_url, &web_url);
-
-		assert_ok!(Server::register(Origin::signed(owner), name, api_url, web_url));
-		assert_ok!(Server::update_name(owner_origin, 0, new_name));
 
 		assert_eq!(Server::server_by_id(server_id), Some(server));
 	})
@@ -71,36 +46,13 @@ pub fn change_api_url_works() {
 		let owner_origin = Origin::signed(owner);
 
 		let server_id = "0".as_bytes().to_vec();
-		let name = "myriad".as_bytes().to_vec();
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
 		let new_api_url = "https://api.testnet.myriad.social".as_bytes().to_vec();
-		let server = pallet_server::Server::new(&server_id, &owner, &name, &new_api_url, &web_url);
+		let server = pallet_server::Server::new(&server_id, &owner, &new_api_url);
 
-		assert_ok!(Server::register(Origin::signed(owner), name, api_url, web_url));
+		assert_ok!(Server::register(Origin::signed(owner), api_url));
 		assert_ok!(Server::update_api_url(owner_origin, 0, new_api_url,));
-
-		assert_eq!(Server::server_by_id(server_id), Some(server));
-	})
-}
-
-#[test]
-pub fn change_web_url_works() {
-	ExternalityBuilder::build().execute_with(|| {
-		let owner = 1;
-		let owner_origin = Origin::signed(owner);
-
-		let server_id = "0".as_bytes().to_vec();
-		let name = "myriad".as_bytes().to_vec();
-		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
-
-		let new_web_url = "https://app.testnet.myriad.social".as_bytes().to_vec();
-		let server = pallet_server::Server::new(&server_id, &owner, &name, &api_url, &new_web_url);
-
-		assert_ok!(Server::register(Origin::signed(owner), name, api_url, web_url));
-		assert_ok!(Server::update_web_url(owner_origin, 0, new_web_url,));
 
 		assert_eq!(Server::server_by_id(server_id), Some(server));
 	})
@@ -113,11 +65,9 @@ pub fn deregister_works() {
 		let owner_origin = Origin::signed(owner);
 
 		let server_id = "0".as_bytes().to_vec();
-		let name = "myriad".as_bytes().to_vec();
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
-		assert_ok!(Server::register(Origin::signed(owner), name, api_url, web_url));
+		assert_ok!(Server::register(Origin::signed(owner), api_url));
 		assert_ok!(Server::unregister(owner_origin, 0));
 
 		assert_eq!(Server::server_by_id(server_id.clone()), None);
@@ -149,11 +99,9 @@ pub fn cant_transfer_owner_when_not_owner() {
 		let owner_origin = Origin::signed(owner);
 
 		let server_id = 0;
-		let name = "myriad".as_bytes().to_vec();
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
-		assert_ok!(Server::register(owner_origin, name, api_url, web_url));
+		assert_ok!(Server::register(owner_origin, api_url));
 
 		let fake_owner = 3;
 		let fake_owner_origin = Origin::signed(fake_owner);
@@ -161,46 +109,6 @@ pub fn cant_transfer_owner_when_not_owner() {
 
 		assert_noop!(
 			Server::transfer_owner(fake_owner_origin, server_id, new_owner),
-			Error::<Test>::Unauthorized,
-		);
-	})
-}
-
-#[test]
-pub fn cant_change_name_when_server_id_not_exist() {
-	ExternalityBuilder::build().execute_with(|| {
-		let owner = 1;
-		let owner_origin = Origin::signed(owner);
-
-		let fake_id = 0;
-		let new_name = "local".as_bytes().to_vec();
-
-		assert_noop!(
-			Server::update_name(owner_origin, fake_id, new_name),
-			Error::<Test>::NotExists,
-		);
-	})
-}
-
-#[test]
-pub fn cant_change_name_when_not_owner() {
-	ExternalityBuilder::build().execute_with(|| {
-		let owner = 1;
-		let owner_origin = Origin::signed(owner);
-
-		let server_id = 0;
-		let name = "myriad".as_bytes().to_vec();
-		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
-
-		assert_ok!(Server::register(owner_origin, name, api_url, web_url));
-
-		let fake_owner = 3;
-		let fake_owner_origin = Origin::signed(fake_owner);
-		let new_name = "local".as_bytes().to_vec();
-
-		assert_noop!(
-			Server::update_name(fake_owner_origin, server_id, new_name),
 			Error::<Test>::Unauthorized,
 		);
 	})
@@ -229,11 +137,9 @@ pub fn cant_change_api_url_when_not_owner() {
 		let owner_origin = Origin::signed(owner);
 
 		let server_id = 0;
-		let name = "myriad".as_bytes().to_vec();
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
-		assert_ok!(Server::register(owner_origin, name, api_url, web_url));
+		assert_ok!(Server::register(owner_origin, api_url));
 
 		let fake_owner = 3;
 		let fake_owner_origin = Origin::signed(fake_owner);
@@ -241,46 +147,6 @@ pub fn cant_change_api_url_when_not_owner() {
 
 		assert_noop!(
 			Server::update_api_url(fake_owner_origin, server_id, new_api_url),
-			Error::<Test>::Unauthorized,
-		);
-	})
-}
-
-#[test]
-pub fn cant_change_web_url_when_server_id_not_exist() {
-	ExternalityBuilder::build().execute_with(|| {
-		let owner = 1;
-		let owner_origin = Origin::signed(owner);
-
-		let fake_id = 0;
-		let new_web_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-
-		assert_noop!(
-			Server::update_web_url(owner_origin, fake_id, new_web_url),
-			Error::<Test>::NotExists,
-		);
-	})
-}
-
-#[test]
-pub fn cant_change_web_url_when_not_owner() {
-	ExternalityBuilder::build().execute_with(|| {
-		let owner = 1;
-		let owner_origin = Origin::signed(owner);
-
-		let server_id = 0;
-		let name = "myriad".as_bytes().to_vec();
-		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
-
-		assert_ok!(Server::register(owner_origin, name, api_url, web_url));
-
-		let fake_owner = 3;
-		let fake_owner_origin = Origin::signed(fake_owner);
-		let new_web_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-
-		assert_noop!(
-			Server::update_web_url(fake_owner_origin, server_id, new_web_url),
 			Error::<Test>::Unauthorized,
 		);
 	})
@@ -305,11 +171,9 @@ pub fn cant_deregister_when_not_owner() {
 		let owner_origin = Origin::signed(owner);
 
 		let server_id = 0;
-		let name = "myriad".as_bytes().to_vec();
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
-		assert_ok!(Server::register(owner_origin, name, api_url, web_url));
+		assert_ok!(Server::register(owner_origin, api_url));
 
 		let fake_owner = 3;
 		let fake_owner_origin = Origin::signed(fake_owner);
@@ -326,14 +190,12 @@ fn call_event_should_work() {
 		let owner = 1;
 
 		let server_id = 0;
-		let name = "myriad".as_bytes().to_vec();
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
 		let id = "0".as_bytes().to_vec();
-		let server = pallet_server::Server::new(&id, &owner, &name, &api_url, &web_url);
+		let server = pallet_server::Server::new(&id, &owner, &api_url);
 
-		assert_ok!(Server::register(Origin::signed(owner), name, api_url, web_url));
+		assert_ok!(Server::register(Origin::signed(owner), api_url));
 
 		System::assert_last_event(Event::Server(crate::Event::Registered(server)));
 
@@ -345,12 +207,6 @@ fn call_event_should_work() {
 			new_owner, server_id,
 		)));
 
-		let new_name = "local".as_bytes().to_vec();
-
-		assert_ok!(Server::update_name(Origin::signed(new_owner), server_id, new_name.clone()));
-
-		System::assert_last_event(Event::Server(crate::Event::NameUpdated(new_name, server_id)));
-
 		let new_api_url = "https://api.testnet.myriad.social".as_bytes().to_vec();
 
 		assert_ok!(Server::update_api_url(
@@ -361,19 +217,6 @@ fn call_event_should_work() {
 
 		System::assert_last_event(Event::Server(crate::Event::ApiUrlUpdated(
 			new_api_url,
-			server_id,
-		)));
-
-		let new_web_url = "https://app.testnet.myriad.social".as_bytes().to_vec();
-
-		assert_ok!(Server::update_web_url(
-			Origin::signed(new_owner),
-			server_id,
-			new_web_url.clone()
-		));
-
-		System::assert_last_event(Event::Server(crate::Event::WebUrlUpdated(
-			new_web_url,
 			server_id,
 		)));
 

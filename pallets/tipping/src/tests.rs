@@ -6,9 +6,7 @@ fn send_tip_myria_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		assert_ok!(Server::register(
 			Origin::signed(account_key("alice")),
-			b"myriad".to_vec(),
 			b"https://api.dev.myriad.social".to_vec(),
-			b"https://app.dev.myriad.social".to_vec(),
 		));
 
 		let server_id = b"0";
@@ -36,9 +34,7 @@ fn send_tip_assets_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		assert_ok!(Server::register(
 			Origin::signed(account_key("alice")),
-			b"myriad".to_vec(),
 			b"https://api.dev.myriad.social".to_vec(),
-			b"https://app.dev.myriad.social".to_vec(),
 		));
 
 		let server_id = b"0";
@@ -67,9 +63,7 @@ fn claim_reference_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		assert_ok!(Server::register(
 			Origin::signed(account_key("alice")),
-			b"myriad".to_vec(),
 			b"https://api.dev.myriad.social".to_vec(),
-			b"https://app.dev.myriad.social".to_vec(),
 		));
 
 		let server_id = b"0";
@@ -191,9 +185,7 @@ pub fn claim_tip_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		assert_ok!(Server::register(
 			Origin::signed(account_key("alice")),
-			b"myriad".to_vec(),
 			b"https://api.dev.myriad.social".to_vec(),
-			b"https://app.dev.myriad.social".to_vec(),
 		));
 
 		let server_id = b"0";
@@ -276,9 +268,7 @@ fn cant_claim_reference_when_not_as_server_owner() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		assert_ok!(Server::register(
 			Origin::signed(account_key("alice")),
-			b"myriad".to_vec(),
 			b"https://api.dev.myriad.social".to_vec(),
-			b"https://app.dev.myriad.social".to_vec(),
 		));
 
 		let server_id = b"0".to_vec();
@@ -303,9 +293,7 @@ fn cant_claim_reference() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		assert_ok!(Server::register(
 			Origin::signed(account_key("alice")),
-			b"myriad".to_vec(),
 			b"https://api.dev.myriad.social".to_vec(),
-			b"https://app.dev.myriad.social".to_vec(),
 		));
 
 		let server_id = b"0";
@@ -410,9 +398,7 @@ fn call_event_should_work() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		assert_ok!(Server::register(
 			Origin::signed(account_key("alice")),
-			b"myriad".to_vec(),
 			b"https://api.dev.myriad.social".to_vec(),
-			b"https://app.dev.myriad.social".to_vec(),
 		));
 
 		let server_id = b"0";

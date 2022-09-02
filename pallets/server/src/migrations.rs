@@ -1,5 +1,6 @@
-use crate::{Config, Pallet, Server, ServerById, ServerByOwner, ServerCount};
-use frame_support::{traits::Get, weights::Weight};
+use crate::{AccountIdOf, Config, Pallet, Server, ServerById, ServerByOwner, ServerCount};
+use frame_support::{pallet_prelude::Decode, traits::Get, weights::Weight};
+use sp_std::vec::Vec;
 
 pub fn migrate<T: Config>() -> Weight {
 	use frame_support::traits::StorageVersion;
@@ -21,29 +22,29 @@ mod v2 {
 	pub fn migrate<T: Config>() -> Weight {
 		let mut weight = T::DbWeight::get().writes(1);
 
-		let server = ServerById::<T>::get(b"myriad".to_vec());
-
-		if let Some(server) = server {
-			weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 3));
-
-			let server_id = b"0";
-			let new_server = Server::new(
-				server_id,
-				server.get_owner(),
-				server.get_name(),
-				server.get_api_url(),
-				server.get_web_url(),
-			);
-
-			ServerByOwner::<T>::insert(
-				server.get_owner().clone(),
-				server_id.to_vec(),
-				new_server.clone(),
-			);
-			ServerCount::<T>::set(1);
-			ServerById::<T>::insert(server_id.to_vec(), new_server);
-			ServerById::<T>::remove(b"myriad".to_vec());
+		#[allow(dead_code)]
+		#[derive(Decode)]
+		pub struct OldServer<AccountId> {
+			id: Vec<u8>,
+			owner: AccountId,
+			name: Vec<u8>,
+			api_url: Vec<u8>,
+			web_url: Vec<u8>,
 		}
+
+		ServerById::<T>::swap(b"myriad".to_vec(), b"0".to_vec());
+		ServerById::<T>::translate(|_key, server: OldServer<AccountIdOf<T>>| {
+			weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+
+			let owner = server.owner;
+			let api_url = server.api_url;
+			let new_server = Server::new(b"0", &owner, &api_url);
+
+			ServerCount::<T>::set(1);
+			ServerByOwner::<T>::insert(owner, b"0".to_vec(), new_server.clone());
+
+			Some(new_server)
+		});
 
 		weight
 	}
