@@ -54,6 +54,10 @@ where
 		&self.amount
 	}
 
+	pub fn get_server_id(&self) -> &Vec<u8> {
+		self.tips_balance_info.get_server_id()
+	}
+
 	pub fn get_reference_id(&self) -> &Vec<u8> {
 		self.tips_balance_info.get_reference_id()
 	}

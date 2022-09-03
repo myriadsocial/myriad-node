@@ -1,18 +1,16 @@
 use super::*;
-use scale_info::prelude::string::ToString;
 
 impl<T: Config> ServerInterface<T> for Pallet<T> {
 	type Error = Error<T>;
 	type Server = ServerOf<T>;
 
-	fn get_by_id(server_id: &[u8]) -> Option<Self::Server> {
+	fn get_by_id(server_id: u64) -> Option<Self::Server> {
 		Self::server_by_id(server_id)
 	}
 
 	fn register(owner: &T::AccountId, api_url: &[u8]) -> Result<Self::Server, Self::Error> {
 		let count = Self::server_count();
-		let server_id = count.to_string().as_bytes().to_vec();
-		let server = Server::new(&server_id, owner, api_url);
+		let server = Server::new(count, owner, api_url);
 
 		Self::do_set_server(true, &OperatorKind::Add, &server)?;
 
@@ -55,7 +53,7 @@ where
 	type Error = Error<T>;
 	type Server = ServerOf<T>;
 
-	fn get_by_id(id: &[u8]) -> Option<ServerOf<T>> {
+	fn get_by_id(id: u64) -> Option<ServerOf<T>> {
 		<Self as ServerInterface<T>>::get_by_id(id)
 	}
 }

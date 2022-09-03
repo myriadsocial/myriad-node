@@ -1,6 +1,5 @@
-use crate::{Config, Pallet, TipsBalanceByReference, TipsBalanceOf};
+use crate::{Config, Pallet, TipsBalance, TipsBalanceByReference, TipsBalanceOf};
 use frame_support::{traits::Get, weights::Weight};
-use sp_std::vec::Vec;
 
 pub fn migrate<T: Config>() -> Weight {
 	use frame_support::traits::StorageVersion;
@@ -21,27 +20,27 @@ mod v2 {
 
 	pub fn migrate<T: Config>() -> Weight {
 		let mut weight = T::DbWeight::get().writes(1);
-		let mut tips_balances: Vec<TipsBalanceOf<T>> = Vec::new();
 
-		for key in TipsBalanceByReference::<T>::iter_keys() {
-			if let Some(mut tips_balance) = TipsBalanceByReference::<T>::get(key.clone()) {
+		TipsBalanceByReference::<T>::translate_values(|tips_balance: TipsBalanceOf<T>| {
+			if tips_balance.get_server_id() == b"myriad" {
+				weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+
 				let tips_balance_info =
 					tips_balance.get_tips_balance_info().clone().set_server_id(b"0");
+				let mut new_tips_balance =
+					TipsBalance::new(&tips_balance_info, tips_balance.get_amount());
 
-				tips_balance.set_tips_balance_info(&tips_balance_info);
-				tips_balances.push(tips_balance);
+				if let Some(account_id) = tips_balance.get_account_id().as_ref() {
+					new_tips_balance.set_account_id(account_id);
+				}
 
-				TipsBalanceByReference::<T>::remove(key);
+				TipsBalanceByReference::<T>::insert(new_tips_balance.key(), new_tips_balance);
+
+				return None
 			}
-		}
 
-		for tips_balance in tips_balances.iter() {
-			weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
-
-			let key = tips_balance.key();
-
-			TipsBalanceByReference::<T>::insert(key, tips_balance);
-		}
+			Some(tips_balance)
+		});
 
 		weight
 	}

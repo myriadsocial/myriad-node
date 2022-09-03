@@ -71,6 +71,11 @@ impl<T: Config> Pallet<T> {
 		server_id: &[u8],
 		sender: Option<&T::AccountId>,
 	) -> Result<(), Error<T>> {
+		let server_id = String::from_utf8(server_id.to_vec())
+			.map_err(|_| Error::<T>::WrongFormat)?
+			.parse::<u64>()
+			.map_err(|_| Error::<T>::WrongFormat)?;
+
 		let server = T::Server::get_by_id(server_id).ok_or(Error::<T>::ServerNotRegister)?;
 
 		if sender.is_none() {

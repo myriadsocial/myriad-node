@@ -1,14 +1,12 @@
 use crate::*;
-use scale_info::prelude::string::ToString;
 
 impl<T: Config> Pallet<T> {
 	pub fn can_update_server(
 		server_id: u64,
 		account_id: &T::AccountId,
 	) -> Result<ServerOf<T>, Error<T>> {
-		let formatted_id = server_id.to_string().as_bytes().to_vec();
 		let server =
-			<Self as ServerInterface<T>>::get_by_id(&formatted_id).ok_or(Error::<T>::NotExists)?;
+			<Self as ServerInterface<T>>::get_by_id(server_id).ok_or(Error::<T>::NotExists)?;
 
 		let current_owner = server.get_owner();
 
@@ -24,9 +22,7 @@ impl<T: Config> Pallet<T> {
 		owner: &T::AccountId,
 		data: &ServerDataKind<T::AccountId>,
 	) -> Result<(), Error<T>> {
-		let formatted_id = server_id.to_string().as_bytes().to_vec();
-
-		ServerById::<T>::try_mutate(formatted_id, |result| match result {
+		ServerById::<T>::try_mutate(server_id, |result| match result {
 			Some(server) => {
 				if server.get_owner() != owner {
 					return Err(Error::<T>::Unauthorized)

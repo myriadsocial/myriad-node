@@ -7,14 +7,14 @@ fn register_works() {
 		let owner = 1;
 		let owner_origin = Origin::signed(owner);
 
-		let server_id = "0".as_bytes().to_vec();
+		let server_id = 0_u64;
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		let server = pallet_server::Server::new(&server_id, &owner, &api_url);
+		let server = pallet_server::Server::new(server_id, &owner, &api_url);
 
 		assert_ok!(Server::register(owner_origin, api_url));
 
-		assert_eq!(Server::server_by_id(server_id.clone()), Some(server.clone()));
+		assert_eq!(Server::server_by_id(server_id), Some(server.clone()));
 		assert_eq!(Server::server_by_owner(owner, server_id), Some(server));
 		assert_eq!(Server::server_count(), 1);
 	})
@@ -26,11 +26,11 @@ pub fn transfer_owner_works() {
 		let owner = 1;
 		let owner_origin = Origin::signed(owner);
 
-		let server_id = "0".as_bytes().to_vec();
+		let server_id = 0_u64;
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
 		let new_owner = 2;
-		let server = pallet_server::Server::new(&server_id, &new_owner, &api_url);
+		let server = pallet_server::Server::new(server_id, &new_owner, &api_url);
 
 		assert_ok!(Server::register(Origin::signed(owner), api_url));
 		assert_ok!(Server::transfer_owner(owner_origin, 0, new_owner));
@@ -45,11 +45,11 @@ pub fn change_api_url_works() {
 		let owner = 1;
 		let owner_origin = Origin::signed(owner);
 
-		let server_id = "0".as_bytes().to_vec();
+		let server_id = 0_u64;
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
 		let new_api_url = "https://api.testnet.myriad.social".as_bytes().to_vec();
-		let server = pallet_server::Server::new(&server_id, &owner, &new_api_url);
+		let server = pallet_server::Server::new(server_id, &owner, &new_api_url);
 
 		assert_ok!(Server::register(Origin::signed(owner), api_url));
 		assert_ok!(Server::update_api_url(owner_origin, 0, new_api_url,));
@@ -64,13 +64,13 @@ pub fn deregister_works() {
 		let owner = 1;
 		let owner_origin = Origin::signed(owner);
 
-		let server_id = "0".as_bytes().to_vec();
+		let server_id = 0_u64;
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
 		assert_ok!(Server::register(Origin::signed(owner), api_url));
 		assert_ok!(Server::unregister(owner_origin, 0));
 
-		assert_eq!(Server::server_by_id(server_id.clone()), None);
+		assert_eq!(Server::server_by_id(server_id), None);
 		assert_eq!(Server::server_by_owner(owner, server_id), None);
 		assert_eq!(Server::server_count(), 0);
 	})
@@ -192,8 +192,7 @@ fn call_event_should_work() {
 		let server_id = 0;
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		let id = "0".as_bytes().to_vec();
-		let server = pallet_server::Server::new(&id, &owner, &api_url);
+		let server = pallet_server::Server::new(server_id, &owner, &api_url);
 
 		assert_ok!(Server::register(Origin::signed(owner), api_url));
 

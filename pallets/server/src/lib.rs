@@ -47,7 +47,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn server_count)]
-	pub type ServerCount<T> = StorageValue<_, u64, ValueQuery>;
+	pub type ServerCount<T> = StorageValue<_, ServerId, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn server_by_id)]
@@ -70,15 +70,15 @@ pub mod pallet {
 		/// Register server success. [server]
 		Registered(ServerOf<T>),
 		/// Name updated success. [name, server_id]
-		NameUpdated(Vec<u8>, u64),
+		NameUpdated(Vec<u8>, ServerId),
 		/// Api url updated success. [api_url, server_id]
-		ApiUrlUpdated(Vec<u8>, u64),
+		ApiUrlUpdated(Vec<u8>, ServerId),
 		/// Web url updated success. [web_url, server_id]
-		WebUrlUpdated(Vec<u8>, u64),
+		WebUrlUpdated(Vec<u8>, ServerId),
 		/// Owner transferred success. [new_owner, server_id]
-		OwnerTransferred(T::AccountId, u64),
+		OwnerTransferred(T::AccountId, ServerId),
 		/// Unregister server success. [server_id]
-		Unregistered(u64),
+		Unregistered(ServerId),
 	}
 
 	#[pallet::error]
@@ -114,7 +114,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::transfer_owner())]
 		pub fn transfer_owner(
 			origin: OriginFor<T>,
-			server_id: u64,
+			server_id: ServerId,
 			new_owner: AccountIdOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
@@ -131,7 +131,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::update_api_url())]
 		pub fn update_api_url(
 			origin: OriginFor<T>,
-			server_id: u64,
+			server_id: ServerId,
 			new_api_url: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
@@ -147,7 +147,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::unregister())]
-		pub fn unregister(origin: OriginFor<T>, server_id: u64) -> DispatchResultWithPostInfo {
+		pub fn unregister(origin: OriginFor<T>, server_id: ServerId) -> DispatchResultWithPostInfo {
 			let account_id = ensure_signed(origin)?;
 
 			match <Self as ServerInterface<T>>::unregister(server_id, &account_id) {

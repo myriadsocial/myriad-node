@@ -234,7 +234,7 @@ pub fn claim_tip_works() {
 }
 
 #[test]
-fn cant_send_tip_myria_when_server_id_not_register() {
+fn cant_send_tip_myria_when_server_not_register() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		let tips_balance_info = TipsBalanceInfo::new(b"0", b"people", b"people_id", b"native");
 
@@ -246,7 +246,37 @@ fn cant_send_tip_myria_when_server_id_not_register() {
 }
 
 #[test]
+fn cant_send_tip_myria_when_server_id_is_wrong_format() {
+	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
+		let tips_balance_info = TipsBalanceInfo::new(b"myriad", b"people", b"people_id", b"native");
+
+		assert_noop!(
+			Tipping::send_tip(Origin::signed(account_key("alice")), tips_balance_info, 1),
+			Error::<Test>::WrongFormat
+		);
+	})
+}
+
+#[test]
 fn cant_claim_reference_when_server_not_registered() {
+	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
+		assert_noop!(
+			Tipping::claim_reference(
+				Origin::signed(account_key("alice")),
+				b"0".to_vec(),
+				References::new(b"people", &[b"people_id".to_vec()]),
+				References::new(b"user", &[b"user_id".to_vec()]),
+				vec![b"native".to_vec()],
+				account_key("john"),
+				1,
+			),
+			Error::<Test>::ServerNotRegister,
+		);
+	})
+}
+
+#[test]
+fn cant_claim_reference_when_server_id_is_wrong_format() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		assert_noop!(
 			Tipping::claim_reference(

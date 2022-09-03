@@ -1,5 +1,10 @@
-use crate::{AccountIdOf, Config, Pallet, Server, ServerById, ServerByOwner, ServerCount};
-use frame_support::{pallet_prelude::Decode, traits::Get, weights::Weight};
+use crate::{
+	AccountIdOf, Config, Pallet, Server as NewServer, ServerById as NewServerById, ServerByOwner,
+	ServerCount,
+};
+use frame_support::{
+	generate_storage_alias, pallet_prelude::*, traits::Get, weights::Weight, Blake2_128Concat,
+};
 use sp_std::vec::Vec;
 
 pub fn migrate<T: Config>() -> Weight {
@@ -23,7 +28,7 @@ mod v2 {
 		let mut weight = T::DbWeight::get().writes(1);
 
 		#[allow(dead_code)]
-		#[derive(Decode)]
+		#[derive(Encode, Decode, Clone)]
 		pub struct OldServer<AccountId> {
 			id: Vec<u8>,
 			owner: AccountId,
@@ -32,18 +37,21 @@ mod v2 {
 			web_url: Vec<u8>,
 		}
 
-		ServerById::<T>::swap(b"myriad".to_vec(), b"0".to_vec());
-		ServerById::<T>::translate(|_key, server: OldServer<AccountIdOf<T>>| {
+		generate_storage_alias!(
+			Server,
+			ServerById<T: Config> => Map<(Blake2_128Concat, Vec<u8>), OldServer<AccountIdOf<T>>>
+		);
+
+		ServerById::<T>::translate(|_key, old: OldServer<AccountIdOf<T>>| {
 			weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 
-			let owner = server.owner;
-			let api_url = server.api_url;
-			let new_server = Server::new(b"0", &owner, &api_url);
+			let new_server = NewServer::new(0, &old.owner, &old.api_url);
 
+			NewServerById::<T>::insert(0, new_server.clone());
+			ServerByOwner::<T>::insert(old.owner, 0, new_server);
 			ServerCount::<T>::set(1);
-			ServerByOwner::<T>::insert(owner, b"0".to_vec(), new_server.clone());
 
-			Some(new_server)
+			None
 		});
 
 		weight
