@@ -1,235 +1,92 @@
-use crate::{self as pallet_server, mock::*, AdminKey, Error};
+use crate::{self as pallet_server, mock::*, Error};
 use frame_support::{assert_noop, assert_ok};
 
 #[test]
 fn register_works() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
 
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
+		let server_id = 0_u64;
+		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		assert_eq!(
-			Server::server_by_id("server_id".as_bytes().to_vec()),
-			Some(pallet_server::Server {
-				id: "server_id".as_bytes().to_vec(),
-				owner: 1,
-				name: "myriad".as_bytes().to_vec(),
-				api_url: "https://api.dev.myriad.social".as_bytes().to_vec(),
-				web_url: "https://app.dev.myriad.social".as_bytes().to_vec(),
-			})
-		);
+		let server = pallet_server::Server::new(server_id, &owner, &api_url);
+
+		assert_ok!(Server::register(owner_origin, api_url));
+
+		assert_eq!(Server::server_by_id(server_id), Some(server.clone()));
+		assert_eq!(Server::server_by_owner(owner, server_id), Some(server));
+		assert_eq!(Server::server_count(), 1);
 	})
 }
 
 #[test]
 pub fn transfer_owner_works() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
 
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
+		let server_id = 0_u64;
+		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		assert_ok!(Server::transfer_owner(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			3
-		));
+		let new_owner = 2;
+		let server = pallet_server::Server::new(server_id, &new_owner, &api_url);
 
-		assert_eq!(
-			Server::server_by_id("server_id".as_bytes().to_vec()),
-			Some(pallet_server::Server {
-				id: "server_id".as_bytes().to_vec(),
-				owner: 3,
-				name: "myriad".as_bytes().to_vec(),
-				api_url: "https://api.dev.myriad.social".as_bytes().to_vec(),
-				web_url: "https://app.dev.myriad.social".as_bytes().to_vec(),
-			})
-		);
-	})
-}
+		assert_ok!(Server::register(Origin::signed(owner), api_url));
+		assert_ok!(Server::transfer_owner(owner_origin, 0, new_owner));
 
-#[test]
-pub fn change_name_works() {
-	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
-
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
-
-		assert_ok!(Server::update_name(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"local".as_bytes().to_vec()
-		));
-
-		assert_eq!(
-			Server::server_by_id("server_id".as_bytes().to_vec()),
-			Some(pallet_server::Server {
-				id: "server_id".as_bytes().to_vec(),
-				owner: 1,
-				name: "local".as_bytes().to_vec(),
-				api_url: "https://api.dev.myriad.social".as_bytes().to_vec(),
-				web_url: "https://app.dev.myriad.social".as_bytes().to_vec(),
-			})
-		);
+		assert_eq!(Server::server_by_id(server_id), Some(server));
 	})
 }
 
 #[test]
 pub fn change_api_url_works() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
 
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
+		let server_id = 0_u64;
+		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		assert_ok!(Server::update_api_url(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"https://api.testnet.myriad.social".as_bytes().to_vec(),
-		));
+		let new_api_url = "https://api.testnet.myriad.social".as_bytes().to_vec();
+		let server = pallet_server::Server::new(server_id, &owner, &new_api_url);
 
-		assert_eq!(
-			Server::server_by_id("server_id".as_bytes().to_vec()),
-			Some(pallet_server::Server {
-				id: "server_id".as_bytes().to_vec(),
-				owner: 1,
-				name: "myriad".as_bytes().to_vec(),
-				api_url: "https://api.testnet.myriad.social".as_bytes().to_vec(),
-				web_url: "https://app.dev.myriad.social".as_bytes().to_vec(),
-			})
-		);
-	})
-}
+		assert_ok!(Server::register(Origin::signed(owner), api_url));
+		assert_ok!(Server::update_api_url(owner_origin, 0, new_api_url,));
 
-#[test]
-pub fn change_web_url_works() {
-	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
-
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
-
-		assert_ok!(Server::update_web_url(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"https://app.testnet.myriad.social".as_bytes().to_vec(),
-		));
-
-		assert_eq!(
-			Server::server_by_id("server_id".as_bytes().to_vec()),
-			Some(pallet_server::Server {
-				id: "server_id".as_bytes().to_vec(),
-				owner: 1,
-				name: "myriad".as_bytes().to_vec(),
-				api_url: "https://api.dev.myriad.social".as_bytes().to_vec(),
-				web_url: "https://app.testnet.myriad.social".as_bytes().to_vec(),
-			})
-		);
+		assert_eq!(Server::server_by_id(server_id), Some(server));
 	})
 }
 
 #[test]
 pub fn deregister_works() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
 
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
+		let server_id = 0_u64;
+		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		assert_ok!(Server::unregister(Origin::signed(2), 1, "server_id".as_bytes().to_vec()));
+		assert_ok!(Server::register(Origin::signed(owner), api_url));
+		assert_ok!(Server::unregister(owner_origin, 0));
 
-		assert_eq!(Server::server_by_id("server_id".as_bytes().to_vec()), None);
-	})
-}
-
-#[test]
-pub fn transfer_admin_key_works() {
-	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(1);
-
-		assert_ok!(Server::transfer_admin_key(Origin::signed(1), 2));
-
-		assert_eq!(Server::admin_key().unwrap(), 2);
-	})
-}
-
-#[test]
-fn cant_register_when_server_id_already_exists() {
-	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
-
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
-
-		assert_noop!(
-			Server::register(
-				Origin::signed(2),
-				1,
-				"server_id".as_bytes().to_vec(),
-				"myriad".as_bytes().to_vec(),
-				"https://api.dev.myriad.social".as_bytes().to_vec(),
-				"https://app.dev.myriad.social".as_bytes().to_vec(),
-			),
-			Error::<Test>::AlreadyExists
-		);
+		assert_eq!(Server::server_by_id(server_id), None);
+		assert_eq!(Server::server_by_owner(owner, server_id), None);
+		assert_eq!(Server::server_count(), 0);
 	})
 }
 
 #[test]
 pub fn cant_transfer_owner_when_server_id_not_exist() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
+
+		let fake_id = 0;
+		let new_owner = 2;
 
 		assert_noop!(
-			Server::transfer_owner(Origin::signed(2), 1, "server_id".as_bytes().to_vec(), 2),
+			Server::transfer_owner(owner_origin, fake_id, new_owner),
 			Error::<Test>::NotExists,
 		);
 	})
@@ -238,62 +95,20 @@ pub fn cant_transfer_owner_when_server_id_not_exist() {
 #[test]
 pub fn cant_transfer_owner_when_not_owner() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
 
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
+		let server_id = 0;
+		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		assert_noop!(
-			Server::transfer_owner(Origin::signed(2), 3, "server_id".as_bytes().to_vec(), 1),
-			Error::<Test>::Unauthorized,
-		);
-	})
-}
+		assert_ok!(Server::register(owner_origin, api_url));
 
-#[test]
-pub fn cant_change_name_when_server_id_not_exist() {
-	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let fake_owner = 3;
+		let fake_owner_origin = Origin::signed(fake_owner);
+		let new_owner = 4;
 
 		assert_noop!(
-			Server::update_name(
-				Origin::signed(2),
-				1,
-				"server_id".as_bytes().to_vec(),
-				"local".as_bytes().to_vec()
-			),
-			Error::<Test>::NotExists,
-		);
-	})
-}
-
-#[test]
-pub fn cant_change_name_when_not_owner() {
-	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
-
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
-
-		assert_noop!(
-			Server::update_name(
-				Origin::signed(2),
-				3,
-				"server_id".as_bytes().to_vec(),
-				"local".as_bytes().to_vec()
-			),
+			Server::transfer_owner(fake_owner_origin, server_id, new_owner),
 			Error::<Test>::Unauthorized,
 		);
 	})
@@ -302,15 +117,14 @@ pub fn cant_change_name_when_not_owner() {
 #[test]
 pub fn cant_change_api_url_when_server_id_not_exist() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
+
+		let fake_id = 0;
+		let new_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
 		assert_noop!(
-			Server::update_api_url(
-				Origin::signed(2),
-				1,
-				"server_id".as_bytes().to_vec(),
-				"https://api.dev.myriad.social".as_bytes().to_vec(),
-			),
+			Server::update_api_url(owner_origin, fake_id, new_api_url),
 			Error::<Test>::NotExists,
 		);
 	})
@@ -319,67 +133,20 @@ pub fn cant_change_api_url_when_server_id_not_exist() {
 #[test]
 pub fn cant_change_api_url_when_not_owner() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
 
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
+		let server_id = 0;
+		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		assert_noop!(
-			Server::update_api_url(
-				Origin::signed(2),
-				3,
-				"server_id".as_bytes().to_vec(),
-				"https://api.dev.myriad.social".as_bytes().to_vec(),
-			),
-			Error::<Test>::Unauthorized,
-		);
-	})
-}
+		assert_ok!(Server::register(owner_origin, api_url));
 
-#[test]
-pub fn cant_change_web_url_when_server_id_not_exist() {
-	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let fake_owner = 3;
+		let fake_owner_origin = Origin::signed(fake_owner);
+		let new_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
 		assert_noop!(
-			Server::update_web_url(
-				Origin::signed(2),
-				1,
-				"server_id".as_bytes().to_vec(),
-				"https://app.dev.myriad.social".as_bytes().to_vec(),
-			),
-			Error::<Test>::NotExists,
-		);
-	})
-}
-
-#[test]
-pub fn cant_change_web_url_when_not_owner() {
-	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
-
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
-
-		assert_noop!(
-			Server::update_web_url(
-				Origin::signed(2),
-				3,
-				"server_id".as_bytes().to_vec(),
-				"https://app.dev.myriad.social".as_bytes().to_vec(),
-			),
+			Server::update_api_url(fake_owner_origin, server_id, new_api_url),
 			Error::<Test>::Unauthorized,
 		);
 	})
@@ -388,33 +155,30 @@ pub fn cant_change_web_url_when_not_owner() {
 #[test]
 pub fn cant_deregister_when_server_id_not_exist() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
 
-		assert_noop!(
-			Server::unregister(Origin::signed(2), 1, "server_id".as_bytes().to_vec()),
-			Error::<Test>::NotExists,
-		);
+		let fake_id = 0;
+
+		assert_noop!(Server::unregister(owner_origin, fake_id), Error::<Test>::NotExists);
 	})
 }
 
 #[test]
 pub fn cant_deregister_when_not_owner() {
 	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(2);
+		let owner = 1;
+		let owner_origin = Origin::signed(owner);
 
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
+		let server_id = 0;
+		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		assert_noop!(
-			Server::unregister(Origin::signed(2), 3, "server_id".as_bytes().to_vec()),
-			Error::<Test>::Unauthorized
-		);
+		assert_ok!(Server::register(owner_origin, api_url));
+
+		let fake_owner = 3;
+		let fake_owner_origin = Origin::signed(fake_owner);
+
+		assert_noop!(Server::unregister(fake_owner_origin, server_id), Error::<Test>::Unauthorized,);
 	})
 }
 
@@ -423,86 +187,40 @@ fn call_event_should_work() {
 	ExternalityBuilder::build().execute_with(|| {
 		System::set_block_number(1);
 
-		AdminKey::<Test>::put(2);
+		let owner = 1;
 
-		assert_ok!(Server::register(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			"myriad".as_bytes().to_vec(),
-			"https://api.dev.myriad.social".as_bytes().to_vec(),
-			"https://app.dev.myriad.social".as_bytes().to_vec(),
-		));
+		let server_id = 0;
+		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		System::assert_last_event(Event::Server(crate::Event::Registered(pallet_server::Server {
-			id: "server_id".as_bytes().to_vec(),
-			owner: 1,
-			name: "myriad".as_bytes().to_vec(),
-			api_url: "https://api.dev.myriad.social".as_bytes().to_vec(),
-			web_url: "https://app.dev.myriad.social".as_bytes().to_vec(),
-		})));
+		let server = pallet_server::Server::new(server_id, &owner, &api_url);
 
-		assert_ok!(Server::transfer_owner(
-			Origin::signed(2),
-			1,
-			"server_id".as_bytes().to_vec(),
-			3
-		));
+		assert_ok!(Server::register(Origin::signed(owner), api_url));
+
+		System::assert_last_event(Event::Server(crate::Event::Registered(server)));
+
+		let new_owner = 3;
+
+		assert_ok!(Server::transfer_owner(Origin::signed(owner), server_id, new_owner));
 
 		System::assert_last_event(Event::Server(crate::Event::OwnerTransferred(
-			3,
-			"server_id".as_bytes().to_vec(),
+			new_owner, server_id,
 		)));
 
-		assert_ok!(Server::update_name(
-			Origin::signed(2),
-			3,
-			"server_id".as_bytes().to_vec(),
-			"local".as_bytes().to_vec()
-		));
-
-		System::assert_last_event(Event::Server(crate::Event::NameUpdated(
-			"local".as_bytes().to_vec(),
-			"server_id".as_bytes().to_vec(),
-		)));
+		let new_api_url = "https://api.testnet.myriad.social".as_bytes().to_vec();
 
 		assert_ok!(Server::update_api_url(
-			Origin::signed(2),
-			3,
-			"server_id".as_bytes().to_vec(),
-			"https://api.testnet.myriad.social".as_bytes().to_vec(),
+			Origin::signed(new_owner),
+			server_id,
+			new_api_url.clone()
 		));
 
 		System::assert_last_event(Event::Server(crate::Event::ApiUrlUpdated(
-			"https://api.testnet.myriad.social".as_bytes().to_vec(),
-			"server_id".as_bytes().to_vec(),
+			new_api_url,
+			server_id,
 		)));
 
-		assert_ok!(Server::update_web_url(
-			Origin::signed(2),
-			3,
-			"server_id".as_bytes().to_vec(),
-			"https://app.testnet.myriad.social".as_bytes().to_vec(),
-		));
+		assert_ok!(Server::unregister(Origin::signed(new_owner), server_id));
 
-		System::assert_last_event(Event::Server(crate::Event::WebUrlUpdated(
-			"https://app.testnet.myriad.social".as_bytes().to_vec(),
-			"server_id".as_bytes().to_vec(),
-		)));
-
-		assert_ok!(Server::unregister(Origin::signed(2), 3, "server_id".as_bytes().to_vec()));
-
-		System::assert_last_event(Event::Server(crate::Event::Unregistered(
-			"server_id".as_bytes().to_vec(),
-		)));
-	})
-}
-
-#[test]
-pub fn cant_transfer_admin_key_when_not_as_admin() {
-	ExternalityBuilder::build().execute_with(|| {
-		AdminKey::<Test>::put(1);
-
-		assert_noop!(Server::transfer_admin_key(Origin::signed(3), 2), Error::<Test>::Unauthorized,);
+		System::assert_last_event(Event::Server(crate::Event::Unregistered(server_id)));
 	})
 }

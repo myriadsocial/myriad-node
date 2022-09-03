@@ -1,6 +1,7 @@
 use crate::*;
 
 use frame_support::{
+	dispatch::DispatchError,
 	sp_runtime::traits::{AccountIdConversion, SaturatedConversion, Saturating, Zero},
 	traits::{fungibles, Currency, ExistenceRequirement, WithdrawReasons},
 	PalletId,
@@ -24,20 +25,20 @@ impl<T: Config> Pallet<T> {
 		tx_fee: &BalanceOf<T>,
 	) -> Result<(), Error<T>> {
 		if tx_fee == &Zero::zero() {
-			return Err(Error::<T>::FailedToVerify)
+			return Err(Error::<T>::InsufficientBalance)
 		}
 
 		let tips_balance =
-			Self::tips_balance_by_reference(tips_balance_key).ok_or(Error::<T>::FailedToVerify)?;
+			Self::tips_balance_by_reference(tips_balance_key).ok_or(Error::<T>::NotExists)?;
 
 		let amount = tips_balance.get_amount();
 
 		if amount == &Zero::zero() {
-			return Err(Error::<T>::FailedToVerify)
+			return Err(Error::<T>::InsufficientBalance)
 		}
 
 		if amount < tx_fee {
-			return Err(Error::<T>::FailedToVerify)
+			return Err(Error::<T>::InsufficientBalance)
 		}
 
 		Ok(())
@@ -70,6 +71,11 @@ impl<T: Config> Pallet<T> {
 		server_id: &[u8],
 		sender: Option<&T::AccountId>,
 	) -> Result<(), Error<T>> {
+		let server_id = String::from_utf8(server_id.to_vec())
+			.map_err(|_| Error::<T>::WrongFormat)?
+			.parse::<u64>()
+			.map_err(|_| Error::<T>::WrongFormat)?;
+
 		let server = T::Server::get_by_id(server_id).ok_or(Error::<T>::ServerNotRegister)?;
 
 		if sender.is_none() {
@@ -133,15 +139,14 @@ impl<T: Config> Pallet<T> {
 		sender: &AccountIdOf<T>,
 		receiver: &AccountIdOf<T>,
 		amount: BalanceOf<T>,
-	) -> Result<(), Error<T>> {
+	) -> Result<(), DispatchError> {
 		if ft_identifier == b"native" {
 			let imb = CurrencyOf::<T>::withdraw(
 				sender,
 				amount,
 				WithdrawReasons::TRANSFER,
 				ExistenceRequirement::KeepAlive,
-			)
-			.map_err(|_| Error::<T>::BadSignature)?;
+			)?;
 
 			CurrencyOf::<T>::resolve_creating(receiver, imb);
 		} else {
@@ -151,8 +156,7 @@ impl<T: Config> Pallet<T> {
 				sender,
 				receiver,
 				amount.saturated_into(),
-			)
-			.map_err(|_| Error::<T>::BadSignature)?;
+			)?;
 		}
 
 		Ok(())

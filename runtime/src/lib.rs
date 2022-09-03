@@ -125,8 +125,8 @@ mod benches {
 	define_benchmarks!(
 		[frame_benchmarking, BaselineBench::<Runtime>]
 		[frame_system, SystemBench::<Runtime>]
+		[pallet_tipping, TippingBench::<Runtime>]
 		[pallet_server, Server]
-		[pallet_tipping, Tipping]
 	);
 }
 
@@ -188,7 +188,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 2016,
+	spec_version: 2017,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -736,7 +736,7 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Call, Config<T>, Event<T>, Pallet, Storage},
 
 		// Local pallets
-		Server: pallet_server::{Call, Event<T>, Config<T>, Pallet, Storage},
+		Server: pallet_server::{Call, Event<T>, Pallet, Storage},
 		Tipping: pallet_tipping::{Call, Event<T>, Pallet, Storage},
 	}
 );
@@ -932,8 +932,11 @@ impl_runtime_apis! {
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
-			use frame_benchmarking::{Benchmarking, BenchmarkList};
+			use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
+			use frame_system_benchmarking::Pallet as SystemBench;
+			use pallet_tipping_benchmarking::Pallet as TippingBench;
+			use baseline::Pallet as BaselineBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
@@ -947,7 +950,15 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+
+			use frame_system_benchmarking::Pallet as SystemBench;
+			use pallet_tipping_benchmarking::Pallet as TippingBench;
+			use baseline::Pallet as BaselineBench;
+
+			impl frame_system_benchmarking::Config for Runtime {}
+			impl pallet_tipping_benchmarking::Config for Runtime {}
+			impl baseline::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number

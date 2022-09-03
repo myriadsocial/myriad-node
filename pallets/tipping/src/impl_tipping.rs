@@ -1,9 +1,10 @@
 use super::*;
 
+use frame_support::dispatch::DispatchError;
 use sp_std::vec::Vec;
 
 impl<T: Config> TippingInterface<T> for Pallet<T> {
-	type Error = Error<T>;
+	type Error = DispatchError;
 	type TipsBalanceInfo = TipsBalanceInfo;
 	type TipsBalanceKey = TipsBalanceKey;
 	type Balance = BalanceOf<T>;
@@ -68,10 +69,6 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 			};
 		}
 
-		if success_claim.is_empty() {
-			return Err(Error::<T>::NothingToClaimed)
-		}
-
 		if failed_claim.is_empty() {
 			return Ok((sender, (success_claim, None)))
 		}
@@ -91,12 +88,8 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		let ref_type = main_references.get_reference_type().clone();
 		let ref_ids = main_references.get_reference_ids().clone();
 
-		if ref_ids.len() != 1 {
-			return Err(Error::<T>::FailedToVerify)
-		}
-
 		if receiver == account_id {
-			return Err(Error::<T>::FailedToVerify)
+			return Err(DispatchError::BadOrigin)
 		}
 
 		Self::do_server_exist(server_id, Some(receiver))?;
