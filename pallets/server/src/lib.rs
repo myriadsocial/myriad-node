@@ -23,7 +23,7 @@ pub use weights::WeightInfo;
 use frame_support::traits::StorageVersion;
 
 /// The current storage version.
-const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -48,6 +48,10 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn server_count)]
 	pub type ServerCount<T> = StorageValue<_, ServerId, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn server_index)]
+	pub type ServerIndex<T> = StorageValue<_, u64, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn server_by_id)]
