@@ -263,7 +263,7 @@ fn cant_claim_reference_when_server_not_registered() {
 		assert_noop!(
 			Tipping::claim_reference(
 				Origin::signed(account_key("alice")),
-				b"0".to_vec(),
+				b"1".to_vec(),
 				References::new(b"people", &[b"people_id".to_vec()]),
 				References::new(b"user", &[b"user_id".to_vec()]),
 				vec![b"native".to_vec()],
@@ -281,7 +281,7 @@ fn cant_claim_reference_when_server_id_is_wrong_format() {
 		assert_noop!(
 			Tipping::claim_reference(
 				Origin::signed(account_key("alice")),
-				b"0".to_vec(),
+				b"1".to_vec(),
 				References::new(b"people", &[b"people_id".to_vec()]),
 				References::new(b"user", &[b"user_id".to_vec()]),
 				vec![b"native".to_vec()],
