@@ -19,12 +19,12 @@ pub fn migrate<T: Config>() -> Weight {
 		version = StorageVersion::new(1);
 	}
 
-	if version < 2 {
+	if version == 1 {
 		weight = weight.saturating_add(versions::v2::migrate::<T>());
 		version = StorageVersion::new(2);
 	}
 
-	if version < 3 {
+	if version == 2 {
 		weight = weight.saturating_add(versions::v3::migrate::<T>());
 		version = StorageVersion::new(3);
 	}
