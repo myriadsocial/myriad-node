@@ -17,6 +17,7 @@ fn register_works() {
 		assert_eq!(Server::server_by_id(server_id), Some(server.clone()));
 		assert_eq!(Server::server_by_owner(owner, server_id), Some(server));
 		assert_eq!(Server::server_count(), 1);
+		assert_eq!(Server::server_index(), 1);
 	})
 }
 
@@ -35,7 +36,9 @@ pub fn transfer_owner_works() {
 		assert_ok!(Server::register(Origin::signed(owner), api_url));
 		assert_ok!(Server::transfer_owner(owner_origin, 0, new_owner));
 
-		assert_eq!(Server::server_by_id(server_id), Some(server));
+		assert_eq!(Server::server_by_id(server_id), Some(server.clone()));
+		assert_eq!(Server::server_by_owner(owner, server_id), None);
+		assert_eq!(Server::server_by_owner(new_owner, server_id), Some(server.clone()));
 	})
 }
 
