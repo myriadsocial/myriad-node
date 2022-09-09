@@ -5,6 +5,7 @@ use super::*;
 #[allow(unused)]
 use crate::{Pallet as Server, ServerInterface};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::sp_runtime::SaturatedConversion;
 use frame_system::RawOrigin;
 use sp_std::vec;
 

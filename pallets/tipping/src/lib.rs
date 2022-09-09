@@ -22,7 +22,7 @@ pub use types::*;
 pub use weights::WeightInfo;
 
 /// The current storage version.
-const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 #[frame_support::pallet]
 pub mod pallet {

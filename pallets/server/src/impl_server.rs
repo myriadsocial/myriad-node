@@ -10,9 +10,17 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 
 	fn register(owner: &T::AccountId, api_url: &[u8]) -> Result<Self::Server, Self::Error> {
 		let count = Self::server_count();
-		let server = Server::new(count, owner, api_url);
+		let index = Self::server_index();
 
-		Self::do_set_server(true, &OperatorKind::Add, &server)?;
+		let server = Server::new(index, owner, api_url);
+
+		let updated_count = count.checked_add(1).ok_or(Error::<T>::Overflow)?;
+		let updated_index = index.checked_add(1).ok_or(Error::<T>::Overflow)?;
+
+		ServerCount::<T>::set(updated_count);
+		ServerIndex::<T>::set(updated_index);
+		ServerById::<T>::insert(index, &server);
+		ServerByOwner::<T>::insert(owner, index, &server);
 
 		Ok(server)
 	}
@@ -23,6 +31,8 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 		new_owner: &T::AccountId,
 	) -> Result<(), Self::Error> {
 		Self::do_mutate_server(server_id, owner, &ServerDataKind::Owner(new_owner.clone()))?;
+
+		ServerByOwner::<T>::swap(owner, server_id, new_owner, server_id);
 
 		Ok(())
 	}
@@ -38,9 +48,20 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 	}
 
 	fn unregister(server_id: u64, owner: &T::AccountId) -> Result<(), Self::Error> {
-		let server = Self::can_update_server(server_id, owner)?;
+		let server =
+			<Self as ServerInterface<T>>::get_by_id(server_id).ok_or(Error::<T>::NotExists)?;
 
-		Self::do_set_server(false, &OperatorKind::Sub, &server)?;
+		let current_owner = server.get_owner();
+
+		if current_owner != owner {
+			return Err(Error::<T>::Unauthorized)
+		}
+
+		let count = Self::server_count().checked_sub(1).ok_or(Error::<T>::Overflow)?;
+
+		ServerById::<T>::remove(server_id);
+		ServerByOwner::<T>::remove(owner, server_id);
+		ServerCount::<T>::set(count);
 
 		Ok(())
 	}
