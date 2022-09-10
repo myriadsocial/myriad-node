@@ -1,5 +1,5 @@
 use crate::{
-	AccountIdOf, Config, Pallet, Server as NewServer, ServerById as NewServerById,
+	AccountIdOf, Config, Pallet, Server as NewServer, ServerByApiUrl, ServerById as NewServerById,
 	ServerByOwner as NewServerByOwner, ServerCount as NewServerCount, ServerId,
 	ServerIndex as NewServerIndex, ServerOf,
 };
@@ -27,6 +27,11 @@ pub fn migrate<T: Config>() -> Weight {
 	if version == 2 {
 		weight = weight.saturating_add(versions::v3::migrate::<T>());
 		version = StorageVersion::new(3);
+	}
+
+	if version == 3 {
+		weight = weight.saturating_add(versions::v4::migrate::<T>());
+		version = StorageVersion::new(4);
 	}
 
 	version.put::<Pallet<T>>();
@@ -145,6 +150,24 @@ mod versions {
 
 			NewServerCount::<T>::set(1);
 			NewServerIndex::<T>::set(1);
+
+			weight
+		}
+	}
+
+	pub mod v4 {
+		use super::*;
+
+		pub fn migrate<T: Config>() -> Weight {
+			let mut weight = T::DbWeight::get().writes(1);
+
+			NewServerById::<T>::translate(|server_id: ServerId, server: ServerOf<T>| {
+				weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+
+				ServerByApiUrl::<T>::insert(server.get_api_url(), server_id);
+
+				Some(server)
+			});
 
 			weight
 		}
