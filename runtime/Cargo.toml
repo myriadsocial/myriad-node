@@ -1,6 +1,6 @@
 [package]
 name = 'myriad-runtime'
-version = '2.1.8'
+version = '2.1.9'
 edition = '2021'
 license = 'AGPL-3.0'
 authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
@@ -73,7 +73,6 @@ pallet-octopus-upward-messages = { git = 'https://github.com/octopus-network/oct
 # Local Pallet
 pallet-server = { path = '../pallets/server', default-features = false }
 pallet-tipping = { path = '../pallets/tipping', default-features = false }
-pallet-tipping-benchmarking = { path = '../pallets/tipping/benchmarking', default-features = false, optional = true }
 
 [features]
 default = ['std']
@@ -152,5 +151,4 @@ runtime-benchmarks = [
 	# Local Pallet
 	'pallet-server/runtime-benchmarks',
 	'pallet-tipping/runtime-benchmarks',
-	'pallet-tipping-benchmarking',
 ]
