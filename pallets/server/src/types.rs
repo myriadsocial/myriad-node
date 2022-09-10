@@ -73,3 +73,4 @@ pub enum OperatorKind {
 pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 pub type ServerOf<T> = Server<AccountIdOf<T>>;
 pub type ServerId = u64;
+pub type ApiUrl = Vec<u8>;
