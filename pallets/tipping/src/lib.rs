@@ -1,13 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
 
-pub use frame_support::traits::StorageVersion;
 pub use pallet::*;
-pub use pallet_server::interface::{ServerInfo, ServerProvider};
 pub use scale_info::{prelude::string::*, TypeInfo};
 
 pub mod functions;
@@ -21,8 +20,10 @@ pub use crate::interface::TippingInterface;
 pub use types::*;
 pub use weights::WeightInfo;
 
+pub use frame_support::traits::StorageVersion;
+
 /// The current storage version.
-const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -46,7 +47,6 @@ pub mod pallet {
 			AssetId = AssetId,
 			Balance = AssetBalance,
 		>;
-		type Server: ServerProvider<Self>;
 		type WeightInfo: WeightInfo;
 	}
 
@@ -61,7 +61,7 @@ pub mod pallet {
 	pub(super) type TipsBalanceByReference<T: Config> = StorageNMap<
 		_,
 		(
-			NMapKey<Blake2_128Concat, ServerId>,
+			NMapKey<Blake2_128Concat, ServerIdOf<T>>,
 			NMapKey<Blake2_128Concat, ReferenceType>,
 			NMapKey<Blake2_128Concat, ReferenceId>,
 			NMapKey<Blake2_128Concat, FtIdentifier>,
@@ -73,7 +73,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Send tip success. [who, pot, (data, balance)]
-		SendTip(T::AccountId, T::AccountId, (TipsBalanceKey, BalanceOf<T>)),
+		SendTip(T::AccountId, T::AccountId, (TipsBalanceKeyOf<T>, BalanceOf<T>)),
 		/// Claim tip success [pot, (succeed, failed)]
 		ClaimTip(T::AccountId, (AccountBalancesOf<T>, Option<AccountBalancesOf<T>>)),
 		/// Claim reference success. [Vec<tips_balance>]
@@ -101,7 +101,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::send_tip())]
 		pub fn send_tip(
 			origin: OriginFor<T>,
-			tips_balance_info: TipsBalanceInfo,
+			tips_balance_info: TipsBalanceInfoOf<T>,
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
@@ -115,7 +115,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::claim_tip())]
 		pub fn claim_tip(
 			origin: OriginFor<T>,
-			server_id: ServerId,
+			server_id: ServerIdOf<T>,
 			reference_type: ReferenceType,
 			reference_id: ReferenceId,
 			ft_identifiers: Vec<FtIdentifier>,
@@ -140,7 +140,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::claim_reference())]
 		pub fn claim_reference(
 			origin: OriginFor<T>,
-			server_id: ServerId,
+			server_id: ServerIdOf<T>,
 			references: References,
 			main_references: References,
 			ft_identifiers: Vec<FtIdentifier>,
@@ -148,6 +148,9 @@ pub mod pallet {
 			tx_fee: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+
+			ensure!(who == server_id, Error::<T>::Unauthorized);
+
 			let mut ft_identifiers = ft_identifiers;
 
 			ft_identifiers.sort_unstable();
