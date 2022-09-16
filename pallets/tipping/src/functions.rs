@@ -16,12 +16,12 @@ impl<T: Config> Pallet<T> {
 		PALLET_ID.into_account()
 	}
 
-	pub fn can_update_balance(tips_balance_key: &TipsBalanceKey) -> bool {
+	pub fn can_update_balance(tips_balance_key: &TipsBalanceKeyOf<T>) -> bool {
 		TipsBalanceByReference::<T>::contains_key(tips_balance_key)
 	}
 
 	pub fn can_pay_fee(
-		tips_balance_key: &TipsBalanceKey,
+		tips_balance_key: &TipsBalanceKeyOf<T>,
 		tx_fee: &BalanceOf<T>,
 	) -> Result<(), Error<T>> {
 		if tx_fee == &Zero::zero() {
@@ -45,7 +45,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn can_claim_tip(
-		tips_balance_key: &TipsBalanceKey,
+		tips_balance_key: &TipsBalanceKeyOf<T>,
 		receiver: &AccountIdOf<T>,
 	) -> Option<TipsBalanceOf<T>> {
 		if let Some(tips_balance) = Self::tips_balance_by_reference(tips_balance_key) {
@@ -65,28 +65,6 @@ impl<T: Config> Pallet<T> {
 		}
 
 		None
-	}
-
-	pub fn do_server_exist(
-		server_id: &[u8],
-		sender: Option<&T::AccountId>,
-	) -> Result<(), Error<T>> {
-		let server_id = String::from_utf8(server_id.to_vec())
-			.map_err(|_| Error::<T>::WrongFormat)?
-			.parse::<u64>()
-			.map_err(|_| Error::<T>::WrongFormat)?;
-
-		let server = T::Server::get_by_id(server_id).ok_or(Error::<T>::ServerNotRegister)?;
-
-		if sender.is_none() {
-			return Ok(())
-		}
-
-		if sender.unwrap() != server.get_owner() {
-			return Err(Error::<T>::Unauthorized)
-		}
-
-		Ok(())
 	}
 
 	pub fn do_store_tips_balance(
@@ -163,7 +141,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn do_store_tips_balances(
-		server_id: &[u8],
+		server_id: &AccountIdOf<T>,
 		references: &References,
 		main_references: &References,
 		ft_identifiers: &[FtIdentifier],
@@ -180,6 +158,7 @@ impl<T: Config> Pallet<T> {
 			let reference_ids = references.get_reference_ids();
 
 			for reference_id in reference_ids {
+				let server_id = server_id.clone();
 				let tips_balance_key = (server_id, reference_type, reference_id, ft_identifier);
 				if let Some(tips_balance) = Self::tips_balance_by_reference(&tips_balance_key) {
 					let amount = *tips_balance.get_amount();

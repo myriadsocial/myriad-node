@@ -9,6 +9,8 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 	}
 
 	fn register(owner: &T::AccountId, api_url: &[u8]) -> Result<Self::Server, Self::Error> {
+		Self::do_api_url_exist(api_url)?;
+
 		let count = Self::server_count();
 		let index = Self::server_index();
 
@@ -20,6 +22,7 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 		ServerCount::<T>::set(updated_count);
 		ServerIndex::<T>::set(updated_index);
 		ServerById::<T>::insert(index, &server);
+		ServerByApiUrl::<T>::insert(api_url, index);
 		ServerByOwner::<T>::insert(owner, index, &server);
 
 		Ok(server)
@@ -42,6 +45,7 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 		owner: &T::AccountId,
 		new_api_url: &[u8],
 	) -> Result<(), Self::Error> {
+		Self::do_api_url_exist(new_api_url)?;
 		Self::do_mutate_server(server_id, owner, &ServerDataKind::ApiUrl(new_api_url.to_vec()))?;
 
 		Ok(())
@@ -59,9 +63,10 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 
 		let count = Self::server_count().checked_sub(1).ok_or(Error::<T>::Overflow)?;
 
+		ServerCount::<T>::set(count);
 		ServerById::<T>::remove(server_id);
 		ServerByOwner::<T>::remove(owner, server_id);
-		ServerCount::<T>::set(count);
+		ServerByApiUrl::<T>::remove(server.get_api_url());
 
 		Ok(())
 	}

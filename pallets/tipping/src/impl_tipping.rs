@@ -5,10 +5,10 @@ use sp_std::vec::Vec;
 
 impl<T: Config> TippingInterface<T> for Pallet<T> {
 	type Error = DispatchError;
-	type TipsBalanceInfo = TipsBalanceInfo;
-	type TipsBalanceKey = TipsBalanceKey;
+	type TipsBalanceInfo = TipsBalanceInfoOf<T>;
+	type TipsBalanceKey = TipsBalanceKeyOf<T>;
 	type Balance = BalanceOf<T>;
-	type ServerId = ServerId;
+	type ServerId = ServerIdOf<T>;
 	type References = References;
 	type ReferenceType = ReferenceType;
 	type ReferenceId = ReferenceId;
@@ -24,12 +24,10 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		amount: &Self::Balance,
 	) -> Result<Self::SendTipResult, Self::Error> {
 		let receiver = Self::tipping_account_id();
-		let server_id = tips_balance_info.get_server_id();
 		let tip_amount = *amount;
 		let ft_identifier = tips_balance_info.get_ft_identifier();
 		let tips_balance = TipsBalance::new(tips_balance_info, amount);
 
-		Self::do_server_exist(server_id, None)?;
 		Self::do_transfer(ft_identifier, sender, &receiver, tip_amount)?;
 		Self::do_store_tips_balance(&tips_balance, false, None);
 
@@ -91,8 +89,6 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		if receiver == account_id {
 			return Err(DispatchError::BadOrigin)
 		}
-
-		Self::do_server_exist(server_id, Some(receiver))?;
 
 		let sender = Self::tipping_account_id();
 		let ref_id = ref_ids[0].clone();

@@ -125,7 +125,7 @@ mod benches {
 	define_benchmarks!(
 		[frame_benchmarking, BaselineBench::<Runtime>]
 		[frame_system, SystemBench::<Runtime>]
-		[pallet_tipping, TippingBench::<Runtime>]
+		[pallet_tipping, Tipping]
 		[pallet_server, Server]
 	);
 }
@@ -188,7 +188,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 2018,
+	spec_version: 2019,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -702,7 +702,6 @@ impl pallet_tipping::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type Assets = OctopusAssets;
-	type Server = Server;
 	type WeightInfo = ();
 }
 
@@ -935,7 +934,6 @@ impl_runtime_apis! {
 			use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
-			use pallet_tipping_benchmarking::Pallet as TippingBench;
 			use baseline::Pallet as BaselineBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
@@ -953,11 +951,9 @@ impl_runtime_apis! {
 			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
-			use pallet_tipping_benchmarking::Pallet as TippingBench;
 			use baseline::Pallet as BaselineBench;
 
 			impl frame_system_benchmarking::Config for Runtime {}
-			impl pallet_tipping_benchmarking::Config for Runtime {}
 			impl baseline::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![

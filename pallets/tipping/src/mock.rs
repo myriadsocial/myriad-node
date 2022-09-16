@@ -27,7 +27,6 @@ construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Tipping: pallet_tipping::{Pallet, Call, Storage, Event<T>},
-		Server: pallet_server::{Pallet, Call, Storage, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -90,13 +89,7 @@ impl pallet_tipping::Config for Test {
 	type Call = Call;
 	type Event = Event;
 	type Currency = Balances;
-	type Server = Server;
 	type Assets = Assets;
-	type WeightInfo = ();
-}
-
-impl pallet_server::Config for Test {
-	type Event = Event;
 	type WeightInfo = ();
 }
 

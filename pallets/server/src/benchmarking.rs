@@ -5,7 +5,6 @@ use super::*;
 #[allow(unused)]
 use crate::{Pallet as Server, ServerInterface};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::sp_runtime::SaturatedConversion;
 use frame_system::RawOrigin;
 use sp_std::vec;
 
@@ -21,10 +20,8 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
 
-		let server_id = 0;
-		let server_name = "myriad".as_bytes().to_vec();
+		let server_id = 0_u64;
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let server_web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
 		let _ = Server::<T>::register(caller_origin.clone(), server_api_url);
 		let new_api_url = "https://api.testnet.myriad.social".as_bytes().to_vec();
@@ -34,10 +31,8 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
 
-		let server_id = 0;
-		let server_name = "myriad".as_bytes().to_vec();
+		let server_id = 0_u64;
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let server_web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
 		let _ = Server::<T>::register(caller_origin.clone(), server_api_url);
 		let new_owner: T::AccountId = account("new_owner", 0, SEED);
@@ -47,10 +42,8 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
 
-		let server_id = 0;
-		let server_name = "myriad".as_bytes().to_vec();
+		let server_id = 0_u64;
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let server_web_url = "https://app.dev.myriad.social".as_bytes().to_vec();
 
 		let _ = Server::<T>::register(caller_origin.clone(), server_api_url);
 	}: _(RawOrigin::Signed(caller), server_id)
