@@ -5,13 +5,26 @@ pub trait TippingInterface<T: frame_system::Config> {
 	type Balance;
 	type ServerId;
 	type References;
-	type ReferenceType;
-	type ReferenceId;
 	type FtIdentifier;
 	type FtIdentifiers;
 	type SendTipResult;
 	type ClaimTipResult;
 	type ClaimReferenceResult;
+	type Receipt;
+	type WithdrawalResult;
+
+	fn pay_content(
+		sender: &T::AccountId,
+		receiver: &T::AccountId,
+		tips_balance_info: &Self::TipsBalanceInfo,
+		amount: &Self::Balance,
+	) -> Result<Self::Receipt, Self::Error>;
+
+	fn withdrawal_balance(
+		sender: &T::AccountId,
+		receiver: &T::AccountId,
+		ft_identifiers: &Self::FtIdentifiers,
+	) -> Result<Self::WithdrawalResult, Self::Error>;
 
 	fn send_tip(
 		sender: &T::AccountId,

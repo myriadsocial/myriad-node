@@ -699,6 +699,7 @@ impl pallet_server::Config for Runtime {
 
 impl pallet_tipping::Config for Runtime {
 	type Call = Call;
+	type TimeProvider = Timestamp;
 	type Event = Event;
 	type Currency = Balances;
 	type Assets = OctopusAssets;

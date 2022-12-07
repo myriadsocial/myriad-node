@@ -2,8 +2,9 @@ use crate::*;
 
 use frame_support::{
 	dispatch::DispatchError,
-	sp_runtime::traits::{AccountIdConversion, SaturatedConversion, Saturating, Zero},
-	traits::{fungibles, Currency, ExistenceRequirement, WithdrawReasons},
+	pallet_prelude::Encode,
+	sp_runtime::traits::{AccountIdConversion, Hash, SaturatedConversion, Saturating, Zero},
+	traits::{fungibles, Currency, ExistenceRequirement},
 	PalletId,
 };
 use sp_std::vec::Vec;
@@ -16,8 +17,54 @@ impl<T: Config> Pallet<T> {
 		PALLET_ID.into_account()
 	}
 
+	pub fn generate_receipt_id(
+		from: &T::AccountId,
+		to: &T::AccountId,
+		info: &TipsBalanceInfoOf<T>,
+	) -> T::Hash {
+		let mut from_bytes = from.encode();
+
+		let mut to_bytes = to.encode();
+		let mut server_id_bytes = info.get_server_id().encode();
+		let mut reference_type_bytes = info.get_reference_type().to_vec();
+		let mut reference_id_bytes = info.get_reference_id().to_vec();
+		let mut ft_identifier_bytes = info.get_ft_identifier().to_vec();
+
+		let from_info = frame_system::Pallet::<T>::account(from);
+
+		let mut nonce_bytes = from_info.nonce.encode();
+
+		from_bytes.append(&mut to_bytes);
+		from_bytes.append(&mut server_id_bytes);
+		from_bytes.append(&mut reference_type_bytes);
+		from_bytes.append(&mut reference_id_bytes);
+		from_bytes.append(&mut ft_identifier_bytes);
+		from_bytes.append(&mut nonce_bytes);
+
+		let seed = &from_bytes;
+		T::Hashing::hash(seed)
+	}
+
 	pub fn can_update_balance(tips_balance_key: &TipsBalanceKeyOf<T>) -> bool {
 		TipsBalanceByReference::<T>::contains_key(tips_balance_key)
+	}
+
+	pub fn can_pay_content(
+		sender: &T::AccountId,
+		amount: &BalanceOf<T>,
+	) -> Result<BalanceOf<T>, Error<T>> {
+		let fee: BalanceOf<T> = *amount / 20u128.saturated_into();
+		let minimum_balance = CurrencyOf::<T>::minimum_balance();
+		let total_transfer = *amount + fee;
+
+		let current_balance = CurrencyOf::<T>::total_balance(sender);
+		let transferable_balance = current_balance - minimum_balance;
+
+		if total_transfer > transferable_balance {
+			return Err(Error::<T>::InsufficientBalance)
+		}
+
+		Ok(fee)
 	}
 
 	pub fn can_pay_fee(
@@ -65,6 +112,31 @@ impl<T: Config> Pallet<T> {
 		}
 
 		None
+	}
+
+	pub fn do_update_withdrawal_balance(ft_identifier: &[u8], balance: BalanceOf<T>) {
+		WithdrawalBalance::<T>::mutate(ft_identifier, |value| {
+			*value += balance;
+		});
+	}
+
+	pub fn do_store_receipt(
+		from: &T::AccountId,
+		to: &T::AccountId,
+		detail: &TipsBalanceInfoOf<T>,
+		total_paid: &BalanceOf<T>,
+		total_fee: &BalanceOf<T>,
+	) -> ReceiptOf<T> {
+		let id = Self::generate_receipt_id(from, to, detail);
+		let now = T::TimeProvider::now().as_millis();
+		let receipt = Receipt::new(&id, from, to, detail, total_paid, total_fee, now);
+
+		Receipts::<T>::insert(id, &receipt);
+		ReceiptIds::<T>::mutate(|value| {
+			value.push(id);
+		});
+
+		receipt
 	}
 
 	pub fn do_store_tips_balance(
@@ -119,21 +191,15 @@ impl<T: Config> Pallet<T> {
 		amount: BalanceOf<T>,
 	) -> Result<(), DispatchError> {
 		if ft_identifier == b"native" {
-			let imb = CurrencyOf::<T>::withdraw(
-				sender,
-				amount,
-				WithdrawReasons::TRANSFER,
-				ExistenceRequirement::KeepAlive,
-			)?;
-
-			CurrencyOf::<T>::resolve_creating(receiver, imb);
+			CurrencyOf::<T>::transfer(sender, receiver, amount, ExistenceRequirement::KeepAlive)?;
 		} else {
 			let asset_id = Self::asset_id(ft_identifier)?;
-			let _ = <T::Assets as fungibles::Mutate<T::AccountId>>::teleport(
+			let _ = <T::Assets as fungibles::Transfer<T::AccountId>>::transfer(
 				asset_id,
 				sender,
 				receiver,
 				amount.saturated_into(),
+				true,
 			)?;
 		}
 

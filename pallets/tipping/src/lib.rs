@@ -20,7 +20,7 @@ pub use crate::interface::TippingInterface;
 pub use types::*;
 pub use weights::WeightInfo;
 
-pub use frame_support::traits::StorageVersion;
+pub use frame_support::traits::{StorageVersion, UnixTime};
 
 /// The current storage version.
 const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
@@ -31,8 +31,9 @@ pub mod pallet {
 
 	use frame_support::{
 		dispatch::DispatchResultWithPostInfo,
-		pallet_prelude::*,
+		pallet_prelude::{ValueQuery, *},
 		traits::{tokens::fungibles, Currency},
+		Blake2_128Concat,
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
@@ -40,9 +41,10 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Call: From<Call<Self>>;
+		type TimeProvider: UnixTime;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type Currency: Currency<<Self as frame_system::Config>::AccountId>;
-		type Assets: fungibles::Mutate<
+		type Assets: fungibles::Transfer<
 			<Self as frame_system::Config>::AccountId,
 			AssetId = AssetId,
 			Balance = AssetBalance,
@@ -69,6 +71,19 @@ pub mod pallet {
 		TipsBalanceOf<T>,
 	>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn receipts)]
+	pub(super) type Receipts<T: Config> = StorageMap<_, Blake2_128Concat, HashOf<T>, ReceiptOf<T>>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn withdrawal_balance)]
+	pub(super) type WithdrawalBalance<T: Config> =
+		StorageMap<_, Blake2_128Concat, FtIdentifier, BalanceOf<T>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn receipt_ids)]
+	pub(super) type ReceiptIds<T: Config> = StorageValue<_, Vec<HashOf<T>>, ValueQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -78,6 +93,10 @@ pub mod pallet {
 		ClaimTip(T::AccountId, (AccountBalancesOf<T>, Option<AccountBalancesOf<T>>)),
 		/// Claim reference success. [Vec<tips_balance>]
 		ClaimReference(Vec<TipsBalanceOf<T>>),
+		/// Pay unlockable content success. [who, receiver, (data, balance)]
+		PayUnlockableContent(ReceiptOf<T>),
+		/// Withdrawal succes [who, receiver, detail]
+		Withdrawal(T::AccountId, T::AccountId, Vec<(FtIdentifier, BalanceOf<T>)>),
 	}
 
 	#[pallet::error]
@@ -98,6 +117,49 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::weight(T::WeightInfo::pay_content())]
+		pub fn pay_content(
+			origin: OriginFor<T>,
+			receiver: AccountIdOf<T>,
+			tips_balance_info: TipsBalanceInfoOf<T>,
+			amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			let receipt = <Self as TippingInterface<T>>::pay_content(
+				&sender,
+				&receiver,
+				&tips_balance_info,
+				&amount,
+			)?;
+
+			Self::deposit_event(Event::PayUnlockableContent(receipt));
+			Ok(().into())
+		}
+
+		#[pallet::weight(T::WeightInfo::withdraw_fee())]
+		pub fn withdraw_fee(
+			origin: OriginFor<T>,
+			ft_identifiers: Vec<FtIdentifier>,
+			receiver: T::AccountId,
+		) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+
+			let mut ft_identifiers = ft_identifiers;
+
+			ft_identifiers.sort_unstable();
+			ft_identifiers.dedup();
+
+			let sender = Self::tipping_account_id();
+			let data = <Self as TippingInterface<T>>::withdrawal_balance(
+				&sender,
+				&receiver,
+				&ft_identifiers,
+			)?;
+
+			Self::deposit_event(Event::Withdrawal(sender, receiver, data));
+			Ok(().into())
+		}
+
 		#[pallet::weight(T::WeightInfo::send_tip())]
 		pub fn send_tip(
 			origin: OriginFor<T>,
@@ -105,6 +167,12 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
+
+			ensure!(
+				tips_balance_info.get_reference_type() != b"unlockable_content",
+				Error::<T>::Unauthorized
+			);
+
 			let (receiver, data) =
 				<Self as TippingInterface<T>>::send_tip(&sender, &tips_balance_info, &amount)?;
 

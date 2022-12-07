@@ -12,14 +12,69 @@ use sp_std::vec;
 const SEED: u32 = 0;
 
 benchmarks! {
+	pay_content {
+		let caller: T::AccountId = whitelisted_caller();
+		let server_id: T::AccountId = account("server_account", 0, SEED);
+		let receiver_id: T::AccountId = account("receiver_id", 0, SEED);
+
+		// Default balance
+		let balance = 1_000_000_000_000_000_000_000u128.saturated_into(); // 1000 MYRIA
+		let amount = 1_000_000_000_000_000_000u128.saturated_into(); // 1 MYRIA
+
+		// Caller initial balance
+		let _ = <T as Config>::Currency::deposit_creating(&caller, balance);
+
+		// Unlockable detail
+		let reference_id = b"unlockable_content_id".to_vec();
+		let reference_type = b"unlockable_content".to_vec();
+		let ft_identifier = b"native".to_vec();
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			&reference_type,
+			&reference_id,
+			&ft_identifier
+		);
+	}: _(RawOrigin::Signed(caller), receiver_id, tips_balance_info, amount)
+
+	withdraw_fee {
+		let caller: T::AccountId = whitelisted_caller();
+		let server_id: T::AccountId = account("server_account", 0, SEED);
+		let receiver_id: T::AccountId = account("receiver_id", 0, SEED);
+		let tipping_account_id: T::AccountId = Tipping::<T>::tipping_account_id();
+
+		// Default balance
+		let balance = 1_000_000_000_000_000_000_000u128.saturated_into(); // 1000 MYRIA
+		let amount = 1_000_000_000_000_000_000u128.saturated_into(); // 1 MYRIA
+
+		// Caller initial balance
+		let _ = <T as Config>::Currency::deposit_creating(&caller, balance);
+		let _ = <T as Config>::Currency::deposit_creating(&tipping_account_id, balance);
+
+		// Pay content
+		let reference_id = b"unlockable_content_id".to_vec();
+		let reference_type = b"unlockable_content".to_vec();
+		let ft_identifier = b"native".to_vec();
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			&reference_type,
+			&reference_id,
+			&ft_identifier
+		);
+
+		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller));
+		let _ = Tipping::<T>::pay_content(caller_origin, receiver_id, tips_balance_info, amount);
+
+		let receiver: T::AccountId = account("receiver", 0, SEED);
+	}: _(RawOrigin::Root, vec![b"native".to_vec()], receiver)
+
 	send_tip {
 		// Initial account
 		let caller: T::AccountId = whitelisted_caller();
 		let server_id: T::AccountId = account("server_account", 0, SEED);
 
 		// Default balance
-		let balance = 1000000000000000000000u128.saturated_into();
-		let amount = 1000000000000000u128.saturated_into();
+		let balance = 1_000_000_000_000_000_000_000u128.saturated_into(); // 1000 MYRIA
+		let amount = 1_000_000_000_000_000_000u128.saturated_into(); // 1 MYRIA
 
 		// Caller initial balance
 		let _ = <T as Config>::Currency::deposit_creating(&caller, balance);
@@ -45,8 +100,8 @@ benchmarks! {
 		let tipping_account_id: T::AccountId = Tipping::<T>::tipping_account_id();
 
 		// Default balance
-		let balance = 1000000000000000000000u128.saturated_into();
-		let tipping_amount = 10000000000000000000u128.saturated_into();
+		let balance = 1_000_000_000_000_000_000_000u128.saturated_into(); // 1000 MYRIA
+		let tipping_amount = 10_000_000_000_000_000_000u128.saturated_into(); // 10 MYRIA
 
 		// Tipping_account_id, account_1, and account_2 initial balance
 		let _ = <T as Config>::Currency::deposit_creating(&account_1, balance);
@@ -75,7 +130,7 @@ benchmarks! {
 
 		// Claim reference data
 		let server_id = caller.clone();
-		let trx_fee = 10000000000000u128.saturated_into();
+		let trx_fee = 10_000_000_000_000_000u128.saturated_into(); // 0.01 MYRIA
 		let references = References::new(b"people", &[b"people_id".to_vec()]);
 		let main_references = References::new(b"user", &[b"user_id".to_vec()]);
 		let ft_identifiers = vec![b"native".to_vec()];
@@ -91,8 +146,8 @@ account_3, trx_fee)
 		let tipping_account_id: T::AccountId = Tipping::<T>::tipping_account_id();
 
 		// Default balance
-		let balance = 1000000000000000000000u128.saturated_into();
-		let tipping_amount = 10000000000000000000u128.saturated_into();
+		let balance = 1_000_000_000_000_000_000_000u128.saturated_into(); // 1000 MYRIA
+		let tipping_amount = 10_000_000_000_000_000_000u128.saturated_into(); // 10 MYRIA
 
 		let _ = <T as Config>::Currency::deposit_creating(&caller, balance);
 		let _ = <T as Config>::Currency::deposit_creating(&account_1, balance);
@@ -121,7 +176,7 @@ account_3, trx_fee)
 
 		// Claim Reference
 		let server_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(server_id.clone()));
-		let tx_fee = 10000000000000u128.saturated_into();
+		let tx_fee = 10_000_000_000_000_000u128.saturated_into(); // 0.01 MYRIA
 		let _ = Tipping::<T>::claim_reference(
 			server_origin,
 			server_id.clone(),
