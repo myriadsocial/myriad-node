@@ -10,13 +10,67 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 	type Balance = BalanceOf<T>;
 	type ServerId = ServerIdOf<T>;
 	type References = References;
-	type ReferenceType = ReferenceType;
-	type ReferenceId = ReferenceId;
 	type FtIdentifier = FtIdentifier;
 	type FtIdentifiers = Vec<FtIdentifier>;
 	type SendTipResult = (AccountIdOf<T>, TipsBalanceTuppleOf<T>);
 	type ClaimTipResult = (AccountIdOf<T>, AccountBalancesTuppleOf<T>);
 	type ClaimReferenceResult = Vec<TipsBalanceOf<T>>;
+	type Receipt = ReceiptOf<T>;
+	type WithdrawalResult = Vec<(FtIdentifier, BalanceOf<T>)>;
+
+	fn pay_content(
+		sender: &T::AccountId,
+		receiver: &T::AccountId,
+		tips_balance_info: &Self::TipsBalanceInfo,
+		amount: &Self::Balance,
+	) -> Result<Self::Receipt, Self::Error> {
+		if sender == receiver {
+			return Err(DispatchError::BadOrigin)
+		}
+
+		let fee = Self::can_pay_content(sender, amount)?;
+		let tips_balance_info = TipsBalanceInfo::new(
+			tips_balance_info.get_server_id(),
+			b"unlockable_content",
+			tips_balance_info.get_reference_id(),
+			tips_balance_info.get_ft_identifier(),
+		);
+
+		let escrow_id = Self::tipping_account_id();
+		let ft_identifier = tips_balance_info.get_ft_identifier();
+
+		Self::do_transfer(ft_identifier, sender, receiver, *amount)?;
+		Self::do_transfer(ft_identifier, sender, &escrow_id, fee)?;
+
+		Self::do_update_withdrawal_balance(ft_identifier, fee);
+		let receipt = Self::do_store_receipt(sender, receiver, &tips_balance_info, amount, &fee);
+
+		Ok(receipt)
+	}
+
+	fn withdrawal_balance(
+		sender: &T::AccountId,
+		receiver: &T::AccountId,
+		ft_identifiers: &Self::FtIdentifiers,
+	) -> Result<Self::WithdrawalResult, Self::Error> {
+		let mut succes_withdrawal = Vec::new();
+
+		for ft in ft_identifiers.iter() {
+			let amount = Self::withdrawal_balance(ft);
+
+			let result = Self::do_transfer(ft, sender, receiver, amount);
+
+			if result.is_err() {
+				continue
+			}
+
+			WithdrawalBalance::<T>::remove(ft);
+
+			succes_withdrawal.push((ft.to_vec(), amount));
+		}
+
+		Ok(succes_withdrawal)
+	}
 
 	fn send_tip(
 		sender: &T::AccountId,

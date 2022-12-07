@@ -17,6 +17,7 @@ pub type AccountBalancesTuppleOf<T> = (AccountBalancesOf<T>, Option<AccountBalan
 pub type AssetId = u32;
 pub type AssetBalance = u128;
 
+pub type HashOf<T> = <T as frame_system::Config>::Hash;
 pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 pub type ServerIdOf<T> = AccountIdOf<T>;
 pub type CurrencyOf<T> = <T as self::Config>::Currency;
@@ -24,6 +25,7 @@ pub type BalanceOf<T> = <CurrencyOf<T> as Currency<AccountIdOf<T>>>::Balance;
 pub type TipsBalanceOf<T> = TipsBalance<BalanceOf<T>, AccountIdOf<T>, ServerIdOf<T>>;
 pub type TipsBalanceInfoOf<T> = TipsBalanceInfo<ServerIdOf<T>>;
 pub type TipsBalanceKeyOf<T> = TipsBalanceKey<ServerIdOf<T>>;
+pub type ReceiptOf<T> = Receipt<HashOf<T>, AccountIdOf<T>, BalanceOf<T>>;
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub struct TipsBalance<Balance, AccountId, ServerId> {
@@ -171,5 +173,42 @@ impl References {
 
 	pub fn get_reference_ids(&self) -> &Vec<Vec<u8>> {
 		&self.reference_ids
+	}
+}
+
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
+pub struct Receipt<Hash, AccountId, Balance> {
+	id: Hash,
+	from: AccountId,
+	to: AccountId,
+	info: TipsBalanceInfo<AccountId>,
+	amount: Balance,
+	fee: Balance,
+	created_at: u128,
+}
+impl<Hash, AccountId, Balance> Receipt<Hash, AccountId, Balance>
+where
+	Hash: Clone,
+	Balance: Clone + Saturating + Copy,
+	AccountId: Clone,
+{
+	pub fn new(
+		id: &Hash,
+		from: &AccountId,
+		to: &AccountId,
+		info: &TipsBalanceInfo<AccountId>,
+		amount: &Balance,
+		fee: &Balance,
+		created_at: u128,
+	) -> Self {
+		Self {
+			id: id.clone(),
+			from: from.clone(),
+			to: to.clone(),
+			info: info.clone(),
+			amount: *amount,
+			fee: *fee,
+			created_at,
+		}
 	}
 }

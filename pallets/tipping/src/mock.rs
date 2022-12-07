@@ -1,4 +1,5 @@
 use crate as pallet_tipping;
+
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU32, ConstU64, Everything, GenesisBuild},
@@ -28,6 +29,7 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Tipping: pallet_tipping::{Pallet, Call, Storage, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 	}
 );
 
@@ -65,6 +67,21 @@ impl system::Config for Test {
 	type MaxConsumers = ConstU32<2>;
 }
 
+pub type Moment = u64;
+pub const SLOT_DURATION: Moment = 10;
+
+parameter_types! {
+	pub const MinimumPeriod: Moment = SLOT_DURATION / 2;
+}
+
+impl pallet_timestamp::Config for Test {
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = Moment;
+	type OnTimestampSet = ();
+	type MinimumPeriod = MinimumPeriod;
+	type WeightInfo = ();
+}
+
 type Balance = u64;
 
 parameter_types! {
@@ -87,6 +104,7 @@ impl pallet_balances::Config for Test {
 
 impl pallet_tipping::Config for Test {
 	type Call = Call;
+	type TimeProvider = Timestamp;
 	type Event = Event;
 	type Currency = Balances;
 	type Assets = Assets;
@@ -141,6 +159,8 @@ impl ExternalityBuilder {
 		let bob_public = account_key("bob");
 		let john_public = account_key("john");
 		let satoshi_public = account_key("satoshi");
+		let sender_1_public = account_key("sender_1");
+		let sender_2_public = account_key("sender_2");
 		let admin_public = account_key("admin");
 
 		pallet_assets::GenesisConfig::<Test> {
@@ -155,11 +175,15 @@ impl ExternalityBuilder {
 				(1, john_public, 30),
 				(1, satoshi_public, 40),
 				(1, admin_public, 50),
+				(1, sender_1_public, 200),
+				(1, sender_2_public, 200),
 				(2, alice_public, 10),
 				(2, bob_public, 20),
 				(2, john_public, 30),
 				(2, satoshi_public, 40),
 				(2, admin_public, 50),
+				(2, sender_1_public, 200),
+				(2, sender_2_public, 200),
 			],
 		}
 		.assimilate_storage(&mut t)
@@ -172,6 +196,8 @@ impl ExternalityBuilder {
 				(john_public, 30),
 				(satoshi_public, 40),
 				(admin_public, 50),
+				(sender_1_public, 200),
+				(sender_2_public, 200),
 			],
 		}
 		.assimilate_storage(&mut t)
