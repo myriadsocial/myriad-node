@@ -167,15 +167,15 @@ impl ExternalityBuilder {
 				(1, john_public, 30),
 				(1, satoshi_public, 40),
 				(1, admin_public, 50),
-				(1, sender_1_public, 200),
-				(1, sender_2_public, 200),
+				(1, sender_1_public, 20_000),
+				(1, sender_2_public, 20_000),
 				(2, alice_public, 10),
 				(2, bob_public, 20),
 				(2, john_public, 30),
 				(2, satoshi_public, 40),
 				(2, admin_public, 50),
-				(2, sender_1_public, 200),
-				(2, sender_2_public, 200),
+				(2, sender_1_public, 20_000),
+				(2, sender_2_public, 20_000),
 			],
 		}
 		.assimilate_storage(&mut t)
@@ -188,8 +188,8 @@ impl ExternalityBuilder {
 				(john_public, 30),
 				(satoshi_public, 40),
 				(admin_public, 50),
-				(sender_1_public, 200),
-				(sender_2_public, 200),
+				(sender_1_public, 20_000),
+				(sender_2_public, 20_000),
 			],
 		}
 		.assimilate_storage(&mut t)

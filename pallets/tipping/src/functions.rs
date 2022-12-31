@@ -52,7 +52,7 @@ impl<T: Config> Pallet<T> {
 	pub fn can_pay_content(
 		sender: &T::AccountId,
 		amount: &BalanceOf<T>,
-	) -> Result<BalanceOf<T>, Error<T>> {
+	) -> Result<(BalanceOf<T>, BalanceOf<T>, BalanceOf<T>), Error<T>> {
 		let fee: BalanceOf<T> = *amount / 20u128.saturated_into();
 		let minimum_balance = CurrencyOf::<T>::minimum_balance();
 		let total_transfer = *amount + fee;
@@ -64,7 +64,10 @@ impl<T: Config> Pallet<T> {
 			return Err(Error::<T>::InsufficientBalance)
 		}
 
-		Ok(fee)
+		let admin_fee = fee / 20u128.saturated_into();
+		let reward_fee = fee - admin_fee;
+
+		Ok((fee, admin_fee, reward_fee))
 	}
 
 	pub fn can_pay_fee(
@@ -116,6 +119,17 @@ impl<T: Config> Pallet<T> {
 
 	pub fn do_update_withdrawal_balance(ft_identifier: &[u8], balance: BalanceOf<T>) {
 		WithdrawalBalance::<T>::mutate(ft_identifier, |value| {
+			*value += balance;
+		});
+	}
+
+	pub fn do_update_reward_balance(
+		tips_balance_info: &TipsBalanceInfoOf<T>,
+		balance: BalanceOf<T>,
+	) {
+		let server_id = tips_balance_info.get_server_id();
+		let ft_identifier = tips_balance_info.get_ft_identifier();
+		RewardBalance::<T>::mutate(server_id, ft_identifier, |value| {
 			*value += balance;
 		});
 	}

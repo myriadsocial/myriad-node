@@ -67,6 +67,36 @@ benchmarks! {
 		let receiver: T::AccountId = account("receiver", 0, SEED);
 	}: _(RawOrigin::Root, receiver)
 
+	withdraw_reward {
+		let caller: T::AccountId = whitelisted_caller();
+		let server_id: T::AccountId = account("server_account", 0, SEED);
+		let receiver_id: T::AccountId = account("receiver_id", 0, SEED);
+		let tipping_account_id: T::AccountId = Tipping::<T>::tipping_account_id();
+
+		// Default balance
+		let balance = 1_000_000_000_000_000_000_000u128.saturated_into(); // 1000 MYRIA
+		let amount = 1_000_000_000_000_000_000u128.saturated_into(); // 1 MYRIA
+
+		// Caller initial balance
+		let _ = <T as Config>::Currency::deposit_creating(&caller, balance);
+		let _ = <T as Config>::Currency::deposit_creating(&server_id, balance);
+		let _ = <T as Config>::Currency::deposit_creating(&tipping_account_id, balance);
+
+		// Pay content
+		let reference_id = b"unlockable_content_id".to_vec();
+		let reference_type = b"unlockable_content".to_vec();
+		let ft_identifier = b"native".to_vec();
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			&reference_type,
+			&reference_id,
+			&ft_identifier
+		);
+
+		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller));
+		let _ = Tipping::<T>::pay_content(caller_origin, receiver_id, tips_balance_info, amount);
+	}: _(RawOrigin::Signed(server_id))
+
 	send_tip {
 		// Initial account
 		let caller: T::AccountId = whitelisted_caller();

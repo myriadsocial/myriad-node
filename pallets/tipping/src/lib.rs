@@ -82,6 +82,18 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, FtIdentifier, BalanceOf<T>, ValueQuery>;
 
 	#[pallet::storage]
+	#[pallet::getter(fn reward_balance)]
+	pub(super) type RewardBalance<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		AccountIdOf<T>,
+		Blake2_128Concat,
+		FtIdentifier,
+		BalanceOf<T>,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
 	#[pallet::getter(fn receipt_ids)]
 	pub(super) type ReceiptIds<T: Config> = StorageValue<_, Vec<HashOf<T>>, ValueQuery>;
 
@@ -145,7 +157,17 @@ pub mod pallet {
 			ensure_root(origin)?;
 
 			let sender = Self::tipping_account_id();
-			let data = <Self as TippingInterface<T>>::withdrawal_balance(&sender, &receiver)?;
+			let data = <Self as TippingInterface<T>>::withdraw_fee(&sender, &receiver)?;
+
+			Self::deposit_event(Event::Withdrawal(sender, receiver, data));
+			Ok(().into())
+		}
+
+		#[pallet::weight(T::WeightInfo::withdraw_reward())]
+		pub fn withdraw_reward(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+			let sender = Self::tipping_account_id();
+			let receiver = ensure_signed(origin)?;
+			let data = <Self as TippingInterface<T>>::withdraw_reward(&sender, &receiver)?;
 
 			Self::deposit_event(Event::Withdrawal(sender, receiver, data));
 			Ok(().into())

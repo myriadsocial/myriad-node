@@ -20,7 +20,12 @@ pub trait TippingInterface<T: frame_system::Config> {
 		amount: &Self::Balance,
 	) -> Result<Self::Receipt, Self::Error>;
 
-	fn withdrawal_balance(
+	fn withdraw_fee(
+		sender: &T::AccountId,
+		receiver: &T::AccountId,
+	) -> Result<Self::WithdrawalResult, Self::Error>;
+
+	fn withdraw_reward(
 		sender: &T::AccountId,
 		receiver: &T::AccountId,
 	) -> Result<Self::WithdrawalResult, Self::Error>;

@@ -28,7 +28,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 			return Err(DispatchError::BadOrigin)
 		}
 
-		let fee = Self::can_pay_content(sender, amount)?;
+		let (total_fee, admin_fee, reward_fee) = Self::can_pay_content(sender, amount)?;
 		let tips_balance_info = TipsBalanceInfo::new(
 			tips_balance_info.get_server_id(),
 			b"unlockable_content",
@@ -40,15 +40,18 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		let ft_identifier = tips_balance_info.get_ft_identifier();
 
 		Self::do_transfer(ft_identifier, sender, receiver, *amount)?;
-		Self::do_transfer(ft_identifier, sender, &escrow_id, fee)?;
+		Self::do_transfer(ft_identifier, sender, &escrow_id, total_fee)?;
 
-		Self::do_update_withdrawal_balance(ft_identifier, fee);
-		let receipt = Self::do_store_receipt(sender, receiver, &tips_balance_info, amount, &fee);
+		Self::do_update_withdrawal_balance(ft_identifier, admin_fee);
+		Self::do_update_reward_balance(&tips_balance_info, reward_fee);
+
+		let receipt =
+			Self::do_store_receipt(sender, receiver, &tips_balance_info, amount, &total_fee);
 
 		Ok(receipt)
 	}
 
-	fn withdrawal_balance(
+	fn withdraw_fee(
 		sender: &T::AccountId,
 		receiver: &T::AccountId,
 	) -> Result<Self::WithdrawalResult, Self::Error> {
@@ -69,6 +72,31 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 
 			None
 		});
+
+		Ok(success_withdrawal)
+	}
+
+	fn withdraw_reward(
+		sender: &T::AccountId,
+		receiver: &T::AccountId,
+	) -> Result<Self::WithdrawalResult, Self::Error> {
+		let mut success_withdrawal = Vec::new();
+		let mut failed_withdrawal = Vec::new();
+
+		for (ft_identifier, amount) in RewardBalance::<T>::drain_prefix(receiver) {
+			let result = Self::do_transfer(&ft_identifier, sender, receiver, amount);
+
+			if result.is_ok() {
+				success_withdrawal.push((ft_identifier, amount));
+			} else {
+				failed_withdrawal.push((ft_identifier, amount));
+			}
+		}
+
+		// Reinsert again failed transfer
+		for (ft_identifier, amount) in failed_withdrawal.iter() {
+			RewardBalance::<T>::insert(receiver, ft_identifier, amount);
+		}
 
 		Ok(success_withdrawal)
 	}
