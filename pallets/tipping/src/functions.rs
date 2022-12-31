@@ -57,7 +57,7 @@ impl<T: Config> Pallet<T> {
 		let minimum_balance = CurrencyOf::<T>::minimum_balance();
 		let total_transfer = *amount + fee;
 
-		let current_balance = CurrencyOf::<T>::total_balance(sender);
+		let current_balance = CurrencyOf::<T>::free_balance(sender);
 		let transferable_balance = current_balance - minimum_balance;
 
 		if total_transfer > transferable_balance {

@@ -140,22 +140,12 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::withdraw_fee())]
 		pub fn withdraw_fee(
 			origin: OriginFor<T>,
-			ft_identifiers: Vec<FtIdentifier>,
 			receiver: T::AccountId,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
-			let mut ft_identifiers = ft_identifiers;
-
-			ft_identifiers.sort_unstable();
-			ft_identifiers.dedup();
-
 			let sender = Self::tipping_account_id();
-			let data = <Self as TippingInterface<T>>::withdrawal_balance(
-				&sender,
-				&receiver,
-				&ft_identifiers,
-			)?;
+			let data = <Self as TippingInterface<T>>::withdrawal_balance(&sender, &receiver)?;
 
 			Self::deposit_event(Event::Withdrawal(sender, receiver, data));
 			Ok(().into())

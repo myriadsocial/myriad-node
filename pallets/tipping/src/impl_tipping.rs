@@ -1,6 +1,6 @@
 use super::*;
 
-use frame_support::dispatch::DispatchError;
+use frame_support::{dispatch::DispatchError, sp_runtime::traits::Zero};
 use sp_std::vec::Vec;
 
 impl<T: Config> TippingInterface<T> for Pallet<T> {
@@ -51,25 +51,26 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 	fn withdrawal_balance(
 		sender: &T::AccountId,
 		receiver: &T::AccountId,
-		ft_identifiers: &Self::FtIdentifiers,
 	) -> Result<Self::WithdrawalResult, Self::Error> {
-		let mut succes_withdrawal = Vec::new();
+		let mut success_withdrawal = Vec::new();
 
-		for ft in ft_identifiers.iter() {
-			let amount = Self::withdrawal_balance(ft);
-
-			let result = Self::do_transfer(ft, sender, receiver, amount);
-
-			if result.is_err() {
-				continue
+		WithdrawalBalance::<T>::translate(|ft: Vec<u8>, amount: BalanceOf<T>| {
+			if amount.is_zero() {
+				return None
 			}
 
-			WithdrawalBalance::<T>::remove(ft);
+			let result = Self::do_transfer(&ft, sender, receiver, amount);
 
-			succes_withdrawal.push((ft.to_vec(), amount));
-		}
+			if result.is_err() {
+				return Some(amount)
+			}
 
-		Ok(succes_withdrawal)
+			success_withdrawal.push((ft, amount));
+
+			None
+		});
+
+		Ok(success_withdrawal)
 	}
 
 	fn send_tip(

@@ -23,7 +23,6 @@ pub trait TippingInterface<T: frame_system::Config> {
 	fn withdrawal_balance(
 		sender: &T::AccountId,
 		receiver: &T::AccountId,
-		ft_identifiers: &Self::FtIdentifiers,
 	) -> Result<Self::WithdrawalResult, Self::Error>;
 
 	fn send_tip(

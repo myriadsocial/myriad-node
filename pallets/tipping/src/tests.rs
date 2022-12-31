@@ -123,11 +123,9 @@ fn withdrawal_fee_works() {
 		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 5);
 		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 5);
 
-		let ft_identifiers = vec![b"native".to_vec(), b"1".to_vec()];
 		let receiver = account_key("satoshi");
 
-		assert_ok!(Tipping::withdraw_fee(RuntimeOrigin::root(), ft_identifiers, receiver));
-
+		assert_ok!(Tipping::withdraw_fee(RuntimeOrigin::root(), receiver));
 		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 0);
 		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 0);
 
@@ -535,11 +533,7 @@ fn call_event_should_work() {
 		)));
 
 		// Withdrawal Event
-		assert_ok!(Tipping::withdraw_fee(
-			RuntimeOrigin::root(),
-			vec![b"native".to_vec()],
-			receiver
-		));
+		assert_ok!(Tipping::withdraw_fee(RuntimeOrigin::root(), receiver));
 
 		let sender = Tipping::tipping_account_id();
 

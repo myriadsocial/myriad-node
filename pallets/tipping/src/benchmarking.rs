@@ -65,7 +65,7 @@ benchmarks! {
 		let _ = Tipping::<T>::pay_content(caller_origin, receiver_id, tips_balance_info, amount);
 
 		let receiver: T::AccountId = account("receiver", 0, SEED);
-	}: _(RawOrigin::Root, vec![b"native".to_vec()], receiver)
+	}: _(RawOrigin::Root, receiver)
 
 	send_tip {
 		// Initial account
