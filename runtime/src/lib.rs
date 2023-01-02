@@ -707,12 +707,20 @@ impl pallet_server::Config for Runtime {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	// In percentage
+	pub const AdminFee: u8 = 10;
+	pub const TransactionFee: u8 = 5;
+}
+
 impl pallet_tipping::Config for Runtime {
 	type Assets = OctopusAssets;
 	type Currency = Balances;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type TimeProvider = Timestamp;
+	type AdminFee = AdminFee;
+	type TransactionFee = TransactionFee;
 	type WeightInfo = ();
 }
 

@@ -4,7 +4,7 @@ use frame_support::{
 	dispatch::DispatchError,
 	pallet_prelude::Encode,
 	sp_runtime::traits::{AccountIdConversion, Hash, SaturatedConversion, Saturating, Zero},
-	traits::{fungibles, Currency, ExistenceRequirement},
+	traits::{fungibles, Currency, ExistenceRequirement, Get},
 	PalletId,
 };
 use sp_std::vec::Vec;
@@ -53,7 +53,11 @@ impl<T: Config> Pallet<T> {
 		sender: &T::AccountId,
 		amount: &BalanceOf<T>,
 	) -> Result<(BalanceOf<T>, BalanceOf<T>, BalanceOf<T>), Error<T>> {
-		let fee: BalanceOf<T> = *amount / 20u128.saturated_into();
+		let tx_fee_denom = 100u8.checked_div(T::TransactionFee::get())
+			.filter(|value| value <= &100u8)
+			.ok_or(Error::<T>::InsufficientFee)?;
+
+		let fee: BalanceOf<T> = *amount / tx_fee_denom.saturated_into();
 		let minimum_balance = CurrencyOf::<T>::minimum_balance();
 		let total_transfer = *amount + fee;
 
@@ -64,7 +68,11 @@ impl<T: Config> Pallet<T> {
 			return Err(Error::<T>::InsufficientBalance)
 		}
 
-		let admin_fee = fee / 20u128.saturated_into();
+		let admin_fee_denom = 100u8.checked_div(T::AdminFee::get())
+			.filter(|value| value <= &100u8)
+			.ok_or(Error::<T>::InsufficientFee)?;
+
+		let admin_fee = fee / admin_fee_denom.saturated_into();
 		let reward_fee = fee - admin_fee;
 
 		Ok((fee, admin_fee, reward_fee))

@@ -33,7 +33,7 @@ pub mod pallet {
 	use frame_support::{
 		dispatch::DispatchResultWithPostInfo,
 		pallet_prelude::*,
-		traits::{tokens::fungibles, Currency},
+		traits::{tokens::fungibles, Currency, Get},
 		Blake2_128Concat,
 	};
 	use frame_system::pallet_prelude::*;
@@ -51,6 +51,10 @@ pub mod pallet {
 			Balance = AssetBalance,
 		>;
 		type WeightInfo: WeightInfo;
+
+		#[pallet::constant]
+		type TransactionFee: Get<u8>;
+		type AdminFee: Get<u8>;
 	}
 
 	#[pallet::pallet]
@@ -119,6 +123,7 @@ pub mod pallet {
 		ServerNotRegister,
 		WrongFormat,
 		NotExists,
+		InsufficientFee,
 	}
 
 	#[pallet::hooks]

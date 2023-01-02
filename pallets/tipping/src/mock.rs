@@ -99,6 +99,22 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
+	pub const AdminFee: u8 = 5;
+	pub const TransactionFee: u8 = 5;
+}
+
+impl pallet_tipping::Config for Test {
+	type Call = Call;
+	type TimeProvider = Timestamp;
+	type Event = Event;
+	type Currency = Balances;
+	type Assets = Assets;
+	type WeightInfo = ();
+	type AdminFee = AdminFee;
+	type TransactionFee = TransactionFee;
+}
+
+parameter_types! {
 	pub const ApprovalDeposit: Balance = 1;
 	pub const AssetAccountDeposit: Balance = 10;
 	pub const AssetDeposit: Balance = 1;
