@@ -161,29 +161,36 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		receiver: &T::AccountId,
 		server_id: &Self::ServerId,
 		references: &Self::References,
-		main_references: &Self::References,
+		account_references: &Self::References,
 		ft_identifiers: &Self::FtIdentifiers,
 		account_id: &T::AccountId,
 		tx_fee: &Self::Balance,
 	) -> Result<Self::ClaimReferenceResult, Self::Error> {
-		let ref_type = main_references.get_reference_type().clone();
-		let ref_ids = main_references.get_reference_ids().clone();
+		let account_reference_type = account_references.get_reference_type().clone();
+		let account_reference_ids = account_references.get_reference_ids().clone();
 
 		if receiver == account_id {
 			return Err(DispatchError::BadOrigin)
 		}
 
+		if account_reference_ids.is_empty() {
+			return Err(DispatchError::BadOrigin)
+		}
+
+		// Pay Fee to Server Admin
 		let sender = Self::tipping_account_id();
-		let ref_id = ref_ids[0].clone();
-		let tips_balance_key = (server_id.clone(), ref_type, ref_id, b"native".to_vec());
+		let account_reference_id = account_reference_ids[0].clone();
+		let tips_balance_key =
+			(server_id.clone(), account_reference_type, account_reference_id, b"native".to_vec());
 
 		Self::can_pay_fee(&tips_balance_key, tx_fee)?;
 		Self::do_transfer(b"native", &sender, receiver, *tx_fee)?;
 
+		// Recap total tips belong to account
 		let tips_balances = Self::do_store_tips_balances(
 			server_id,
 			references,
-			main_references,
+			account_references,
 			ft_identifiers,
 			account_id,
 			tx_fee,
