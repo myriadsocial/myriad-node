@@ -4,7 +4,8 @@ use frame_support::{
 	traits::{ConstU32, Everything},
 };
 use frame_system as system;
-use sp_core::H256;
+use pallet_balances::AccountData;
+use sp_core::{sr25519, Pair, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
 	testing::Header,
@@ -22,6 +23,7 @@ construct_runtime!(
 	{
 		System: system::{Pallet, Call, Config, Storage, Event<T>},
 		Server: pallet_server::{Pallet, Call, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
 
@@ -42,7 +44,7 @@ impl system::Config for Test {
 	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = sp_core::sr25519::Public;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type Event = Event;
@@ -50,7 +52,7 @@ impl system::Config for Test {
 	type DbWeight = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -59,16 +61,82 @@ impl system::Config for Test {
 	type MaxConsumers = ConstU32<2>;
 }
 
+parameter_types! {
+	pub const MinimumStakeAmount: u64 = 3;
+	pub const ScheduledBlockTime: u32 = 10;
+	pub const MaxScheduledPerBlock: u32 = 5;
+}
+
 impl pallet_server::Config for Test {
 	type Event = Event;
+	type Currency = Balances;
+	type MinimumStakeAmount = MinimumStakeAmount;
+	type ScheduledBlockTime = ScheduledBlockTime;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
 	type WeightInfo = ();
 }
 
-pub struct ExternalityBuilder;
+type Balance = u64;
+
+parameter_types! {
+	pub static ExistentialDeposit: Balance = 0;
+}
+
+impl pallet_balances::Config for Test {
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	/// The type for recording an account's balance.
+	type Balance = Balance;
+	/// The ubiquitous event type.
+	type Event = Event;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type WeightInfo = ();
+}
+
+pub fn account_key(s: &str) -> sr25519::Public {
+	sr25519::Pair::from_string(&format!("//{}", s), None)
+		.expect("static values are valud; qed")
+		.public()
+}
+
+pub struct ExternalityBuilder {
+	existential_deposit: u64,
+}
 
 impl ExternalityBuilder {
-	pub fn build() -> TestExternalities {
-		let storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
-		TestExternalities::from(storage)
+	pub fn build(&self) -> TestExternalities {
+		let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+		let alice_public = account_key("alice");
+		let bob_public = account_key("bob");
+		let john_public = account_key("john");
+		let satoshi_public = account_key("satoshi");
+
+		pallet_balances::GenesisConfig::<Test> {
+			balances: vec![
+				(alice_public, 10),
+				(bob_public, 20),
+				(john_public, 30),
+				(satoshi_public, 2),
+			],
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+
+		let mut ext = TestExternalities::new(t);
+		ext.execute_with(|| System::set_block_number(1));
+		ext
+	}
+
+	pub fn existential_deposit(mut self, existential_deposit: u64) -> Self {
+		self.existential_deposit = existential_deposit;
+		self
+	}
+
+	pub fn default() -> Self {
+		Self { existential_deposit: 0 }
 	}
 }
