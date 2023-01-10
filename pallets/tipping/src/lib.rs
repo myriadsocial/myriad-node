@@ -31,7 +31,7 @@ pub mod pallet {
 
 	use frame_support::{
 		dispatch::DispatchResultWithPostInfo,
-		pallet_prelude::{ValueQuery, *},
+		pallet_prelude::*,
 		traits::{tokens::fungibles, Currency},
 		Blake2_128Concat,
 	};

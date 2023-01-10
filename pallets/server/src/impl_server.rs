@@ -1,23 +1,28 @@
 use super::*;
+use frame_support::traits::{ExistenceRequirement, Get};
+use sp_std::vec::Vec;
 
 impl<T: Config> ServerInterface<T> for Pallet<T> {
 	type Error = Error<T>;
 	type Server = ServerOf<T>;
-
-	fn get_by_id(server_id: u64) -> Option<Self::Server> {
-		Self::server_by_id(server_id)
-	}
+	type Balance = BalanceOf<T>;
+	type Action = ActionOf<T>;
 
 	fn register(owner: &T::AccountId, api_url: &[u8]) -> Result<Self::Server, Self::Error> {
 		Self::do_api_url_exist(api_url)?;
 
 		let count = Self::server_count();
 		let index = Self::server_index();
+		let stake_amount = Self::do_balance_sufficient(owner, None)?;
 
-		let server = Server::new(index, owner, api_url);
+		let server = Server::new(index, owner, api_url, stake_amount);
 
 		let updated_count = count.checked_add(1).ok_or(Error::<T>::Overflow)?;
 		let updated_index = index.checked_add(1).ok_or(Error::<T>::Overflow)?;
+
+		let receiver = Self::server_account_id(index);
+
+		Self::do_transfer(owner, &receiver, stake_amount, ExistenceRequirement::KeepAlive)?;
 
 		ServerCount::<T>::set(updated_count);
 		ServerIndex::<T>::set(updated_index);
@@ -51,22 +56,39 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 		Ok(())
 	}
 
-	fn unregister(server_id: u64, owner: &T::AccountId) -> Result<(), Self::Error> {
-		let server =
-			<Self as ServerInterface<T>>::get_by_id(server_id).ok_or(Error::<T>::NotExists)?;
+	fn unregister(server_id: u64, owner: &T::AccountId) -> Result<T::BlockNumber, Self::Error> {
+		ServerById::<T>::get(server_id)
+			.ok_or(Error::<T>::NotExists)?
+			.is_authorized(owner)
+			.ok_or(Error::<T>::Unauthorized)?;
 
-		let current_owner = server.get_owner();
+		let current_block_number = <frame_system::Pallet<T>>::block_number();
+		let scheduled_block_number = current_block_number + T::ScheduledBlockTime::get();
 
-		if current_owner != owner {
-			return Err(Error::<T>::Unauthorized)
-		}
+		Tasks::<T>::mutate(scheduled_block_number, |tasks: &mut Vec<ServerId>| {
+			if tasks.len() as u32 >= T::MaxScheduledPerBlock::get() {
+				return Err(Error::<T>::FailedToSchedule)
+			}
 
-		let count = Self::server_count().checked_sub(1).ok_or(Error::<T>::Overflow)?;
+			tasks.push(server_id);
 
-		ServerCount::<T>::set(count);
-		ServerById::<T>::remove(server_id);
-		ServerByOwner::<T>::remove(owner, server_id);
-		ServerByApiUrl::<T>::remove(server.get_api_url());
+			Ok(())
+		})?;
+
+		Ok(scheduled_block_number)
+	}
+
+	fn update_stake_amount(
+		server_id: u64,
+		owner: &T::AccountId,
+		action: &Self::Action,
+	) -> Result<(), Self::Error> {
+		let server_data_kind = match action {
+			Action::Stake(amount) => ServerDataKind::StakeAmount(*amount),
+			Action::Unstake(amount) => ServerDataKind::UnstakeAmount(*amount),
+		};
+
+		Self::do_mutate_server(server_id, owner, &server_data_kind)?;
 
 		Ok(())
 	}
@@ -80,6 +102,6 @@ where
 	type Server = ServerOf<T>;
 
 	fn get_by_id(id: u64) -> Option<ServerOf<T>> {
-		<Self as ServerInterface<T>>::get_by_id(id)
+		ServerById::<T>::get(id)
 	}
 }

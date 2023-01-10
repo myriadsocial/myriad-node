@@ -7,6 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use beefy_primitives::{crypto::AuthorityId as BeefyId, mmr::MmrLeafVersion};
+use currency::UNITS;
 use sp_api::impl_runtime_apis;
 use sp_consensus_babe::{
 	AllowedSlots::PrimaryAndSecondaryVRFSlots, BabeEpochConfiguration, BabeGenesisConfiguration,
@@ -691,9 +692,19 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
+parameter_types! {
+	pub const MinimumStakeAmount: Balance = 50_000 * UNITS;
+	pub const ScheduledBlockTime: BlockNumber = 5;
+	pub const MaxScheduledPerBlock: u32 = DAYS;
+}
+
 // Local pallets
 impl pallet_server::Config for Runtime {
 	type Event = Event;
+	type Currency = Balances;
+	type MinimumStakeAmount = MinimumStakeAmount;
+	type ScheduledBlockTime = ScheduledBlockTime;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
 	type WeightInfo = ();
 }
 

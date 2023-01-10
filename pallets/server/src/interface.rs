@@ -16,8 +16,8 @@ pub trait ServerProvider<T: frame_system::Config> {
 pub trait ServerInterface<T: frame_system::Config> {
 	type Error;
 	type Server;
-
-	fn get_by_id(server_id: u64) -> Option<Self::Server>;
+	type Balance: Copy;
+	type Action;
 
 	fn register(owner: &T::AccountId, api_url: &[u8]) -> Result<Self::Server, Self::Error>;
 
@@ -33,5 +33,11 @@ pub trait ServerInterface<T: frame_system::Config> {
 		new_api_url: &[u8],
 	) -> Result<(), Self::Error>;
 
-	fn unregister(server_id: u64, owner: &T::AccountId) -> Result<(), Self::Error>;
+	fn unregister(server_id: u64, owner: &T::AccountId) -> Result<T::BlockNumber, Self::Error>;
+
+	fn update_stake_amount(
+		server_id: u64,
+		owner: &T::AccountId,
+		action: &Self::Action,
+	) -> Result<(), Self::Error>;
 }
