@@ -1,5 +1,5 @@
 FROM ubuntu:20.04
-LABEL social.myriad.image.authors="myriad.dev@blocksphere.id"
+LABEL social.myriad.image.authors="dev@myriad.social"
 RUN apt-get update && \
 	DEBIAN_FRONTEND=noninteractive apt-get install -y \
 		libssl1.1 \

@@ -1,10 +1,5 @@
 use crate as pallet_server;
-use frame_support::{
-	construct_runtime, parameter_types,
-	traits::{ConstU32, Everything},
-};
-use frame_system as system;
-use pallet_balances::AccountData;
+
 use sp_core::{sr25519, Pair, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -12,8 +7,18 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 
+use frame_support::{
+	construct_runtime, parameter_types,
+	traits::{ConstU16, ConstU32, ConstU64, Everything},
+	weights::Weight,
+};
+use frame_system as system;
+
+use pallet_balances::AccountData;
+
 type UncheckedExtrinsic = system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = system::mocking::MockBlock<Test>;
+type Balance = u64;
 
 construct_runtime!(
 	pub enum Test where
@@ -21,44 +26,57 @@ construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: system::{Pallet, Call, Config, Storage, Event<T>},
-		Server: pallet_server::{Pallet, Call, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		System: system,
+		Server: pallet_server,
+		Balances: pallet_balances,
 	}
 );
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub const SS58Prefix: u8 = 42;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
+	pub BlockWeights: system::limits::BlockWeights = system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
 }
 
 impl system::Config for Test {
+	type AccountData = AccountData<Balance>;
+	type AccountId = sr25519::Public;
 	type BaseCallFilter = Everything;
-	type BlockWeights = ();
+	type BlockHashCount = ConstU64<250>;
 	type BlockLength = ();
-	type Origin = Origin;
-	type Index = u64;
-	type Call = Call;
 	type BlockNumber = u64;
+	type BlockWeights = ();
+	type DbWeight = ();
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = sp_core::sr25519::Public;
-	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
-	type BlockHashCount = BlockHashCount;
-	type DbWeight = ();
-	type Version = ();
-	type PalletInfo = PalletInfo;
-	type AccountData = AccountData<Balance>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type SS58Prefix = SS58Prefix;
-	type OnSetCode = ();
+	type Index = u64;
+	type Lookup = IdentityLookup<Self::AccountId>;
 	type MaxConsumers = ConstU32<2>;
+	type OnKilledAccount = ();
+	type OnNewAccount = ();
+	type OnSetCode = ();
+	type PalletInfo = PalletInfo;
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
+	type SS58Prefix = ConstU16<42>;
+	type SystemWeightInfo = ();
+	type Version = ();
+}
+
+parameter_types! {
+	pub static ExistentialDeposit: Balance = 0;
+}
+
+impl pallet_balances::Config for Test {
+	type AccountStore = System;
+	type Balance = Balance;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -68,31 +86,11 @@ parameter_types! {
 }
 
 impl pallet_server::Config for Test {
-	type Event = Event;
 	type Currency = Balances;
-	type MinimumStakeAmount = MinimumStakeAmount;
-	type ScheduledBlockTime = ScheduledBlockTime;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
-	type WeightInfo = ();
-}
-
-type Balance = u64;
-
-parameter_types! {
-	pub static ExistentialDeposit: Balance = 0;
-}
-
-impl pallet_balances::Config for Test {
-	type MaxLocks = ();
-	type MaxReserves = ();
-	type ReserveIdentifier = [u8; 8];
-	/// The type for recording an account's balance.
-	type Balance = Balance;
-	/// The ubiquitous event type.
-	type Event = Event;
-	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type AccountStore = System;
+	type MinimumStakeAmount = MinimumStakeAmount;
+	type RuntimeEvent = RuntimeEvent;
+	type ScheduledBlockTime = ScheduledBlockTime;
 	type WeightInfo = ();
 }
 

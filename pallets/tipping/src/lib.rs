@@ -1,10 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
+
+mod benchmarking;
 
 pub use pallet::*;
 pub use scale_info::{prelude::string::*, TypeInfo};
@@ -40,9 +41,9 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type Call: From<Call<Self>>;
+		type RuntimeCall: From<Call<Self>>;
 		type TimeProvider: UnixTime;
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<<Self as frame_system::Config>::AccountId>;
 		type Assets: fungibles::Transfer<
 			<Self as frame_system::Config>::AccountId,

@@ -43,35 +43,35 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Tipping ReceiptIds (r:1 w:1)
 	// Storage: Tipping Receipts (r:0 w:1)
 	fn pay_content() -> Weight {
-		165_900_000_u64
+		Weight::from_ref_time(165_900_000_u64)
 			.saturating_add(T::DbWeight::get().reads(5_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 	// Storage: Tipping WithdrawalBalance (r:1 w:1)
 	// Storage: System Account (r:2 w:2)
 	fn withdraw_fee() -> Weight {
-		165_800_000_u64
+		Weight::from_ref_time(165_800_000_u64)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	// Storage: System Account (r:1 w:1)
 	// Storage: Tipping TipsBalanceByReference (r:1 w:1)
 	fn send_tip() -> Weight {
-		122_100_000_u64
+		Weight::from_ref_time(122_100_000_u64)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: Tipping TipsBalanceByReference (r:2 w:2)
 	// Storage: System Account (r:1 w:1)
 	fn claim_reference() -> Weight {
-		165_100_000_u64
+		Weight::from_ref_time(165_100_000_u64)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	// Storage: Tipping TipsBalanceByReference (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn claim_tip() -> Weight {
-		107_400_000_u64
+		Weight::from_ref_time(107_400_000_u64)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -85,35 +85,35 @@ impl WeightInfo for () {
 	// Storage: Tipping ReceiptIds (r:1 w:1)
 	// Storage: Tipping Receipts (r:0 w:1)
 	fn pay_content() -> Weight {
-		165_900_000_u64
+		Weight::from_ref_time(165_900_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
 	// Storage: Tipping WithdrawalBalance (r:1 w:1)
 	// Storage: System Account (r:2 w:2)
 	fn withdraw_fee() -> Weight {
-		165_800_000_u64
+		Weight::from_ref_time(165_800_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	// Storage: System Account (r:1 w:1)
 	// Storage: Tipping TipsBalanceByReference (r:1 w:1)
 	fn send_tip() -> Weight {
-		122_100_000_u64
+		Weight::from_ref_time(122_100_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: Tipping TipsBalanceByReference (r:2 w:2)
 	// Storage: System Account (r:1 w:1)
 	fn claim_reference() -> Weight {
-		165_100_000_u64
+		Weight::from_ref_time(165_100_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	// Storage: Tipping TipsBalanceByReference (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn claim_tip() -> Weight {
-		107_400_000_u64
+		Weight::from_ref_time(107_400_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}

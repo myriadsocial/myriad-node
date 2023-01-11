@@ -18,7 +18,7 @@ fn pay_content_with_myria_works() {
 		);
 
 		assert_ok!(Tipping::pay_content(
-			Origin::signed(sender),
+			RuntimeOrigin::signed(sender),
 			receiver,
 			tips_balance_info.clone(),
 			amount
@@ -53,7 +53,7 @@ fn pay_content_with_assets_works() {
 			TipsBalanceInfo::new(&server_id, b"unlockable_content", b"unlockable_content_id", b"1");
 
 		assert_ok!(Tipping::pay_content(
-			Origin::signed(sender),
+			RuntimeOrigin::signed(sender),
 			receiver,
 			tips_balance_info.clone(),
 			amount
@@ -80,7 +80,12 @@ fn withdrawal_fee_works() {
 	<ExternalityBuilder>::default().existential_deposit(1).build().execute_with(|| {
 		let tipping_account_id = Tipping::tipping_account_id();
 
-		assert_ok!(Assets::mint(Origin::signed(account_key("alice")), 1, tipping_account_id, 2));
+		assert_ok!(Assets::mint(
+			RuntimeOrigin::signed(account_key("alice")),
+			1,
+			tipping_account_id,
+			2
+		));
 
 		let server_id = account_key("alice");
 		let sender_1 = account_key("sender_1");
@@ -99,7 +104,7 @@ fn withdrawal_fee_works() {
 		);
 
 		assert_ok!(Tipping::pay_content(
-			Origin::signed(sender_1),
+			RuntimeOrigin::signed(sender_1),
 			receiver_1,
 			tips_balance_info,
 			amount
@@ -109,7 +114,7 @@ fn withdrawal_fee_works() {
 			TipsBalanceInfo::new(&server_id, b"unlockable_content", b"unlockable_content_id", b"1");
 
 		assert_ok!(Tipping::pay_content(
-			Origin::signed(sender_2),
+			RuntimeOrigin::signed(sender_2),
 			receiver_2,
 			tips_balance_info,
 			amount
@@ -121,7 +126,7 @@ fn withdrawal_fee_works() {
 		let ft_identifiers = vec![b"native".to_vec(), b"1".to_vec()];
 		let receiver = account_key("satoshi");
 
-		assert_ok!(Tipping::withdraw_fee(Origin::root(), ft_identifiers, receiver));
+		assert_ok!(Tipping::withdraw_fee(RuntimeOrigin::root(), ft_identifiers, receiver));
 
 		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 0);
 		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 0);
@@ -139,7 +144,11 @@ fn send_tip_myria_works() {
 			TipsBalanceInfo::new(&server_id, b"people", b"people_id", b"native");
 		let tips_balance = TipsBalance::new(&tips_balance_info, &1);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info, 1));
+		assert_ok!(Tipping::send_tip(
+			RuntimeOrigin::signed(account_key("bob")),
+			tips_balance_info,
+			1
+		));
 
 		assert_eq!(
 			Tipping::tips_balance_by_reference((
@@ -162,7 +171,11 @@ fn send_tip_assets_works() {
 		let tips_balance_info = TipsBalanceInfo::new(&server_id, b"people", b"people_id", b"1");
 		let tips_balance = TipsBalance::new(&tips_balance_info, &1);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info, 1));
+		assert_ok!(Tipping::send_tip(
+			RuntimeOrigin::signed(account_key("bob")),
+			tips_balance_info,
+			1
+		));
 
 		assert_eq!(
 			Tipping::tips_balance_by_reference((
@@ -202,18 +215,30 @@ fn claim_reference_works() {
 		let mut main_tips_balance_1 = TipsBalance::new(&main_tips_balance_info_1, &1);
 		let mut main_tips_balance_2 = TipsBalance::new(&main_tips_balance_info_2, &2);
 
-		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info_0, 1));
-		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info_1, 1));
-		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info_2, 2));
+		assert_ok!(Tipping::send_tip(
+			RuntimeOrigin::signed(account_key("bob")),
+			tips_balance_info_0,
+			1
+		));
+		assert_ok!(Tipping::send_tip(
+			RuntimeOrigin::signed(account_key("bob")),
+			tips_balance_info_1,
+			1
+		));
+		assert_ok!(Tipping::send_tip(
+			RuntimeOrigin::signed(account_key("bob")),
+			tips_balance_info_2,
+			2
+		));
 
 		assert_ok!(Tipping::send_tip(
-			Origin::signed(account_key("bob")),
+			RuntimeOrigin::signed(account_key("bob")),
 			main_tips_balance_info_0,
 			1
 		));
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(account_key("alice")),
+			RuntimeOrigin::signed(account_key("alice")),
 			server_id,
 			References::new(b"people", &[b"people_id".to_vec()]),
 			References::new(b"user", &[b"user_id".to_vec()]),
@@ -298,8 +323,18 @@ pub fn claim_tip_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		let tipping_account_id = Tipping::tipping_account_id();
 
-		assert_ok!(Assets::mint(Origin::signed(account_key("alice")), 1, tipping_account_id, 2));
-		assert_ok!(Assets::mint(Origin::signed(account_key("alice")), 2, tipping_account_id, 2));
+		assert_ok!(Assets::mint(
+			RuntimeOrigin::signed(account_key("alice")),
+			1,
+			tipping_account_id,
+			2
+		));
+		assert_ok!(Assets::mint(
+			RuntimeOrigin::signed(account_key("alice")),
+			2,
+			tipping_account_id,
+			2
+		));
 
 		let server_id = account_key("alice");
 		let tips_balance_info_0 =
@@ -310,17 +345,29 @@ pub fn claim_tip_works() {
 		let main_tips_balance_info_0 =
 			TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
 
-		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info_0, 1));
-		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info_1, 1));
-		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info_2, 2));
 		assert_ok!(Tipping::send_tip(
-			Origin::signed(account_key("bob")),
+			RuntimeOrigin::signed(account_key("bob")),
+			tips_balance_info_0,
+			1
+		));
+		assert_ok!(Tipping::send_tip(
+			RuntimeOrigin::signed(account_key("bob")),
+			tips_balance_info_1,
+			1
+		));
+		assert_ok!(Tipping::send_tip(
+			RuntimeOrigin::signed(account_key("bob")),
+			tips_balance_info_2,
+			2
+		));
+		assert_ok!(Tipping::send_tip(
+			RuntimeOrigin::signed(account_key("bob")),
 			main_tips_balance_info_0,
 			1
 		));
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(account_key("alice")),
+			RuntimeOrigin::signed(account_key("alice")),
 			server_id,
 			References::new(b"people", &[b"people_id".to_vec()]),
 			References::new(b"user", &[b"user_id".to_vec()]),
@@ -330,7 +377,7 @@ pub fn claim_tip_works() {
 		));
 
 		assert_ok!(Tipping::claim_tip(
-			Origin::signed(account_key("john")),
+			RuntimeOrigin::signed(account_key("john")),
 			server_id,
 			b"user".to_vec(),
 			b"user_id".to_vec(),
@@ -351,7 +398,7 @@ fn cant_claim_reference() {
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(account_key("alice")),
+				RuntimeOrigin::signed(account_key("alice")),
 				account_key("bob"),
 				References::new(b"people", &[b"people_id".to_vec()]),
 				References::new(b"user", &[b"user_id".to_vec()]),
@@ -364,7 +411,7 @@ fn cant_claim_reference() {
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(account_key("alice")),
+				RuntimeOrigin::signed(account_key("alice")),
 				server_id,
 				References::new(b"people", &[b"people_id".to_vec()]),
 				References::new(b"user", &[b"user_id".to_vec()]),
@@ -377,7 +424,7 @@ fn cant_claim_reference() {
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(account_key("alice")),
+				RuntimeOrigin::signed(account_key("alice")),
 				server_id,
 				References::new(b"people", &[b"people_id".to_vec()]),
 				References::new(b"user", &[b"user_id".to_vec()]),
@@ -390,7 +437,7 @@ fn cant_claim_reference() {
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(account_key("alice")),
+				RuntimeOrigin::signed(account_key("alice")),
 				server_id,
 				References::new(b"people", &[b"people_id".to_vec()]),
 				References::new(b"user", &[b"user_id".to_vec(), b"user_idd".to_vec()]),
@@ -403,7 +450,7 @@ fn cant_claim_reference() {
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(account_key("alice")),
+				RuntimeOrigin::signed(account_key("alice")),
 				server_id,
 				References::new(b"people", &[b"people_id".to_vec()]),
 				References::new(b"user", &[b"user_id".to_vec()]),
@@ -418,14 +465,14 @@ fn cant_claim_reference() {
 			TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
 
 		assert_ok!(Tipping::send_tip(
-			Origin::signed(account_key("bob")),
+			RuntimeOrigin::signed(account_key("bob")),
 			main_tips_balance_info.clone(),
 			0,
 		));
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(account_key("alice")),
+				RuntimeOrigin::signed(account_key("alice")),
 				server_id,
 				References::new(b"people", &[b"people_id".to_vec()]),
 				References::new(b"user", &[b"user_id".to_vec()]),
@@ -437,14 +484,14 @@ fn cant_claim_reference() {
 		);
 
 		assert_ok!(Tipping::send_tip(
-			Origin::signed(account_key("bob")),
+			RuntimeOrigin::signed(account_key("bob")),
 			main_tips_balance_info,
 			1,
 		));
 
 		assert_noop!(
 			Tipping::claim_reference(
-				Origin::signed(account_key("alice")),
+				RuntimeOrigin::signed(account_key("alice")),
 				server_id,
 				References::new(b"people", &[b"people_id".to_vec()]),
 				References::new(b"user", &[b"user_id".to_vec()]),
@@ -474,7 +521,7 @@ fn call_event_should_work() {
 		);
 
 		assert_ok!(Tipping::pay_content(
-			Origin::signed(sender),
+			RuntimeOrigin::signed(sender),
 			receiver,
 			tips_balance_info.clone(),
 			amount
@@ -483,16 +530,20 @@ fn call_event_should_work() {
 		let receipt_ids = Tipping::receipt_ids();
 		let receipt_id = receipt_ids[0];
 
-		System::assert_last_event(Event::Tipping(crate::Event::PayUnlockableContent(
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::PayUnlockableContent(
 			Receipt::new(&receipt_id, &sender, &receiver, &tips_balance_info, &amount, &5, 0),
 		)));
 
 		// Withdrawal Event
-		assert_ok!(Tipping::withdraw_fee(Origin::root(), vec![b"native".to_vec()], receiver));
+		assert_ok!(Tipping::withdraw_fee(
+			RuntimeOrigin::root(),
+			vec![b"native".to_vec()],
+			receiver
+		));
 
 		let sender = Tipping::tipping_account_id();
 
-		System::assert_last_event(Event::Tipping(crate::Event::Withdrawal(
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::Withdrawal(
 			sender,
 			receiver,
 			vec![(b"native".to_vec(), 5)],
@@ -504,11 +555,15 @@ fn call_event_should_work() {
 			TipsBalanceInfo::new(&server_id, b"people", b"people_id", b"native");
 		let tips_balance_key = tips_balance_info.key();
 
-		assert_ok!(Tipping::send_tip(Origin::signed(account_key("bob")), tips_balance_info, 1));
+		assert_ok!(Tipping::send_tip(
+			RuntimeOrigin::signed(account_key("bob")),
+			tips_balance_info,
+			1
+		));
 
 		let tipping_account_id = Tipping::tipping_account_id();
 
-		System::assert_last_event(Event::Tipping(crate::Event::SendTip(
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::SendTip(
 			account_key("bob"),
 			tipping_account_id,
 			(tips_balance_key, 1),
@@ -519,13 +574,13 @@ fn call_event_should_work() {
 			TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
 
 		assert_ok!(Tipping::send_tip(
-			Origin::signed(account_key("bob")),
+			RuntimeOrigin::signed(account_key("bob")),
 			main_tips_balance_info.clone(),
 			1
 		));
 
 		assert_ok!(Tipping::claim_reference(
-			Origin::signed(account_key("alice")),
+			RuntimeOrigin::signed(account_key("alice")),
 			server_id,
 			References::new(b"people", &[b"people_id".to_vec()]),
 			References::new(b"user", &[b"user_id".to_vec()]),
@@ -538,7 +593,7 @@ fn call_event_should_work() {
 
 		main_tips_balance.set_account_id(&account_key("john"));
 
-		System::assert_last_event(Event::Tipping(crate::Event::ClaimReference(vec![
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::ClaimReference(vec![
 			main_tips_balance,
 		])));
 
@@ -547,20 +602,20 @@ fn call_event_should_work() {
 			TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
 
 		assert_ok!(Tipping::send_tip(
-			Origin::signed(account_key("bob")),
+			RuntimeOrigin::signed(account_key("bob")),
 			main_tips_balance_info,
 			1
 		));
 
 		assert_ok!(Tipping::claim_tip(
-			Origin::signed(account_key("john")),
+			RuntimeOrigin::signed(account_key("john")),
 			server_id,
 			b"user".to_vec(),
 			b"user_id".to_vec(),
 			vec![b"native".to_vec()],
 		));
 
-		System::assert_last_event(Event::Tipping(crate::Event::ClaimTip(
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::ClaimTip(
 			tipping_account_id,
 			(vec![(b"native".to_vec(), account_key("john"), 2)], None),
 		)));

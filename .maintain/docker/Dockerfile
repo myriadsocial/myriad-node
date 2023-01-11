@@ -23,7 +23,7 @@ RUN cargo build --release
 
 # Production image, copy all the files and run
 FROM debian:buster-20210816-slim AS runner
-LABEL social.myriad.image.authors="myriad.dev@blocksphere.id"
+LABEL social.myriad.image.authors="dev@myriad.social"
 # Create user and set ownership and permissions as required
 RUN useradd -m -u 1001 -U -s /bin/sh -d /home/myriad myriad && \
   # manage folder data
