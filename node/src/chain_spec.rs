@@ -16,8 +16,8 @@ use myriad_runtime::{
 	currency::{OCTS, UNITS as MYRIA},
 	opaque::{Block, SessionKeys},
 	AccountId, BabeConfig, Balance, BalancesConfig, GenesisConfig, OctopusAppchainConfig,
-	OctopusLposConfig, SessionConfig, Signature, SudoConfig, SystemConfig,
-	BABE_GENESIS_EPOCH_CONFIG, WASM_BINARY,
+	OctopusBridgeConfig, OctopusLposConfig, OctopusUpwardMessagesConfig, SessionConfig, Signature,
+	SudoConfig, SystemConfig, BABE_GENESIS_EPOCH_CONFIG, WASM_BINARY,
 };
 
 use serde::{Deserialize, Serialize};
@@ -281,13 +281,17 @@ fn genesis(
 		grandpa: Default::default(),
 		beefy: Default::default(),
 		im_online: Default::default(),
+		transaction_payment: Default::default(),
 		octopus_appchain: OctopusAppchainConfig {
 			anchor_contract: appchain_config.0,
-			asset_id_by_token_id: vec![(appchain_config.1, 0)],
-			premined_amount: appchain_config.2,
 			validators: initial_authorities.iter().map(|x| (x.0.clone(), x.6)).collect(),
 		},
+		octopus_bridge: OctopusBridgeConfig {
+			asset_id_by_token_id: vec![(appchain_config.1, 0)],
+			premined_amount: appchain_config.2,
+		},
 		octopus_lpos: OctopusLposConfig { era_payout: appchain_config.3, ..Default::default() },
+		octopus_upward_messages: OctopusUpwardMessagesConfig { interval: 1 },
 		octopus_assets: Default::default(),
 		sudo: SudoConfig { key: Some(root_key) },
 	}

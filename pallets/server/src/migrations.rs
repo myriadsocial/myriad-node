@@ -4,15 +4,17 @@ use crate::{
 	ServerIndex as NewServerIndex, ServerOf,
 };
 use frame_support::{
-	generate_storage_alias, pallet_prelude::*, sp_runtime::traits::SaturatedConversion,
-	traits::Get, weights::Weight, Blake2_128Concat,
+	pallet_prelude::*,
+	sp_runtime::traits::SaturatedConversion,
+	storage_alias,
+	traits::{Get, StorageVersion},
+	weights::Weight,
+	Blake2_128Concat,
 };
 use sp_std::vec::Vec;
 
 pub fn migrate<T: Config>() -> Weight {
-	use frame_support::traits::StorageVersion;
-
-	let mut weight: Weight = 0;
+	let mut weight: Weight = Weight::zero();
 	let mut version = StorageVersion::get::<Pallet<T>>();
 
 	if version < 1 {
@@ -69,10 +71,9 @@ mod versions {
 				pub web_url: Vec<u8>,
 			}
 
-			generate_storage_alias!(
-				Server,
-				ServerById<T: Config> => Map<(Blake2_128Concat, Vec<u8>), Server<AccountIdOf<T>>>
-			);
+			#[storage_alias]
+			type ServerById<T: Config> =
+				StorageMap<Server, Blake2_128Concat, Vec<u8>, Server<AccountIdOf<T>>>;
 
 			ServerById::<T>::translate(|_key, old: OldServer<AccountIdOf<T>>| {
 				weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
@@ -118,24 +119,23 @@ mod versions {
 				}
 			}
 
-			generate_storage_alias!(
-				Server,
-				OldServerById<T: Config> => Map<(Blake2_128Concat, Vec<u8>), OldServer<AccountIdOf<T>>>
-			);
+			#[storage_alias]
+			type OldServerById<T: Config> =
+				StorageMap<Server, Blake2_128Concat, Vec<u8>, OldServer<AccountIdOf<T>>>;
 
-			generate_storage_alias!(
-				Server,
-				ServerById<T: Config> => Map<(Blake2_128Concat, ServerId), Server<AccountIdOf<T>>>
-			);
+			#[storage_alias]
+			type ServerById<T: Config> =
+				StorageMap<Server, Blake2_128Concat, ServerId, Server<AccountIdOf<T>>>;
 
-			generate_storage_alias!(
+			#[storage_alias]
+			type ServerByOwner<T: Config> = StorageDoubleMap<
 				Server,
-				ServerByOwner<T: Config> => DoubleMap<
-					(Blake2_128Concat, AccountIdOf<T>),
-					(Blake2_128Concat, ServerId),
-					Server<AccountIdOf<T>>
-				>
-			);
+				Blake2_128Concat,
+				AccountIdOf<T>,
+				Blake2_128Concat,
+				ServerId,
+				Server<AccountIdOf<T>>,
+			>;
 
 			OldServerById::<T>::translate(|_key, old: OldServer<AccountIdOf<T>>| {
 				weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));

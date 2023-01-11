@@ -14,7 +14,7 @@ const PALLET_ID: PalletId = PalletId(*b"Tipping!");
 impl<T: Config> Pallet<T> {
 	/// The account ID that holds tipping's funds
 	pub fn tipping_account_id() -> T::AccountId {
-		PALLET_ID.into_account()
+		PALLET_ID.into_account_truncating()
 	}
 
 	pub fn generate_receipt_id(

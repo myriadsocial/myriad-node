@@ -1,6 +1,6 @@
 use sc_cli::{
-	BuildSpecCmd, CheckBlockCmd, ExportBlocksCmd, ExportStateCmd, ImportBlocksCmd, KeySubcommand,
-	PurgeChainCmd, RevertCmd, RunCmd,
+	BuildSpecCmd, ChainInfoCmd, CheckBlockCmd, ExportBlocksCmd, ExportStateCmd, ImportBlocksCmd,
+	KeySubcommand, PurgeChainCmd, RevertCmd, RunCmd, SignCmd, VanityCmd, VerifyCmd,
 };
 
 use frame_benchmarking_cli::BenchmarkCmd;
@@ -12,6 +12,9 @@ pub struct Cli {
 
 	#[clap(flatten)]
 	pub run: RunCmd,
+
+	#[clap(long)]
+	pub no_hardware_benchmarks: bool,
 }
 
 #[derive(Debug, clap::Subcommand)]
@@ -19,6 +22,15 @@ pub enum Subcommand {
 	/// Key management cli utilities
 	#[clap(subcommand)]
 	Key(KeySubcommand),
+
+	/// Sign a message, with a given (secret) key.
+	Sign(SignCmd),
+
+	/// Verify a signature for a message, provided on STDIN, with a given (public or secret) key.
+	Verify(VerifyCmd),
+
+	/// Generate a seed that provides a vanity address.
+	Vanity(VanityCmd),
 
 	/// Build a chain specification.
 	BuildSpec(BuildSpecCmd),
@@ -41,8 +53,11 @@ pub enum Subcommand {
 	/// Revert the chain to a previous state.
 	Revert(RevertCmd),
 
-	/// The custom benchmark subcommand benchmarking runtime pallets.
-	#[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
+	/// Db meta columns information.
+	ChainInfo(ChainInfoCmd),
+
+	/// Sub-commands concerned with benchmarking.
+	#[clap(subcommand)]
 	Benchmark(BenchmarkCmd),
 
 	/// Try some command against runtime state.

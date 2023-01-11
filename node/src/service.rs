@@ -1,20 +1,16 @@
-use crate::rpc::{BabeDeps, BeefyDeps, FullDeps, GrandpaDeps, IoHandlerRpcExtension};
+use crate::rpc::{BabeDeps, BeefyDeps, FullDeps, GrandpaDeps};
 
 use std::{sync::Arc, time::Duration};
 
 use sp_authorship::InherentDataProvider as AuthorshipInherentDataProvider;
-use sp_consensus::CanAuthorWithNativeVersion;
 use sp_consensus_babe::inherents::InherentDataProvider as BabeInherentDataProvider;
 use sp_runtime::traits::Block as BlockT;
 use sp_timestamp::InherentDataProvider;
-use sp_transaction_storage_proof::registration;
 
 use sc_basic_authorship::ProposerFactory;
-use sc_client_api::{BlockBackend, ExecutorProvider};
+use sc_client_api::BlockBackend;
 use sc_consensus::{DefaultImportQueue, LongestChain};
-use sc_consensus_babe::{
-	self, BabeBlockImport, BabeLink, BabeParams, Config as BabeConfig, SlotProportion,
-};
+use sc_consensus_babe::{self, BabeBlockImport, BabeLink, BabeParams, SlotProportion};
 use sc_consensus_slots::BackoffAuthoringOnFinalizedHeadLagging;
 use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch, NativeVersion};
 use sc_finality_grandpa::{
@@ -32,21 +28,19 @@ use sc_service::{
 use sc_telemetry::{Error as TelemetryError, Telemetry, TelemetryWorker};
 use sc_transaction_pool::{BasicPool, FullPool};
 
-use beefy_gadget::{
-	notification::{
-		BeefyBestBlockSender, BeefyBestBlockStream, BeefySignedCommitmentSender,
-		BeefySignedCommitmentStream,
-	},
-	BeefyParams,
-};
+use beefy_gadget::{import::BeefyBlockImport, BeefyParams, BeefyVoterLinks};
+
+use jsonrpsee::RpcModule;
 
 use myriad_runtime::{opaque::Block, RuntimeApi};
 
 /// The full client type definition.
-type FullClient = TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
+pub type FullClient = TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
 type FullBackend = TFullBackend<Block>;
 type FullSelectChain = LongestChain<FullBackend, Block>;
 type FullGrandpaBlockImport = GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
+type FullBeefyBlockImport =
+	BeefyBlockImport<Block, FullBackend, FullClient, FullGrandpaBlockImport>;
 /// The transaction pool type defintion.
 type TransactionPool = FullPool<Block, FullClient>;
 
@@ -96,12 +90,12 @@ pub fn new_partial(
 		FullPool<Block, FullClient>,
 		(
 			(
-				BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+				BabeBlockImport<Block, FullClient, FullBeefyBlockImport>,
 				BabeLink<Block>,
 				GrandpaLinkHalf<Block, FullClient, FullSelectChain>,
-				(BeefySignedCommitmentSender<Block>, BeefyBestBlockSender<Block>),
+				BeefyVoterLinks<Block>,
 			),
-			impl Fn(DenyUnsafe, SubscriptionTaskExecutor) -> Result<IoHandlerRpcExtension, ServiceError>,
+			impl Fn(DenyUnsafe, SubscriptionTaskExecutor) -> Result<RpcModule<()>, ServiceError>,
 			SharedVoterState,
 			Option<Telemetry>,
 		),
@@ -159,9 +153,16 @@ pub fn new_partial(
 
 	let justification_import = grandpa_block_import.clone();
 
+	let (beefy_block_import, beefy_voter_links, beefy_rpc_links) =
+		beefy_gadget::beefy_block_import_and_links(
+			grandpa_block_import,
+			backend.clone(),
+			client.clone(),
+		);
+
 	let (block_import, babe_link) = sc_consensus_babe::block_import(
-		BabeConfig::get(&*client)?,
-		grandpa_block_import,
+		sc_consensus_babe::configuration(&*client)?,
+		beefy_block_import,
 		client.clone(),
 	)?;
 
@@ -184,20 +185,14 @@ pub fn new_partial(
 			let uncles =
 				AuthorshipInherentDataProvider::<<Block as BlockT>::Header>::check_inherents();
 
-			Ok((timestamp, slot, uncles))
+			Ok((slot, timestamp, uncles))
 		},
 		&task_manager.spawn_essential_handle(),
 		config.prometheus_registry(),
-		CanAuthorWithNativeVersion::new(client.executor().clone()),
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let (beefy_commitment_link, beefy_commitment_stream) =
-		BeefySignedCommitmentStream::<Block>::channel();
-	let (beefy_best_block_link, beefy_best_block_stream) = BeefyBestBlockStream::<Block>::channel();
-	let beefy_links = (beefy_commitment_link, beefy_best_block_link);
-
-	let import_setup = (block_import, babe_link, grandpa_link, beefy_links);
+	let import_setup = (block_import, babe_link, grandpa_link, beefy_voter_links);
 
 	let (rpc_extensions_builder, shared_voter_state) = {
 		let (_, babe_link, grandpa_link, _) = &import_setup;
@@ -238,11 +233,15 @@ pub fn new_partial(
 						shared_authority_set: shared_authority_set.clone(),
 						justification_stream: justification_stream.clone(),
 						subscription_executor: subscription_executor.clone(),
-						finality_provider: finality_proof_provider.clone(),
+						finality_proof_provider: finality_proof_provider.clone(),
 					},
 					beefy: BeefyDeps {
-						beefy_commitment_stream: beefy_commitment_stream.clone(),
-						beefy_best_block_stream: beefy_best_block_stream.clone(),
+						beefy_finality_proof_stream: beefy_rpc_links
+							.from_voter_justif_stream
+							.clone(),
+						beefy_best_block_stream: beefy_rpc_links
+							.from_voter_best_beefy_stream
+							.clone(),
 						beefy_subscription_executor: subscription_executor,
 					},
 				};
@@ -269,7 +268,7 @@ pub fn new_partial(
 pub fn new_full_base(
 	mut config: Configuration,
 	with_startup_data: impl FnOnce(
-		&BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+		&BabeBlockImport<Block, FullClient, FullBeefyBlockImport>,
 		&BabeLink<Block>,
 	),
 ) -> Result<NewFullBase, ServiceError> {
@@ -284,7 +283,7 @@ pub fn new_full_base(
 		other: (import_setup, rpc_extensions_builder, shared_voter_state, mut telemetry),
 	} = new_partial(&config)?;
 
-	let (block_import, babe_link, grandpa_link, beefy_links) = import_setup;
+	let (block_import, babe_link, grandpa_link, beefy_voter_links) = import_setup;
 
 	let grandpa_protocol_name = sc_finality_grandpa::protocol_standard_name(
 		&client.block_hash(0).ok().flatten().expect("Genesis block exists; qed"),
@@ -310,7 +309,7 @@ pub fn new_full_base(
 		Vec::default(),
 	));
 
-	let (network, system_rpc_tx, network_starter) =
+	let (network, system_rpc_tx, tx_handler_controller, network_starter) =
 		sc_service::build_network(BuildNetworkParams {
 			config: &config,
 			client: client.clone(),
@@ -344,9 +343,10 @@ pub fn new_full_base(
 		task_manager: &mut task_manager,
 		keystore: keystore_container.sync_keystore(),
 		transaction_pool: transaction_pool.clone(),
-		rpc_extensions_builder: Box::new(rpc_extensions_builder),
+		rpc_builder: Box::new(rpc_extensions_builder),
 		network: network.clone(),
 		system_rpc_tx,
+		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
 	})?;
 
@@ -360,8 +360,6 @@ pub fn new_full_base(
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
 		);
-
-		let can_author_with = CanAuthorWithNativeVersion::new(client.executor().clone());
 
 		let client_clone = client.clone();
 		let slot_duration = babe_link.config().slot_duration();
@@ -389,15 +387,12 @@ pub fn new_full_base(
 						slot_duration,
 					);
 
-					let storage_proof = registration::new_data_provider(&*client_clone, &parent)?;
-
-					Ok((timestamp, slot, uncles, storage_proof))
+					Ok((slot, timestamp, uncles))
 				}
 			},
 			force_authoring,
 			backoff_authoring_blocks,
 			babe_link,
-			can_author_with,
 			block_proposal_slot_portion: SlotProportion::new(0.5),
 			max_block_proposal_slot_portion: None,
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
@@ -405,9 +400,11 @@ pub fn new_full_base(
 
 		let babe = sc_consensus_babe::start_babe(babe_params)?;
 
-		task_manager
-			.spawn_essential_handle()
-			.spawn_blocking("babe-proposer", None, babe);
+		task_manager.spawn_essential_handle().spawn_blocking(
+			"babe-proposer",
+			Some("block-authoring"),
+			babe,
+		);
 	}
 
 	// if the node isn't actively participating in consensus then it doesn't
@@ -456,16 +453,16 @@ pub fn new_full_base(
 	let beefy_params = BeefyParams {
 		client: client.clone(),
 		backend,
+		runtime: client.clone(),
 		key_store: keystore.clone(),
 		network: network.clone(),
-		signed_commitment_sender: beefy_links.0,
-		beefy_best_block_sender: beefy_links.1,
 		min_block_delta: 8,
 		prometheus_registry,
 		protocol_name: beefy_protocol_name,
+		links: beefy_voter_links,
 	};
 
-	let beefy = beefy_gadget::start_beefy_gadget::<_, _, _, _>(beefy_params);
+	let beefy = beefy_gadget::start_beefy_gadget::<_, _, _, _, _>(beefy_params);
 
 	task_manager.spawn_handle().spawn_blocking("beefy-gadget", None, beefy);
 

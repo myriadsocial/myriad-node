@@ -1,6 +1,6 @@
 use crate::*;
 use frame_support::{
-	sp_runtime::traits::{AccountIdConversion, Zero},
+	sp_runtime::traits::AccountIdConversion,
 	traits::{Currency, ExistenceRequirement, Get},
 	weights::Weight,
 	PalletId,
@@ -11,7 +11,7 @@ const PALLET_ID: PalletId = PalletId(*b"Server!!");
 
 impl<T: Config> Pallet<T> {
 	pub fn server_account_id(server_id: ServerId) -> T::AccountId {
-		PALLET_ID.into_sub_account(server_id)
+		PALLET_ID.into_sub_account_truncating(server_id)
 	}
 
 	pub fn do_api_url_exist(api_url: &[u8]) -> Result<(), Error<T>> {

@@ -1,9 +1,9 @@
 [package]
 name = 'pallet-server'
-version = '2.2.0'
+version = '2.3.0'
 edition = '2021'
 license = 'AGPL-3.0'
-authors = ['Myriad Dev Team <myriad.dev@blocksphere.id>']
+authors = ['Myriad Dev Team <dev@myriad.social>']
 homepage = 'https://myriad.social'
 repository = 'https://github.com/myriadsocial/myriad-node'
 
@@ -12,47 +12,46 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
 # External Dependencies
-codec = { package = 'parity-scale-codec', version = '3.0.0', default-features = false, features = ['derive'] }
-scale-info = { version = '2.0.1', default-features = false, features = ['derive'] }
+codec = { package = 'parity-scale-codec', version = '3.0.0', default-features = false, features = ['derive', 'max-encoded-len'] }
+scale-info = { version = '2.1.1', default-features = false, features = ['derive'] }
 
-# Substrate packages
+# Substrate Dependencies
 ## Substrate Primitive Dependencies
-sp-std = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.18', default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 
 ## Substrate Frame Dependencies
-frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
-frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.18', default-features = false, optional = true }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false, optional = true }
+frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 
 ## Substrate Pallet Dependencies
-pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.18', default-features = false }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 
 [dev-dependencies]
 # External Dependencies
 serde = { version = '1.0.136', default-features = false }
 hex-literal = { version = '0.3.4', default-features = false }
 
-# Substrate packages
+# Substrate Dependencies
 ## Substrate Primitive Dependencies
-sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
-sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.18', default-features = false }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 
 [features]
 default = ['std']
+runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
 	'codec/std',
 	'scale-info/std',
 
 	'sp-std/std',
 
+	'frame-benchmarking?/std',
 	'frame-support/std',
 	'frame-system/std',
-	'frame-benchmarking/std',
 
 	'pallet-balances/std',
 ]
-runtime-benchmarks = [
-	'frame-benchmarking'
-]
+
 try-runtime = ['frame-support/try-runtime']

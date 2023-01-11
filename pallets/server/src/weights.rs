@@ -45,8 +45,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Server ServerById (r:0 w:1)
 	// Storage: Server ServerByOwner (r:0 w:1)
 	fn register(s: u32, ) -> Weight {
-		208_368_000_u64			// Standard Error: 145_000
-			.saturating_add((8_000_u64).saturating_mul(s as Weight))
+		Weight::from_ref_time(208_368_000_u64)			// Standard Error: 145_000
+			.saturating_add(Weight::from_ref_time((8_000_u64).saturating_mul(s.into())))
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
@@ -54,21 +54,21 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Server ServerById (r:1 w:1)
 	// Storage: Server ServerByOwner (r:0 w:1)
 	fn update_api_url() -> Weight {
-		149_100_000_u64
+		Weight::from_ref_time(149_100_000_u64)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 	// Storage: Server ServerById (r:1 w:1)
 	// Storage: Server ServerByOwner (r:1 w:2)
 	fn transfer_owner() -> Weight {
-		110_600_000_u64
+		Weight::from_ref_time(110_600_000_u64)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	// Storage: Server ServerById (r:1 w:0)
 	// Storage: Server Tasks (r:1 w:1)
 	fn unregister() -> Weight {
-		116_900_000_u64
+		Weight::from_ref_time(116_900_000_u64)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -76,7 +76,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: System Account (r:1 w:1)
 	// Storage: Server ServerByOwner (r:0 w:1)
 	fn update_stake_amount() -> Weight {
-		140_300_000_u64
+		Weight::from_ref_time(140_300_000_u64)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -87,7 +87,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Server ServerByOwner (r:0 w:1)
 	// Storage: Server ServerByApiUrl (r:0 w:1)
 	fn on_initialize_server() -> Weight {
-		202_300_000_u64
+		Weight::from_ref_time(202_300_000_u64)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
@@ -102,8 +102,8 @@ impl WeightInfo for () {
 	// Storage: Server ServerById (r:0 w:1)
 	// Storage: Server ServerByOwner (r:0 w:1)
 	fn register(s: u32, ) -> Weight {
-		208_368_000_u64			// Standard Error: 145_000
-			.saturating_add((8_000_u64).saturating_mul(s as Weight))
+		Weight::from_ref_time(208_368_000_u64) 		// Standard Error: 145_000
+			.saturating_add(Weight::from_ref_time((8_000_u64).saturating_mul(s.into())))
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
@@ -111,21 +111,21 @@ impl WeightInfo for () {
 	// Storage: Server ServerById (r:1 w:1)
 	// Storage: Server ServerByOwner (r:0 w:1)
 	fn update_api_url() -> Weight {
-		149_100_000_u64
+		Weight::from_ref_time(149_100_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 	// Storage: Server ServerById (r:1 w:1)
 	// Storage: Server ServerByOwner (r:1 w:2)
 	fn transfer_owner() -> Weight {
-		110_600_000_u64
+		Weight::from_ref_time(110_600_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	// Storage: Server ServerById (r:1 w:0)
 	// Storage: Server Tasks (r:1 w:1)
 	fn unregister() -> Weight {
-		116_900_000_u64
+		Weight::from_ref_time(116_900_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
@@ -133,7 +133,7 @@ impl WeightInfo for () {
 	// Storage: System Account (r:1 w:1)
 	// Storage: Server ServerByOwner (r:0 w:1)
 	fn update_stake_amount() -> Weight {
-		140_300_000_u64
+		Weight::from_ref_time(140_300_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
@@ -144,7 +144,7 @@ impl WeightInfo for () {
 	// Storage: Server ServerByOwner (r:0 w:1)
 	// Storage: Server ServerByApiUrl (r:0 w:1)
 	fn on_initialize_server() -> Weight {
-		202_300_000_u64
+		Weight::from_ref_time(202_300_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
