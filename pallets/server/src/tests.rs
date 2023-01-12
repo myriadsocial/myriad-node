@@ -75,6 +75,7 @@ pub fn deregister_works() {
 
 		let server_id = 0u64;
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
+		let server = pallet_server::Server::new(server_id, &owner, &api_url, 3).set_unstaked_at(20);
 
 		System::set_block_number(10);
 
@@ -82,6 +83,8 @@ pub fn deregister_works() {
 		assert_ok!(Server::unregister(owner_origin, server_id));
 
 		assert_eq!(Server::tasks(20), vec![0]);
+		assert_eq!(Server::server_by_id(server_id), Some(server.clone()));
+		assert_eq!(Server::server_by_owner(owner, server_id), Some(server));
 	})
 }
 
@@ -147,7 +150,7 @@ pub fn unstake_server_works() {
 
 		let server_id = 0u64;
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-		let server = pallet_server::Server::new(server_id, &owner, &api_url, 0);
+		let server = pallet_server::Server::new(server_id, &owner, &api_url, 0).set_unstaked_at(11);
 
 		assert_ok!(Server::register(RuntimeOrigin::signed(owner), api_url.clone()));
 		assert_ok!(Server::unregister(RuntimeOrigin::signed(owner), server_id));
@@ -206,6 +209,41 @@ pub fn cant_register_when_balance_insufficient() {
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
 		assert_noop!(Server::register(owner_origin, api_url), Error::<Test>::InsufficientBalance,);
+	})
+}
+
+#[test]
+pub fn cant_update_server_where_already_deregister() {
+	<ExternalityBuilder>::default().existential_deposit(1).build().execute_with(|| {
+		let owner = account_key("alice");
+		let owner_origin = RuntimeOrigin::signed(owner);
+
+		let server_id = 0u64;
+		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
+
+		System::set_block_number(10);
+
+		assert_ok!(Server::register(RuntimeOrigin::signed(owner), api_url));
+		assert_ok!(Server::unregister(owner_origin.clone(), server_id));
+
+		let new_owner = account_key("bob");
+		let new_api_url = "https://api.testnet.myriad.social".as_bytes().to_vec();
+		let new_action = Action::Stake(10);
+
+		assert_noop!(
+			Server::transfer_owner(owner_origin.clone(), server_id, new_owner),
+			Error::<Test>::WaitingToUnstaked,
+		);
+
+		assert_noop!(
+			Server::update_api_url(owner_origin.clone(), server_id, new_api_url),
+			Error::<Test>::WaitingToUnstaked,
+		);
+
+		assert_noop!(
+			Server::update_stake_amount(owner_origin, server_id, new_action),
+			Error::<Test>::WaitingToUnstaked,
+		);
 	})
 }
 

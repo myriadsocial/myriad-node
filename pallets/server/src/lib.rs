@@ -24,7 +24,7 @@ pub use weights::WeightInfo;
 use frame_support::traits::StorageVersion;
 
 /// The current storage version.
-const STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(6);
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -128,6 +128,7 @@ pub mod pallet {
 		InsufficientBalance,
 		FailedToSchedule,
 		UnstakingLimitBalance,
+		WaitingToUnstaked,
 	}
 
 	#[pallet::hooks]

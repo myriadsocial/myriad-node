@@ -42,6 +42,11 @@ pub fn migrate<T: Config>() -> Weight {
 		version = StorageVersion::new(5);
 	}
 
+	if version == 5 {
+		weight = weight.saturating_add(versions::v6::migrate::<T>());
+		version = StorageVersion::new(6);
+	}
+
 	version.put::<Pallet<T>>();
 	weight
 }
@@ -222,20 +227,81 @@ mod versions {
 				api_url: Vec<u8>,
 			}
 
-			NewServerById::<T>::translate(|server_id: ServerId, old: OldServer<AccountIdOf<T>>| {
+			#[allow(dead_code)]
+			#[derive(Encode, Decode, Clone)]
+			pub struct Server<AccountId, Balance> {
+				id: u64,
+				owner: AccountId,
+				api_url: Vec<u8>,
+				staked_amount: Balance,
+			}
+
+			#[storage_alias]
+			type ServerById<T: Config> = StorageMap<
+				Server,
+				Blake2_128Concat,
+				ServerId,
+				Server<AccountIdOf<T>, BalanceOf<T>>,
+			>;
+
+			#[storage_alias]
+			type ServerByOwner<T: Config> = StorageDoubleMap<
+				Server,
+				Blake2_128Concat,
+				AccountIdOf<T>,
+				Blake2_128Concat,
+				ServerId,
+				Server<AccountIdOf<T>, BalanceOf<T>>,
+			>;
+
+			ServerById::<T>::translate(|server_id: ServerId, old: OldServer<AccountIdOf<T>>| {
 				weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 
-				let new_server = NewServer::new(
-					server_id,
-					&old.owner,
-					&old.api_url,
-					0u128.saturated_into::<BalanceOf<T>>(),
-				);
+				let new_server = Server {
+					id: server_id,
+					owner: old.owner.clone(),
+					api_url: old.api_url,
+					staked_amount: 0u128.saturated_into::<BalanceOf<T>>(),
+				};
 
-				NewServerByOwner::<T>::insert(&old.owner, server_id, &new_server);
+				ServerByOwner::<T>::insert(&old.owner, server_id, &new_server);
 
 				Some(new_server)
 			});
+
+			weight
+		}
+	}
+
+	pub mod v6 {
+		use crate::BalanceOf;
+
+		use super::*;
+
+		pub fn migrate<T: Config>() -> Weight {
+			let mut weight = T::DbWeight::get().writes(1);
+
+			#[allow(dead_code)]
+			#[derive(Encode, Decode, Clone)]
+			pub struct OldServer<AccountId, Balance> {
+				id: u64,
+				owner: AccountId,
+				api_url: Vec<u8>,
+				staked_amount: Balance,
+			}
+
+			NewServerById::<T>::translate(
+				|server_id: ServerId, old: OldServer<AccountIdOf<T>, BalanceOf<T>>| {
+					weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+
+					let new_server =
+						NewServer::new(server_id, &old.owner, &old.api_url, old.staked_amount);
+
+					NewServerByOwner::<T>::insert(&old.owner, server_id, &new_server);
+
+					Some(new_server)
+				},
+			);
 
 			weight
 		}

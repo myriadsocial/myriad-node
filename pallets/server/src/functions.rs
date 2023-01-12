@@ -65,6 +65,10 @@ impl<T: Config> Pallet<T> {
 					return Err(Error::<T>::Unauthorized)
 				}
 
+				if server.get_unstaked_at().is_some() {
+					return Err(Error::<T>::WaitingToUnstaked)
+				}
+
 				let updated_server = match data {
 					ServerDataKind::Owner(new_owner) => {
 						let server = server.clone().set_owner(new_owner);

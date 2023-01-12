@@ -57,7 +57,7 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 	}
 
 	fn unregister(server_id: u64, owner: &T::AccountId) -> Result<T::BlockNumber, Self::Error> {
-		ServerById::<T>::get(server_id)
+		let server = ServerById::<T>::get(server_id)
 			.ok_or(Error::<T>::NotExists)?
 			.is_authorized(owner)
 			.ok_or(Error::<T>::Unauthorized)?;
@@ -74,6 +74,11 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 
 			Ok(())
 		})?;
+
+		let server = server.set_unstaked_at(scheduled_block_number);
+
+		ServerById::<T>::insert(server_id, &server);
+		ServerByOwner::<T>::insert(owner, server_id, &server);
 
 		Ok(scheduled_block_number)
 	}
