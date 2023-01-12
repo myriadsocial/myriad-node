@@ -693,9 +693,9 @@ impl pallet_sudo::Config for Runtime {
 
 // Local pallets
 parameter_types! {
-	pub const MaxScheduledPerBlock: u32 = DAYS;
+	pub const MaxScheduledPerBlock: u32 = 5;
 	pub const MinimumStakeAmount: Balance = 50_000 * currency::DOLLARS;
-	pub const ScheduledBlockTime: BlockNumber = 5;
+	pub const ScheduledBlockTime: BlockNumber = DAYS;
 }
 
 impl pallet_server::Config for Runtime {

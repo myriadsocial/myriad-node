@@ -1,6 +1,6 @@
 use crate::*;
 use frame_support::{
-	sp_runtime::traits::AccountIdConversion,
+	sp_runtime::traits::{AccountIdConversion, Zero},
 	traits::{Currency, ExistenceRequirement, Get},
 	weights::Weight,
 	PalletId,
@@ -130,6 +130,7 @@ impl<T: Config> Pallet<T> {
 			let server = ServerById::<T>::get(server_id);
 
 			if let Some(server) = server {
+				let server = server.set_stake_amount(Zero::zero());
 				let count = Self::server_count().saturating_sub(1);
 				let sender = Self::server_account_id(server_id);
 				let receiver = server.get_owner();
@@ -150,8 +151,8 @@ impl<T: Config> Pallet<T> {
 
 					ServerCount::<T>::set(count);
 					ServerById::<T>::remove(server_id);
-					ServerByOwner::<T>::remove(receiver, server_id);
 					ServerByApiUrl::<T>::remove(server.get_api_url());
+					ServerByOwner::<T>::insert(receiver, server_id, &server);
 
 					Self::deposit_event(Event::Unregistered(server_id));
 					Self::deposit_event(Event::Unstaked(receiver.clone(), server_id, amount));

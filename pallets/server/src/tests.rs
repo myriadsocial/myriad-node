@@ -147,6 +147,7 @@ pub fn unstake_server_works() {
 
 		let server_id = 0u64;
 		let api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
+		let server = pallet_server::Server::new(server_id, &owner, &api_url, 0);
 
 		assert_ok!(Server::register(RuntimeOrigin::signed(owner), api_url.clone()));
 		assert_ok!(Server::unregister(RuntimeOrigin::signed(owner), server_id));
@@ -167,7 +168,7 @@ pub fn unstake_server_works() {
 		let server_account_id = Server::server_account_id(server_id);
 
 		assert_eq!(Server::server_by_id(server_id), None);
-		assert_eq!(Server::server_by_owner(owner, server_id), None);
+		assert_eq!(Server::server_by_owner(owner, server_id), Some(server));
 		assert_eq!(Server::server_by_api_url(api_url), None);
 		assert_eq!(Server::server_count(), 1);
 		assert_eq!(Server::server_index(), 2);
