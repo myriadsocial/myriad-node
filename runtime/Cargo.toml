@@ -39,6 +39,8 @@ sp-staking = { git = 'https://github.com/paritytech/substrate.git', branch = 'po
 sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 sp-transaction-pool = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 sp-version = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
+sp-npos-elections = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
+
 
 ## Substrate Frame Dependencies
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false, optional = true }
@@ -145,6 +147,7 @@ std = [
 	'sp-transaction-pool/std',
 	'sp-version/std',
 	'sp-sandbox/std',
+	'sp-npos-elections/std',
 
 	## Substrate Frame Dependencies
 	'frame-benchmarking?/std',
@@ -172,6 +175,7 @@ std = [
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
 	'pallet-uniques/std',
+	'pallet-offences-benchmarking/std',
 
 	# Octopus Dependencies
 	## Octopus Pallet Dependencies

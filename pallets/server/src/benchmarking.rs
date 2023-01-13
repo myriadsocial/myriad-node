@@ -3,7 +3,7 @@
 use super::*;
 
 #[allow(unused)]
-use crate::{Action, Pallet as Server, ServerInterface};
+use crate::{Action, ActionType, Pallet as Server, ServerInterface};
 
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::{
@@ -22,31 +22,21 @@ benchmarks! {
 
 		// Default balance
 		let balance = 100_000_000_000_000_000_000_000u128.saturated_into(); // 100_000 MYRIA
+		let stake_amount = 60_000_000_000_000_000_000_000u128.saturated_into();
 
 		// Caller initial balance
 		let _ = <T as Config>::Currency::deposit_creating(&caller, balance);
-	}: _(RawOrigin::Signed(caller), vec![s as u8])
+	}: _(RawOrigin::Signed(caller), vec![s as u8], Some(stake_amount))
 
-	update_api_url {
-		let caller: T::AccountId = whitelisted_caller();
-		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
-
-		// Default balance
-		let balance = 100_000_000_000_000_000_000_000u128.saturated_into(); // 100_000 MYRIA
-
-		// Caller initial balance
-		let _ = <T as Config>::Currency::deposit_creating(&caller, balance);
-
-		let server_id = 0u64;
-		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
-
-		let _ = Server::<T>::register(caller_origin.clone(), server_api_url);
+	update_server {
+		let new_owner = account("new_owner", 0, SEED);
 		let new_api_url = "https://api.testnet.myriad.social".as_bytes().to_vec();
-	}: _(RawOrigin::Signed(caller), server_id, new_api_url)
+		let new_stake_amount = 10_000_000_000_000_000_000u128.saturated_into(); // 10 MYRIA
+		let action_types = vec![ActionType::StakeAmount(new_stake_amount), ActionType::UpdateApiUrl(new_api_url), ActionType::TransferOwner(new_owner)];
 
-	transfer_owner {
+		let s in 0 .. 2;
 		let caller: T::AccountId = whitelisted_caller();
-		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
+		let caller_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
 
 		// Default balance
 		let balance = 100_000_000_000_000_000_000_000u128.saturated_into(); // 100_000 MYRIA
@@ -57,13 +47,12 @@ benchmarks! {
 		let server_id = 0u64;
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		let _ = Server::<T>::register(caller_origin.clone(), server_api_url);
-		let new_owner: T::AccountId = account("new_owner", 0, SEED);
-	}: _(RawOrigin::Signed(caller), server_id, new_owner)
+		let _ = Server::<T>::register(caller_origin.clone(), server_api_url, None);
+	}: _(RawOrigin::Signed(caller), server_id, action_types[s as usize].clone())
 
 	unregister {
 		let caller: T::AccountId = whitelisted_caller();
-		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
+		let caller_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
 
 		// Default balance
 		let balance = 100_000_000_000_000_000_000_000u128.saturated_into(); // 100_000 MYRIA
@@ -74,12 +63,12 @@ benchmarks! {
 		let server_id = 0u64;
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		let _ = Server::<T>::register(caller_origin.clone(), server_api_url);
+		let _ = Server::<T>::register(caller_origin.clone(), server_api_url, None);
 	}: _(RawOrigin::Signed(caller), server_id)
 
-	update_stake_amount {
+	cancel_unregister {
 		let caller: T::AccountId = whitelisted_caller();
-		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
+		let caller_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
 
 		// Default balance
 		let balance = 100_000_000_000_000_000_000_000u128.saturated_into(); // 100_000 MYRIA
@@ -90,13 +79,13 @@ benchmarks! {
 		let server_id = 0u64;
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		let _ = Server::<T>::register(caller_origin.clone(), server_api_url);
-		let stake_amount = 10_000_000_000_000_000_000u128.saturated_into(); // 10 MYRIA
-	}: _(RawOrigin::Signed(caller), server_id, Action::Stake(stake_amount))
+		let _ = Server::<T>::register(caller_origin.clone(), server_api_url, None);
+		let _ = Server::<T>::unregister(caller_origin, server_id);
+	}: _(RawOrigin::Signed(caller), server_id)
 
 	on_initialize_server {
 		let caller: T::AccountId = whitelisted_caller();
-		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone()));
+		let caller_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
 
 		// Default balance
 		let balance = 100_000_000_000_000_000_000_000u128.saturated_into(); // 100_000 MYRIA
@@ -107,7 +96,7 @@ benchmarks! {
 		let server_id = 0u64;
 		let server_api_url = "https://api.dev.myriad.social".as_bytes().to_vec();
 
-		let _ = Server::<T>::register(caller_origin.clone(), server_api_url);
+		let _ = Server::<T>::register(caller_origin.clone(), server_api_url, None);
 
 		// Current block
 		let current_block = System::<T>::block_number();
