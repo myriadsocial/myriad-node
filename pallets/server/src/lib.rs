@@ -98,20 +98,12 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Register server success. [server]
 		Registered(ServerOf<T>),
-		/// Name updated success. [name, server_id]
-		NameUpdated(Vec<u8>, ServerId),
-		/// Api url updated success. [api_url, server_id]
-		ApiUrlUpdated(Vec<u8>, ServerId),
-		/// Web url updated success. [web_url, server_id]
-		WebUrlUpdated(Vec<u8>, ServerId),
-		/// Owner transferred success. [new_owner, server_id]
-		OwnerTransferred(T::AccountId, ServerId),
+		/// Server updated success. [account_id, server_id, action_type]
+		ServerUpdated(T::AccountId, ServerId, ActionTypeOf<T>),
 		/// Unregister server success. [server_id]
 		Unregistered(ServerId),
 		/// Staked success. [account_id, server_id, amount]
 		Staked(T::AccountId, ServerId, BalanceOf<T>),
-		/// Stake amount updated success. [account_id, server_id, action]
-		StakedAmountUpdated(T::AccountId, ServerId, ActionOf<T>),
 		/// Unstaked success. [account_id, server_id, amount]
 		Unstaked(T::AccountId, ServerId, BalanceOf<T>),
 		/// Unstaked scheduled success. { server_id, when, task }
@@ -127,6 +119,7 @@ pub mod pallet {
 		BadSignature,
 		InsufficientBalance,
 		FailedToSchedule,
+		MinimumStakeLimitBalance,
 		UnstakingLimitBalance,
 		WaitingToUnstaked,
 	}
@@ -146,10 +139,14 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(T::WeightInfo::register(api_url.len() as u32))]
-		pub fn register(origin: OriginFor<T>, api_url: Vec<u8>) -> DispatchResultWithPostInfo {
+		pub fn register(
+			origin: OriginFor<T>,
+			api_url: Vec<u8>,
+			stake_amount: Option<BalanceOf<T>>,
+		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 
-			match <Self as ServerInterface<T>>::register(&who, &api_url) {
+			match <Self as ServerInterface<T>>::register(&who, &api_url, stake_amount) {
 				Ok(server) => {
 					Self::deposit_event(Event::Registered(server.clone()));
 					Self::deposit_event(Event::Staked(
@@ -163,51 +160,17 @@ pub mod pallet {
 			}
 		}
 
-		#[pallet::weight(T::WeightInfo::transfer_owner())]
-		pub fn transfer_owner(
+		#[pallet::weight(T::WeightInfo::update_server(*server_id as u32))]
+		pub fn update_server(
 			origin: OriginFor<T>,
 			server_id: ServerId,
-			new_owner: AccountIdOf<T>,
+			action_type: ActionTypeOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 
-			match <Self as ServerInterface<T>>::transfer_owner(server_id, &who, &new_owner) {
+			match <Self as ServerInterface<T>>::update_server(server_id, &who, &action_type) {
 				Ok(_) => {
-					Self::deposit_event(Event::OwnerTransferred(new_owner, server_id));
-					Ok(().into())
-				},
-				Err(error) => Err(error.into()),
-			}
-		}
-
-		#[pallet::weight(T::WeightInfo::update_api_url())]
-		pub fn update_api_url(
-			origin: OriginFor<T>,
-			server_id: ServerId,
-			new_api_url: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
-
-			match <Self as ServerInterface<T>>::update_api_url(server_id, &who, &new_api_url) {
-				Ok(_) => {
-					Self::deposit_event(Event::ApiUrlUpdated(new_api_url, server_id));
-					Ok(().into())
-				},
-				Err(error) => Err(error.into()),
-			}
-		}
-
-		#[pallet::weight(T::WeightInfo::update_stake_amount())]
-		pub fn update_stake_amount(
-			origin: OriginFor<T>,
-			server_id: ServerId,
-			action: ActionOf<T>,
-		) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
-
-			match <Self as ServerInterface<T>>::update_stake_amount(server_id, &who, &action) {
-				Ok(_) => {
-					Self::deposit_event(Event::StakedAmountUpdated(who, server_id, action));
+					Self::deposit_event(Event::ServerUpdated(who, server_id, action_type));
 					Ok(().into())
 				},
 				Err(error) => Err(error.into()),
@@ -225,6 +188,27 @@ pub mod pallet {
 						when,
 						task: b"Unstaked".to_vec(),
 						status: Status::InProgress,
+					});
+					Ok(().into())
+				},
+				Err(error) => Err(error.into()),
+			}
+		}
+
+		#[pallet::weight(0)]
+		pub fn cancel_unregister(
+			origin: OriginFor<T>,
+			server_id: ServerId,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+
+			match <Self as ServerInterface<T>>::cancel_unregister(server_id, &who) {
+				Ok(when) => {
+					Self::deposit_event(Event::Scheduled {
+						server_id,
+						when,
+						task: b"Unstaked".to_vec(),
+						status: Status::Cancelled,
 					});
 					Ok(().into())
 				},

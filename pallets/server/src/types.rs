@@ -77,8 +77,8 @@ where
 		self
 	}
 
-	pub fn set_unstaked_at(mut self, block_number: BlockNumber) -> Self {
-		self.unstaked_at = Some(block_number);
+	pub fn set_unstaked_at(mut self, block_number: Option<BlockNumber>) -> Self {
+		self.unstaked_at = block_number;
 		self
 	}
 
@@ -113,10 +113,10 @@ where
 	}
 }
 
-#[derive(Encode, Decode, Clone)]
-pub enum ServerDataKind<AccountId, Balance> {
-	Owner(AccountId),
-	ApiUrl(Vec<u8>),
+#[derive(Encode, Decode, Clone, RuntimeDebug, TypeInfo, PartialEq, Eq)]
+pub enum ActionType<AccountId, Balance> {
+	TransferOwner(AccountId),
+	UpdateApiUrl(Vec<u8>),
 	StakeAmount(Balance),
 	UnstakeAmount(Balance),
 }
@@ -126,6 +126,7 @@ pub enum Status {
 	InProgress,
 	Failed,
 	Success,
+	Cancelled,
 }
 
 #[derive(Encode, Decode, Clone, RuntimeDebug, TypeInfo, PartialEq, Eq)]
@@ -140,4 +141,5 @@ pub type ServerId = u64;
 pub type CurrencyOf<T> = <T as self::Config>::Currency;
 pub type BalanceOf<T> = <CurrencyOf<T> as Currency<AccountIdOf<T>>>::Balance;
 pub type ActionOf<T> = Action<BalanceOf<T>>;
+pub type ActionTypeOf<T> = ActionType<AccountIdOf<T>, BalanceOf<T>>;
 pub type ApiUrl = Vec<u8>;

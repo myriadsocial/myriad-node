@@ -17,27 +17,24 @@ pub trait ServerInterface<T: frame_system::Config> {
 	type Error;
 	type Server;
 	type Balance: Copy;
-	type Action;
+	type ActionType;
 
-	fn register(owner: &T::AccountId, api_url: &[u8]) -> Result<Self::Server, Self::Error>;
+	fn register(
+		owner: &T::AccountId,
+		api_url: &[u8],
+		stake_amount: Option<Self::Balance>,
+	) -> Result<Self::Server, Self::Error>;
 
-	fn transfer_owner(
+	fn update_server(
 		server_id: u64,
 		owner: &T::AccountId,
-		new_owner: &T::AccountId,
-	) -> Result<(), Self::Error>;
-
-	fn update_api_url(
-		server_id: u64,
-		owner: &T::AccountId,
-		new_api_url: &[u8],
+		action: &Self::ActionType,
 	) -> Result<(), Self::Error>;
 
 	fn unregister(server_id: u64, owner: &T::AccountId) -> Result<T::BlockNumber, Self::Error>;
 
-	fn update_stake_amount(
+	fn cancel_unregister(
 		server_id: u64,
 		owner: &T::AccountId,
-		action: &Self::Action,
-	) -> Result<(), Self::Error>;
+	) -> Result<T::BlockNumber, Self::Error>;
 }
