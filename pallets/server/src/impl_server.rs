@@ -178,7 +178,7 @@ impl<T: Config> ServerInterface<T> for Pallet<T> {
 		ServerById::<T>::insert(server_id, &server);
 		ServerByOwner::<T>::insert(owner, server_id, &server);
 
-		if tasks.len() > 0 {
+		if !tasks.is_empty() {
 			Tasks::<T>::insert(unstaked_at, tasks);
 		}
 
