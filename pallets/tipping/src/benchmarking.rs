@@ -61,7 +61,7 @@ benchmarks! {
 			&ft_identifier
 		);
 
-		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller));
+		let caller_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller));
 		let _ = Tipping::<T>::pay_content(caller_origin, receiver_id, tips_balance_info, amount);
 
 		let receiver: T::AccountId = account("receiver", 0, SEED);
@@ -109,7 +109,7 @@ benchmarks! {
 		let _ = <T as Config>::Currency::deposit_creating(&tipping_account_id, balance);
 
 		// Send Tip by account_1
-		let account_1_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(account_1));
+		let account_1_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(account_1));
 		let tips_balance_info = TipsBalanceInfo::new(
 			&caller,
 			b"people",
@@ -119,7 +119,7 @@ benchmarks! {
 		let _ = Tipping::<T>::send_tip(account_1_origin, tips_balance_info, tipping_amount);
 
 		// Send Tip by account_2
-		let account_2_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(account_2));
+		let account_2_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(account_2));
 		let tips_balance_info = TipsBalanceInfo::new(
 			&caller,
 			b"user",
@@ -155,7 +155,7 @@ account_3, trx_fee)
 		let _ = <T as Config>::Currency::deposit_creating(&tipping_account_id, balance);
 
 		// Send Tip
-		let account_1_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(account_1));
+		let account_1_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(account_1));
 		let tips_balance_info = TipsBalanceInfo::new(
 			&server_id,
 			b"people",
@@ -165,7 +165,7 @@ account_3, trx_fee)
 		let _ = Tipping::<T>::send_tip(account_1_origin, tips_balance_info, tipping_amount);
 
 		// Send Tip
-		let account_2_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(account_2));
+		let account_2_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(account_2));
 		let tips_balance_info_user = TipsBalanceInfo::new(
 			&server_id,
 			b"user",
@@ -175,7 +175,7 @@ account_3, trx_fee)
 		let _ = Tipping::<T>::send_tip(account_2_origin, tips_balance_info_user, tipping_amount);
 
 		// Claim Reference
-		let server_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(server_id.clone()));
+		let server_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(server_id.clone()));
 		let tx_fee = 10_000_000_000_000_000u128.saturated_into(); // 0.01 MYRIA
 		let _ = Tipping::<T>::claim_reference(
 			server_origin,

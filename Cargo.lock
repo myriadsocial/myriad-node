@@ -4075,6 +4075,7 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-mmr-primitives",
+ "sp-npos-elections",
  "sp-offchain",
  "sp-runtime",
  "sp-sandbox",
@@ -4814,6 +4815,7 @@ dependencies = [
  "parity-scale-codec",
  "rand_chacha 0.2.2",
  "scale-info",
+ "serde",
  "sp-application-crypto",
  "sp-io",
  "sp-runtime",
@@ -7816,6 +7818,7 @@ source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.3
 dependencies = [
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-arithmetic",
  "sp-core",
  "sp-runtime",
