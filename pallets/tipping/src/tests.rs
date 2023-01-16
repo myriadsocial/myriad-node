@@ -1,5 +1,5 @@
 use crate::{mock::*, Error, Receipt, References, TipsBalance, TipsBalanceInfo};
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchError, sp_runtime::traits::Zero};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
 
 #[test]
 fn pay_content_with_myria_works() {
@@ -157,7 +157,12 @@ fn withdrawal_reward_works() {
 	<ExternalityBuilder>::default().existential_deposit(1).build().execute_with(|| {
 		let tipping_account_id = Tipping::tipping_account_id();
 
-		assert_ok!(Assets::mint(Origin::signed(account_key("alice")), 1, tipping_account_id, 2));
+		assert_ok!(Assets::mint(
+			RuntimeOrigin::signed(account_key("alice")),
+			1,
+			tipping_account_id,
+			2
+		));
 
 		let server_id = account_key("alice");
 		let sender_1 = account_key("sender_1");
@@ -176,7 +181,7 @@ fn withdrawal_reward_works() {
 		);
 
 		assert_ok!(Tipping::pay_content(
-			Origin::signed(sender_1),
+			RuntimeOrigin::signed(sender_1),
 			receiver_1,
 			tips_balance_info,
 			amount
@@ -186,7 +191,7 @@ fn withdrawal_reward_works() {
 			TipsBalanceInfo::new(&server_id, b"unlockable_content", b"unlockable_content_id", b"1");
 
 		assert_ok!(Tipping::pay_content(
-			Origin::signed(sender_2),
+			RuntimeOrigin::signed(sender_2),
 			receiver_2,
 			tips_balance_info,
 			amount
@@ -195,7 +200,7 @@ fn withdrawal_reward_works() {
 		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 475);
 		assert_eq!(Tipping::reward_balance(server_id, b"1".to_vec()), 475);
 
-		assert_ok!(Tipping::withdraw_reward(Origin::signed(server_id)));
+		assert_ok!(Tipping::withdraw_reward(RuntimeOrigin::signed(server_id)));
 
 		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 0);
 		assert_eq!(Tipping::reward_balance(server_id, b"1".to_vec()), 0);
@@ -269,10 +274,6 @@ fn claim_reference_works() {
 		let tips_balance_info_1 = TipsBalanceInfo::new(&server_id, b"people", b"people_id", b"1");
 		let tips_balance_info_2 = TipsBalanceInfo::new(&server_id, b"people", b"people_id", b"2");
 
-		let mut tips_balance_0 = TipsBalance::new(&tips_balance_info_0, &1);
-		let mut tips_balance_1 = TipsBalance::new(&tips_balance_info_1, &1);
-		let mut tips_balance_2 = TipsBalance::new(&tips_balance_info_2, &2);
-
 		let main_tips_balance_info_0 =
 			TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
 
@@ -316,9 +317,6 @@ fn claim_reference_works() {
 			1,
 		));
 
-		tips_balance_0.set_amount(Zero::zero());
-		tips_balance_1.set_amount(Zero::zero());
-		tips_balance_2.set_amount(Zero::zero());
 		main_tips_balance_0.set_account_id(&account_key("john"));
 		main_tips_balance_1.set_account_id(&account_key("john"));
 		main_tips_balance_2.set_account_id(&account_key("john"));
@@ -330,7 +328,7 @@ fn claim_reference_works() {
 				b"people_id".to_vec(),
 				b"native".to_vec()
 			)),
-			Some(tips_balance_0.clone())
+			None,
 		);
 
 		assert_eq!(
@@ -340,7 +338,7 @@ fn claim_reference_works() {
 				b"people_id".to_vec(),
 				b"1".to_vec()
 			)),
-			Some(tips_balance_1.clone())
+			None,
 		);
 
 		assert_eq!(
@@ -350,7 +348,7 @@ fn claim_reference_works() {
 				b"people_id".to_vec(),
 				b"2".to_vec()
 			)),
-			Some(tips_balance_2.clone())
+			None,
 		);
 
 		assert_eq!(
@@ -598,37 +596,42 @@ fn call_event_should_work() {
 
 		let receipt_ids = Tipping::receipt_ids();
 		let receipt_id = receipt_ids[0];
+		let receipt =
+			Receipt::new(&receipt_id, &sender, &receiver, &tips_balance_info, &amount, &500, 0);
 
-
-		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::PayUnlockableContent(
-			Receipt::new(&receipt_id, &sender, &receiver, &tips_balance_info, &amount, &500, 0),
-		)));
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::PayUnlockableContent {
+			from: sender,
+			to: receiver,
+			receipt,
+		}));
 
 		// Withdraw Fee Event
 		assert_ok!(Tipping::withdraw_fee(RuntimeOrigin::root(), receiver));
 
 		let sender = Tipping::tipping_account_id();
 
-		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::Withdrawal(
-			sender,
-			receiver,
-			vec![(b"native".to_vec(), 25)],
-		)));
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::Withdrawal {
+			from: sender,
+			to: receiver,
+			success: vec![(b"native".to_vec(), 25)],
+			failed: Vec::new(),
+		}));
 
 		// Withdraw Reward Event
-		assert_ok!(Tipping::withdraw_reward(Origin::signed(server_id)));
+		assert_ok!(Tipping::withdraw_reward(RuntimeOrigin::signed(server_id)));
 
-		System::assert_last_event(Event::Tipping(crate::Event::Withdrawal(
-			sender,
-			server_id,
-			vec![(b"native".to_vec(), 475)],
-		)));
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::Withdrawal {
+			from: sender,
+			to: server_id,
+			success: vec![(b"native".to_vec(), 475)],
+			failed: Vec::new(),
+		}));
 
 		// SendTip Event
 		let server_id = account_key("alice");
 		let tips_balance_info =
 			TipsBalanceInfo::new(&server_id, b"people", b"people_id", b"native");
-		let tips_balance_key = tips_balance_info.key();
+		let tips_balance = TipsBalance::new(&tips_balance_info, &1);
 
 		assert_ok!(Tipping::send_tip(
 			RuntimeOrigin::signed(account_key("bob")),
@@ -638,11 +641,11 @@ fn call_event_should_work() {
 
 		let tipping_account_id = Tipping::tipping_account_id();
 
-		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::SendTip(
-			account_key("bob"),
-			tipping_account_id,
-			(tips_balance_key, 1),
-		)));
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::SendTip {
+			from: account_key("bob"),
+			to: tipping_account_id,
+			tips_balance,
+		}));
 
 		// ClaimReference Event
 		let main_tips_balance_info =
@@ -690,9 +693,11 @@ fn call_event_should_work() {
 			vec![b"native".to_vec()],
 		));
 
-		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::ClaimTip(
-			tipping_account_id,
-			(vec![(b"native".to_vec(), account_key("john"), 2)], None),
-		)));
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::ClaimTip {
+			from: tipping_account_id,
+			to: account_key("john"),
+			success: vec![(b"native".to_vec(), 2)],
+			failed: Vec::new(),
+		}));
 	})
 }

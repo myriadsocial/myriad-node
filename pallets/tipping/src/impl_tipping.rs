@@ -5,16 +5,11 @@ use sp_std::vec::Vec;
 
 impl<T: Config> TippingInterface<T> for Pallet<T> {
 	type Error = DispatchError;
+	type TipsBalance = TipsBalanceOf<T>;
 	type TipsBalanceInfo = TipsBalanceInfoOf<T>;
 	type TipsBalanceKey = TipsBalanceKeyOf<T>;
 	type Balance = BalanceOf<T>;
-	type ServerId = ServerIdOf<T>;
 	type References = References;
-	type FtIdentifier = FtIdentifier;
-	type FtIdentifiers = Vec<FtIdentifier>;
-	type SendTipResult = (AccountIdOf<T>, TipsBalanceTuppleOf<T>);
-	type ClaimTipResult = (AccountIdOf<T>, AccountBalancesTuppleOf<T>);
-	type ClaimReferenceResult = Vec<TipsBalanceOf<T>>;
 	type Receipt = ReceiptOf<T>;
 	type WithdrawalResult = Vec<(FtIdentifier, BalanceOf<T>)>;
 
@@ -28,8 +23,12 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 			return Err(DispatchError::BadOrigin)
 		}
 
-		let (total_fee, admin_fee, reward_fee) = Self::can_pay_content(sender, amount)?;
-		let tips_balance_info = TipsBalanceInfo::new(
+		let fee_detail = Self::can_pay_content(sender, amount)?;
+		let admin_fee = fee_detail.admin_fee();
+		let server_fee = fee_detail.server_fee();
+		let total_fee = fee_detail.total_fee();
+
+		let info = TipsBalanceInfo::new(
 			tips_balance_info.get_server_id(),
 			b"unlockable_content",
 			tips_balance_info.get_reference_id(),
@@ -37,16 +36,15 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		);
 
 		let escrow_id = Self::tipping_account_id();
-		let ft_identifier = tips_balance_info.get_ft_identifier();
+		let ft_identifier = info.get_ft_identifier();
 
 		Self::do_transfer(ft_identifier, sender, receiver, *amount)?;
 		Self::do_transfer(ft_identifier, sender, &escrow_id, total_fee)?;
 
 		Self::do_update_withdrawal_balance(ft_identifier, admin_fee);
-		Self::do_update_reward_balance(&tips_balance_info, reward_fee);
+		Self::do_update_reward_balance(&info, server_fee);
 
-		let receipt =
-			Self::do_store_receipt(sender, receiver, &tips_balance_info, amount, &total_fee);
+		let receipt = Self::do_store_receipt(sender, receiver, &info, amount, &total_fee);
 
 		Ok(receipt)
 	}
@@ -54,8 +52,9 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 	fn withdraw_fee(
 		sender: &T::AccountId,
 		receiver: &T::AccountId,
-	) -> Result<Self::WithdrawalResult, Self::Error> {
+	) -> Result<(Self::WithdrawalResult, Self::WithdrawalResult), Self::Error> {
 		let mut success_withdrawal = Vec::new();
+		let mut failed_withdrawal = Vec::new();
 
 		WithdrawalBalance::<T>::translate(|ft: Vec<u8>, amount: BalanceOf<T>| {
 			if amount.is_zero() {
@@ -65,21 +64,21 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 			let result = Self::do_transfer(&ft, sender, receiver, amount);
 
 			if result.is_err() {
-				return Some(amount)
+				failed_withdrawal.push((ft, amount));
+				Some(amount)
+			} else {
+				success_withdrawal.push((ft, amount));
+				None
 			}
-
-			success_withdrawal.push((ft, amount));
-
-			None
 		});
 
-		Ok(success_withdrawal)
+		Ok((success_withdrawal, failed_withdrawal))
 	}
 
 	fn withdraw_reward(
 		sender: &T::AccountId,
 		receiver: &T::AccountId,
-	) -> Result<Self::WithdrawalResult, Self::Error> {
+	) -> Result<(Self::WithdrawalResult, Self::WithdrawalResult), Self::Error> {
 		let mut success_withdrawal = Vec::new();
 		let mut failed_withdrawal = Vec::new();
 
@@ -98,32 +97,31 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 			RewardBalance::<T>::insert(receiver, ft_identifier, amount);
 		}
 
-		Ok(success_withdrawal)
+		Ok((success_withdrawal, failed_withdrawal))
 	}
 
 	fn send_tip(
 		sender: &T::AccountId,
+		receiver: &T::AccountId,
 		tips_balance_info: &Self::TipsBalanceInfo,
 		amount: &Self::Balance,
-	) -> Result<Self::SendTipResult, Self::Error> {
-		let receiver = Self::tipping_account_id();
+	) -> Result<Self::TipsBalance, Self::Error> {
 		let tip_amount = *amount;
 		let ft_identifier = tips_balance_info.get_ft_identifier();
 		let tips_balance = TipsBalance::new(tips_balance_info, amount);
 
-		Self::do_transfer(ft_identifier, sender, &receiver, tip_amount)?;
+		Self::do_transfer(ft_identifier, sender, receiver, tip_amount)?;
 		Self::do_store_tips_balance(&tips_balance, false, None);
 
-		Ok((receiver, (tips_balance.key(), tip_amount)))
+		Ok(tips_balance)
 	}
 
 	fn claim_tip(
+		sender: &T::AccountId,
 		receiver: &T::AccountId,
 		tips_balance_key: &Self::TipsBalanceKey,
-		ft_identifiers: &Self::FtIdentifiers,
-	) -> Result<Self::ClaimTipResult, Self::Error> {
-		let sender = Self::tipping_account_id();
-
+		ft_identifiers: &[Vec<u8>],
+	) -> Result<(Self::WithdrawalResult, Self::WithdrawalResult), Self::Error> {
 		let mut tips_balance_key = tips_balance_key.clone();
 		let mut success_claim = Vec::new();
 		let mut failed_claim = Vec::new();
@@ -140,32 +138,28 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 			let tips_balance = can_claim_tip.unwrap();
 			let amount = *tips_balance.get_amount();
 
-			match Self::do_transfer(ft, &sender, receiver, amount) {
+			match Self::do_transfer(ft, sender, receiver, amount) {
 				Ok(_) => {
 					Self::do_store_tips_balance(&tips_balance, true, None);
 
-					success_claim.push((ft.to_vec(), receiver.clone(), amount));
+					success_claim.push((ft.to_vec(), amount));
 				},
-				Err(_) => failed_claim.push((ft.to_vec(), receiver.clone(), amount)),
+				Err(_) => failed_claim.push((ft.to_vec(), amount)),
 			};
 		}
 
-		if failed_claim.is_empty() {
-			return Ok((sender, (success_claim, None)))
-		}
-
-		Ok((sender, (success_claim, Some(failed_claim))))
+		Ok((success_claim, failed_claim))
 	}
 
 	fn claim_reference(
 		receiver: &T::AccountId,
-		server_id: &Self::ServerId,
+		server_id: &T::AccountId,
 		references: &Self::References,
 		account_references: &Self::References,
-		ft_identifiers: &Self::FtIdentifiers,
+		ft_identifiers: &[Vec<u8>],
 		account_id: &T::AccountId,
 		tx_fee: &Self::Balance,
-	) -> Result<Self::ClaimReferenceResult, Self::Error> {
+	) -> Result<Vec<Self::TipsBalance>, Self::Error> {
 		let account_reference_type = account_references.get_reference_type().clone();
 		let account_reference_ids = account_references.get_reference_ids().clone();
 

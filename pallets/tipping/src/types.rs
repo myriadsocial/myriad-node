@@ -212,3 +212,30 @@ where
 		}
 	}
 }
+
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
+pub struct FeeDetail<Balance> {
+	admin_fee: Balance,
+	server_fee: Balance,
+	total_fee: Balance,
+}
+impl<Balance> FeeDetail<Balance>
+where
+	Balance: Copy,
+{
+	pub fn new(admin_fee: Balance, server_fee: Balance, total_fee: Balance) -> Self {
+		Self { admin_fee, server_fee, total_fee }
+	}
+
+	pub fn admin_fee(&self) -> Balance {
+		self.admin_fee
+	}
+
+	pub fn server_fee(&self) -> Balance {
+		self.server_fee
+	}
+
+	pub fn total_fee(&self) -> Balance {
+		self.total_fee
+	}
+}

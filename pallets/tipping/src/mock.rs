@@ -104,9 +104,9 @@ parameter_types! {
 }
 
 impl pallet_tipping::Config for Test {
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type TimeProvider = Timestamp;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type Assets = Assets;
 	type WeightInfo = ();
@@ -137,15 +137,6 @@ impl pallet_assets::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type RuntimeEvent = RuntimeEvent;
 	type StringLimit = StringLimit;
-	type WeightInfo = ();
-}
-
-impl pallet_tipping::Config for Test {
-	type Assets = Assets;
-	type Currency = Balances;
-	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-	type TimeProvider = Timestamp;
 	type WeightInfo = ();
 }
 

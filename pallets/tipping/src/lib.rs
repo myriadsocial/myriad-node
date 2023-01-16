@@ -104,16 +104,26 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Send tip success. [who, pot, (data, balance)]
-		SendTip(T::AccountId, T::AccountId, (TipsBalanceKeyOf<T>, BalanceOf<T>)),
-		/// Claim tip success [pot, (succeed, failed)]
-		ClaimTip(T::AccountId, (AccountBalancesOf<T>, Option<AccountBalancesOf<T>>)),
+		/// Send tip success. { from, to, tips_balance }
+		SendTip { from: T::AccountId, to: T::AccountId, tips_balance: TipsBalanceOf<T> },
+		/// Claim tip success { from, to, success, failed }
+		ClaimTip {
+			from: T::AccountId,
+			to: T::AccountId,
+			success: Vec<(FtIdentifier, BalanceOf<T>)>,
+			failed: Vec<(FtIdentifier, BalanceOf<T>)>,
+		},
 		/// Claim reference success. [Vec<tips_balance>]
 		ClaimReference(Vec<TipsBalanceOf<T>>),
-		/// Pay unlockable content success. [who, receiver, (data, balance)]
-		PayUnlockableContent(ReceiptOf<T>),
-		/// Withdrawal succes [who, receiver, detail]
-		Withdrawal(T::AccountId, T::AccountId, Vec<(FtIdentifier, BalanceOf<T>)>),
+		/// Pay unlockable content success. { from, to, receipt }
+		PayUnlockableContent { from: T::AccountId, to: T::AccountId, receipt: ReceiptOf<T> },
+		/// Withdrawal succes { from, to, success, failed }
+		Withdrawal {
+			from: T::AccountId,
+			to: T::AccountId,
+			success: Vec<(FtIdentifier, BalanceOf<T>)>,
+			failed: Vec<(FtIdentifier, BalanceOf<T>)>,
+		},
 	}
 
 	#[pallet::error]
@@ -150,7 +160,11 @@ pub mod pallet {
 				&amount,
 			)?;
 
-			Self::deposit_event(Event::PayUnlockableContent(receipt));
+			Self::deposit_event(Event::PayUnlockableContent {
+				from: sender,
+				to: receiver,
+				receipt,
+			});
 			Ok(().into())
 		}
 
@@ -162,9 +176,11 @@ pub mod pallet {
 			ensure_root(origin)?;
 
 			let sender = Self::tipping_account_id();
-			let data = <Self as TippingInterface<T>>::withdraw_fee(&sender, &receiver)?;
+			let result = <Self as TippingInterface<T>>::withdraw_fee(&sender, &receiver)?;
 
-			Self::deposit_event(Event::Withdrawal(sender, receiver, data));
+			let (success, failed) = result;
+
+			Self::deposit_event(Event::Withdrawal { from: sender, to: receiver, success, failed });
 			Ok(().into())
 		}
 
@@ -172,29 +188,28 @@ pub mod pallet {
 		pub fn withdraw_reward(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let sender = Self::tipping_account_id();
 			let receiver = ensure_signed(origin)?;
-			let data = <Self as TippingInterface<T>>::withdraw_reward(&sender, &receiver)?;
+			let result = <Self as TippingInterface<T>>::withdraw_reward(&sender, &receiver)?;
 
-			Self::deposit_event(Event::Withdrawal(sender, receiver, data));
+			let (success, failed) = result;
+
+			Self::deposit_event(Event::Withdrawal { from: sender, to: receiver, success, failed });
 			Ok(().into())
 		}
 
 		#[pallet::weight(T::WeightInfo::send_tip())]
 		pub fn send_tip(
 			origin: OriginFor<T>,
-			tips_balance_info: TipsBalanceInfoOf<T>,
+			info: TipsBalanceInfoOf<T>,
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
+			let receiver = Self::tipping_account_id();
 
-			ensure!(
-				tips_balance_info.get_reference_type() != b"unlockable_content",
-				Error::<T>::Unauthorized
-			);
+			ensure!(info.get_reference_type() != b"unlockable_content", Error::<T>::Unauthorized);
 
-			let (receiver, data) =
-				<Self as TippingInterface<T>>::send_tip(&sender, &tips_balance_info, &amount)?;
+			let data = <Self as TippingInterface<T>>::send_tip(&sender, &receiver, &info, &amount)?;
 
-			Self::deposit_event(Event::SendTip(sender, receiver, data));
+			Self::deposit_event(Event::SendTip { from: sender, to: receiver, tips_balance: data });
 			Ok(().into())
 		}
 
@@ -207,19 +222,22 @@ pub mod pallet {
 			ft_identifiers: Vec<FtIdentifier>,
 		) -> DispatchResultWithPostInfo {
 			let receiver = ensure_signed(origin)?;
+			let sender = Self::tipping_account_id();
+
 			let mut ft_identifiers = ft_identifiers;
 
 			ft_identifiers.sort_unstable();
 			ft_identifiers.dedup();
 
 			let tips_balance_key = (server_id, reference_type, reference_id, b"".to_vec());
-			let (sender, data) = <Self as TippingInterface<T>>::claim_tip(
+			let (success, failed) = <Self as TippingInterface<T>>::claim_tip(
+				&sender,
 				&receiver,
 				&tips_balance_key,
 				&ft_identifiers,
 			)?;
 
-			Self::deposit_event(Event::ClaimTip(sender, data));
+			Self::deposit_event(Event::ClaimTip { from: sender, to: receiver, success, failed });
 			Ok(().into())
 		}
 

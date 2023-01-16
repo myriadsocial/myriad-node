@@ -7,7 +7,7 @@ use frame_support::{
 	traits::{fungibles, Currency, ExistenceRequirement, Get},
 	PalletId,
 };
-use sp_std::vec::Vec;
+use sp_std::vec::*;
 
 const PALLET_ID: PalletId = PalletId(*b"Tipping!");
 
@@ -45,14 +45,14 @@ impl<T: Config> Pallet<T> {
 		T::Hashing::hash(seed)
 	}
 
-	pub fn can_update_balance(tips_balance_key: &TipsBalanceKeyOf<T>) -> bool {
-		TipsBalanceByReference::<T>::contains_key(tips_balance_key)
+	pub fn can_update_balance(key: &TipsBalanceKeyOf<T>) -> bool {
+		TipsBalanceByReference::<T>::contains_key(key)
 	}
 
 	pub fn can_pay_content(
 		sender: &T::AccountId,
 		amount: &BalanceOf<T>,
-	) -> Result<(BalanceOf<T>, BalanceOf<T>, BalanceOf<T>), Error<T>> {
+	) -> Result<FeeDetail<BalanceOf<T>>, Error<T>> {
 		let tx_fee_denom = 100u8
 			.checked_div(T::TransactionFee::get())
 			.filter(|value| value <= &100u8)
@@ -75,22 +75,18 @@ impl<T: Config> Pallet<T> {
 			.ok_or(Error::<T>::InsufficientFee)?;
 
 		let admin_fee = fee / admin_fee_denom.saturated_into();
-		let reward_fee = fee - admin_fee;
+		let server_fee = fee - admin_fee;
+		let fee_detail = FeeDetail::new(admin_fee, server_fee, fee);
 
-		Ok((fee, admin_fee, reward_fee))
+		Ok(fee_detail)
 	}
 
-	pub fn can_pay_fee(
-		tips_balance_key: &TipsBalanceKeyOf<T>,
-		tx_fee: &BalanceOf<T>,
-	) -> Result<(), Error<T>> {
+	pub fn can_pay_fee(key: &TipsBalanceKeyOf<T>, tx_fee: &BalanceOf<T>) -> Result<(), Error<T>> {
 		if tx_fee == &Zero::zero() {
 			return Err(Error::<T>::InsufficientBalance)
 		}
 
-		let tips_balance =
-			Self::tips_balance_by_reference(tips_balance_key).ok_or(Error::<T>::NotExists)?;
-
+		let tips_balance = Self::tips_balance_by_reference(key).ok_or(Error::<T>::NotExists)?;
 		let amount = tips_balance.get_amount();
 
 		if amount == &Zero::zero() {
@@ -105,10 +101,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn can_claim_tip(
-		tips_balance_key: &TipsBalanceKeyOf<T>,
+		key: &TipsBalanceKeyOf<T>,
 		receiver: &AccountIdOf<T>,
 	) -> Option<TipsBalanceOf<T>> {
-		if let Some(tips_balance) = Self::tips_balance_by_reference(tips_balance_key) {
+		if let Some(tips_balance) = Self::tips_balance_by_reference(key) {
 			if tips_balance.get_amount() == &Zero::zero() {
 				return None
 			}
@@ -168,7 +164,7 @@ impl<T: Config> Pallet<T> {
 		set_empty: bool,
 		tx_fee: Option<BalanceOf<T>>,
 	) -> BalanceOf<T> {
-		let tips_balance_key = tips_balance.key();
+		let key = tips_balance.key();
 		let amount = *tips_balance.get_amount();
 		let account_id = tips_balance.get_account_id();
 		let ft_identifier = tips_balance.get_ft_identifier();
@@ -176,37 +172,33 @@ impl<T: Config> Pallet<T> {
 		//  Total tip that has been send and claim
 		let mut total_tip: BalanceOf<T> = amount;
 
-		if Self::can_update_balance(&tips_balance_key) {
-			TipsBalanceByReference::<T>::mutate(
-				tips_balance_key,
-				|tips_balance| match tips_balance {
-					Some(tips_balance) => {
-						if set_empty {
-							tips_balance.set_amount(Zero::zero()); // Set balance to zero
-						} else if tx_fee.is_some() && ft_identifier == b"native" {
-							// Reduce user balance by the tx fee
-							// As user ask admin server to claim references
-							let current_balance = *tips_balance.get_amount();
-							let final_balance = current_balance
-								.saturating_sub(tx_fee.unwrap())
-								.saturating_add(amount);
-							tips_balance.set_amount(final_balance);
-							total_tip = final_balance;
-						} else {
-							// There is an increase in balance
-							tips_balance.add_amount(amount);
-						}
+		if Self::can_update_balance(&key) {
+			TipsBalanceByReference::<T>::mutate(key, |tips_balance| match tips_balance {
+				Some(tips_balance) => {
+					if set_empty {
+						tips_balance.set_amount(Zero::zero()); // Set balance to zero
+					} else if tx_fee.is_some() && ft_identifier == b"native" {
+						// Reduce user balance by the tx fee
+						// As user ask admin server to claim references
+						let current_balance = *tips_balance.get_amount();
+						let final_balance =
+							current_balance.saturating_sub(tx_fee.unwrap()).saturating_add(amount);
+						tips_balance.set_amount(final_balance);
+						total_tip = final_balance;
+					} else {
+						// There is an increase in balance
+						tips_balance.add_amount(amount);
+					}
 
-						// Claim tips balance by account_id
-						if account_id.is_some() {
-							tips_balance.set_account_id(account_id.as_ref().unwrap());
-						}
-					},
-					None => (),
+					// Claim tips balance by account_id
+					if account_id.is_some() {
+						tips_balance.set_account_id(account_id.as_ref().unwrap());
+					}
 				},
-			);
+				None => (),
+			});
 		} else {
-			TipsBalanceByReference::<T>::insert(tips_balance.key(), tips_balance);
+			TipsBalanceByReference::<T>::insert(key, tips_balance);
 		}
 
 		total_tip
@@ -257,8 +249,8 @@ impl<T: Config> Pallet<T> {
 			// Store the balance to account reference balance
 			for reference_id in reference_ids {
 				let server_id = server_id.clone();
-				let tips_balance_key = (server_id, reference_type, reference_id, ft_identifier);
-				let tips_balance = TipsBalanceByReference::<T>::take(&tips_balance_key);
+				let key = (server_id, reference_type, reference_id, ft_identifier);
+				let tips_balance = TipsBalanceByReference::<T>::take(&key);
 
 				if let Some(tips_balance) = tips_balance {
 					let amount = tips_balance.get_amount();

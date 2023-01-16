@@ -58,7 +58,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Tipping RewardBalance (r:2 w:1)
 	// Storage: System Account (r:2 w:2)
 	fn withdraw_reward() -> Weight {
-		85_800_000_u64
+		Weight::from_ref_time(85_800_000_u64)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -107,7 +107,7 @@ impl WeightInfo for () {
 	// Storage: Tipping RewardBalance (r:2 w:1)
 	// Storage: System Account (r:2 w:2)
 	fn withdraw_reward() -> Weight {
-		85_800_000_u64
+		Weight::from_ref_time(85_800_000_u64)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}

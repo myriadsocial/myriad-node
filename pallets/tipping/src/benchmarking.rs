@@ -93,7 +93,7 @@ benchmarks! {
 			&ft_identifier
 		);
 
-		let caller_origin = <T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller));
+		let caller_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller));
 		let _ = Tipping::<T>::pay_content(caller_origin, receiver_id, tips_balance_info, amount);
 	}: _(RawOrigin::Signed(server_id))
 
