@@ -12,9 +12,10 @@ pub trait TippingInterface<T: frame_system::Config> {
 
 	fn pay_content(
 		sender: &T::AccountId,
-		receiver: &T::AccountId,
+		receiver: &Option<T::AccountId>,
 		tips_balance_info: &Self::TipsBalanceInfo,
 		amount: &Self::Balance,
+		account_reference: &Option<Vec<u8>>,
 	) -> Result<Self::Receipt, Self::Error>;
 
 	fn withdraw_fee(

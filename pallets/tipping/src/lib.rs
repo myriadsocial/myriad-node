@@ -76,6 +76,7 @@ pub mod pallet {
 		TipsBalanceOf<T>,
 	>;
 
+	// TODO: Do we need this storage?
 	#[pallet::storage]
 	#[pallet::getter(fn receipts)]
 	pub(super) type Receipts<T: Config> = StorageMap<_, Blake2_128Concat, HashOf<T>, ReceiptOf<T>>;
@@ -116,7 +117,7 @@ pub mod pallet {
 		/// Claim reference success. [Vec<tips_balance>]
 		ClaimReference(Vec<TipsBalanceOf<T>>),
 		/// Pay unlockable content success. { from, to, receipt }
-		PayUnlockableContent { from: T::AccountId, to: T::AccountId, receipt: ReceiptOf<T> },
+		PayUnlockableContent { from: T::AccountId, to: Option<T::AccountId>, receipt: ReceiptOf<T> },
 		/// Withdrawal succes { from, to, success, failed }
 		Withdrawal {
 			from: T::AccountId,
@@ -148,9 +149,10 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::pay_content())]
 		pub fn pay_content(
 			origin: OriginFor<T>,
-			receiver: AccountIdOf<T>,
+			receiver: Option<AccountIdOf<T>>,
 			tips_balance_info: TipsBalanceInfoOf<T>,
 			amount: BalanceOf<T>,
+			account_reference: Option<Vec<u8>>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			let receipt = <Self as TippingInterface<T>>::pay_content(
@@ -158,6 +160,7 @@ pub mod pallet {
 				&receiver,
 				&tips_balance_info,
 				&amount,
+				&account_reference,
 			)?;
 
 			Self::deposit_event(Event::PayUnlockableContent {
@@ -246,7 +249,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			server_id: ServerIdOf<T>,
 			references: References,
-			main_references: References,
+			account_references: References,
 			ft_identifiers: Vec<FtIdentifier>,
 			account_id: AccountIdOf<T>,
 			tx_fee: BalanceOf<T>,
@@ -264,7 +267,7 @@ pub mod pallet {
 				&who,
 				&server_id,
 				&references,
-				&main_references,
+				&account_references,
 				&ft_identifiers,
 				&account_id,
 				&tx_fee,

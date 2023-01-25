@@ -15,12 +15,15 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 
 	fn pay_content(
 		sender: &T::AccountId,
-		receiver: &T::AccountId,
+		receiver: &Option<T::AccountId>,
 		tips_balance_info: &Self::TipsBalanceInfo,
 		amount: &Self::Balance,
+		account_reference: &Option<Vec<u8>>,
 	) -> Result<Self::Receipt, Self::Error> {
-		if sender == receiver {
-			return Err(DispatchError::BadOrigin)
+		if let Some(receiver) = receiver {
+			if sender == receiver {
+				return Err(DispatchError::BadOrigin)
+			}
 		}
 
 		let fee_detail = Self::can_pay_content(sender, amount)?;
@@ -38,8 +41,26 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		let escrow_id = Self::tipping_account_id();
 		let ft_identifier = info.get_ft_identifier();
 
-		Self::do_transfer(ft_identifier, sender, receiver, *amount)?;
-		Self::do_transfer(ft_identifier, sender, &escrow_id, total_fee)?;
+		if let Some(receiver) = receiver {
+			Self::do_transfer(ft_identifier, sender, receiver, *amount)?;
+			Self::do_transfer(ft_identifier, sender, &escrow_id, total_fee)?;
+		} else {
+			if account_reference.is_none() {
+				return Err(DispatchError::BadOrigin)
+			}
+
+			let account_reference = account_reference.as_ref().unwrap();
+			let account_info = TipsBalanceInfo::new(
+				tips_balance_info.get_server_id(),
+				b"user",
+				account_reference,
+				tips_balance_info.get_ft_identifier(),
+			);
+			let tips_balance = TipsBalance::new(&account_info, amount);
+
+			Self::do_transfer(ft_identifier, sender, &escrow_id, *amount + total_fee)?;
+			Self::do_store_tips_balance(&tips_balance, false, None);
+		}
 
 		Self::do_update_withdrawal_balance(ft_identifier, admin_fee);
 		Self::do_update_reward_balance(&info, server_fee);
@@ -160,24 +181,23 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		account_id: &T::AccountId,
 		tx_fee: &Self::Balance,
 	) -> Result<Vec<Self::TipsBalance>, Self::Error> {
-		let account_reference_type = account_references.get_reference_type().clone();
-		let account_reference_ids = account_references.get_reference_ids().clone();
+		let account_ref_type = account_references.get_reference_type().clone();
+		let account_ref_ids = account_references.get_reference_ids().clone();
 
 		if receiver == account_id {
 			return Err(DispatchError::BadOrigin)
 		}
 
-		if account_reference_ids.is_empty() {
+		if account_ref_ids.is_empty() {
 			return Err(DispatchError::BadOrigin)
 		}
 
 		// Pay Fee to Server Admin
 		let sender = Self::tipping_account_id();
-		let account_reference_id = account_reference_ids[0].clone();
-		let tips_balance_key =
-			(server_id.clone(), account_reference_type, account_reference_id, b"native".to_vec());
+		let account_reference_id = account_ref_ids[0].clone();
+		let key = (server_id.clone(), account_ref_type, account_reference_id, b"native".to_vec());
 
-		Self::can_pay_fee(&tips_balance_key, tx_fee)?;
+		Self::can_pay_fee(&key, tx_fee)?;
 		Self::do_transfer(b"native", &sender, receiver, *tx_fee)?;
 
 		// Recap total tips belong to account

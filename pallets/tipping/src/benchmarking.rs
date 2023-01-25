@@ -34,7 +34,7 @@ benchmarks! {
 			&reference_id,
 			&ft_identifier
 		);
-	}: _(RawOrigin::Signed(caller), receiver_id, tips_balance_info, amount)
+	}: _(RawOrigin::Signed(caller), Some(receiver_id), tips_balance_info, amount, None)
 
 	withdraw_fee {
 		let caller: T::AccountId = whitelisted_caller();
@@ -62,7 +62,7 @@ benchmarks! {
 		);
 
 		let caller_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller));
-		let _ = Tipping::<T>::pay_content(caller_origin, receiver_id, tips_balance_info, amount);
+		let _ = Tipping::<T>::pay_content(caller_origin, Some(receiver_id), tips_balance_info, amount, None);
 
 		let receiver: T::AccountId = account("receiver", 0, SEED);
 	}: _(RawOrigin::Root, receiver)
@@ -94,7 +94,7 @@ benchmarks! {
 		);
 
 		let caller_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller));
-		let _ = Tipping::<T>::pay_content(caller_origin, receiver_id, tips_balance_info, amount);
+		let _ = Tipping::<T>::pay_content(caller_origin, Some(receiver_id), tips_balance_info, amount, None);
 	}: _(RawOrigin::Signed(server_id))
 
 	send_tip {

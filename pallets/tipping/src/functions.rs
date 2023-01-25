@@ -17,14 +17,9 @@ impl<T: Config> Pallet<T> {
 		PALLET_ID.into_account_truncating()
 	}
 
-	pub fn generate_receipt_id(
-		from: &T::AccountId,
-		to: &T::AccountId,
-		info: &TipsBalanceInfoOf<T>,
-	) -> T::Hash {
+	pub fn generate_receipt_id(from: &T::AccountId, info: &TipsBalanceInfoOf<T>) -> T::Hash {
 		let mut from_bytes = from.encode();
 
-		let mut to_bytes = to.encode();
 		let mut server_id_bytes = info.get_server_id().encode();
 		let mut reference_type_bytes = info.get_reference_type().to_vec();
 		let mut reference_id_bytes = info.get_reference_id().to_vec();
@@ -34,7 +29,6 @@ impl<T: Config> Pallet<T> {
 
 		let mut nonce_bytes = from_info.nonce.encode();
 
-		from_bytes.append(&mut to_bytes);
 		from_bytes.append(&mut server_id_bytes);
 		from_bytes.append(&mut reference_type_bytes);
 		from_bytes.append(&mut reference_id_bytes);
@@ -142,12 +136,12 @@ impl<T: Config> Pallet<T> {
 
 	pub fn do_store_receipt(
 		from: &T::AccountId,
-		to: &T::AccountId,
+		to: &Option<T::AccountId>,
 		detail: &TipsBalanceInfoOf<T>,
 		total_paid: &BalanceOf<T>,
 		total_fee: &BalanceOf<T>,
 	) -> ReceiptOf<T> {
-		let id = Self::generate_receipt_id(from, to, detail);
+		let id = Self::generate_receipt_id(from, detail);
 		let now = T::TimeProvider::now().as_millis();
 		let receipt = Receipt::new(&id, from, to, detail, total_paid, total_fee, now);
 

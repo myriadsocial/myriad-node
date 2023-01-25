@@ -180,7 +180,7 @@ impl References {
 pub struct Receipt<Hash, AccountId, Balance> {
 	id: Hash,
 	from: AccountId,
-	to: AccountId,
+	to: Option<AccountId>,
 	info: TipsBalanceInfo<AccountId>,
 	amount: Balance,
 	fee: Balance,
@@ -195,7 +195,7 @@ where
 	pub fn new(
 		id: &Hash,
 		from: &AccountId,
-		to: &AccountId,
+		to: &Option<AccountId>,
 		info: &TipsBalanceInfo<AccountId>,
 		amount: &Balance,
 		fee: &Balance,
