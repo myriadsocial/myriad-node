@@ -1,5 +1,5 @@
 use crate::{mock::*, Error, Receipt, References, TipsBalance, TipsBalanceInfo};
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchError, sp_runtime::traits::Zero};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
 
 #[test]
 fn pay_content_with_myria_works() {
@@ -8,7 +8,7 @@ fn pay_content_with_myria_works() {
 		let sender = account_key("sender_1");
 		let receiver = account_key("john");
 		let tipping_account_id = Tipping::tipping_account_id();
-		let amount = 100;
+		let amount = 10_000;
 
 		let tips_balance_info = TipsBalanceInfo::new(
 			&server_id,
@@ -19,23 +19,33 @@ fn pay_content_with_myria_works() {
 
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender),
-			receiver,
+			Some(receiver),
 			tips_balance_info.clone(),
-			amount
+			amount,
+			None,
 		));
 
 		let receipt_ids = Tipping::receipt_ids();
 		let receipt_id = receipt_ids[0];
 
-		assert_eq!(Balances::free_balance(sender), 95);
-		assert_eq!(Balances::free_balance(receiver), 130);
-		assert_eq!(Balances::free_balance(tipping_account_id), 5);
+		assert_eq!(Balances::free_balance(sender), 9_500);
+		assert_eq!(Balances::free_balance(receiver), 10_030);
+		assert_eq!(Balances::free_balance(tipping_account_id), 500);
 
-		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 5);
+		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 25);
+		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 475);
 
 		assert_eq!(
 			Tipping::receipts(receipt_id),
-			Some(Receipt::new(&receipt_id, &sender, &receiver, &tips_balance_info, &amount, &5, 0))
+			Some(Receipt::new(
+				&receipt_id,
+				&sender,
+				&Some(receiver),
+				&tips_balance_info,
+				&amount,
+				&500,
+				0
+			))
 		);
 	})
 }
@@ -47,30 +57,93 @@ fn pay_content_with_assets_works() {
 		let sender = account_key("sender_1");
 		let receiver = account_key("john");
 		let tipping_account_id = Tipping::tipping_account_id();
-		let amount = 100;
+		let amount = 10_000;
 
 		let tips_balance_info =
 			TipsBalanceInfo::new(&server_id, b"unlockable_content", b"unlockable_content_id", b"1");
 
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender),
-			receiver,
+			Some(receiver),
 			tips_balance_info.clone(),
-			amount
+			amount,
+			None,
 		));
 
 		let receipt_ids = Tipping::receipt_ids();
 		let receipt_id = receipt_ids[0];
 
-		assert_eq!(Assets::balance(1, sender), 95u128);
-		assert_eq!(Assets::balance(1, receiver), 130u128);
-		assert_eq!(Assets::balance(1, tipping_account_id), 5u128);
+		assert_eq!(Assets::balance(1, sender), 9_500u128);
+		assert_eq!(Assets::balance(1, receiver), 10_030u128);
+		assert_eq!(Assets::balance(1, tipping_account_id), 500u128);
 
-		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 5);
+		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 25);
+		assert_eq!(Tipping::reward_balance(server_id, b"1".to_vec()), 475);
 
 		assert_eq!(
 			Tipping::receipts(receipt_id),
-			Some(Receipt::new(&receipt_id, &sender, &receiver, &tips_balance_info, &amount, &5, 0))
+			Some(Receipt::new(
+				&receipt_id,
+				&sender,
+				&Some(receiver),
+				&tips_balance_info,
+				&amount,
+				&500,
+				0
+			))
+		);
+	})
+}
+
+#[test]
+fn pay_content_to_escrow_works() {
+	<ExternalityBuilder>::default().existential_deposit(1).build().execute_with(|| {
+		let server_id = account_key("alice");
+		let sender = account_key("sender_1");
+		let tipping_account_id = Tipping::tipping_account_id();
+		let amount = 10_000;
+
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			b"unlockable_content",
+			b"unlockable_content_id",
+			b"native",
+		);
+
+		assert_ok!(Tipping::pay_content(
+			RuntimeOrigin::signed(sender),
+			None,
+			tips_balance_info.clone(),
+			amount,
+			Some(b"user_id".to_vec()),
+		));
+
+		let receipt_ids = Tipping::receipt_ids();
+		let receipt_id = receipt_ids[0];
+
+		assert_eq!(Balances::free_balance(sender), 9_500);
+		assert_eq!(Balances::free_balance(tipping_account_id), 10_500);
+
+		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 25);
+		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 475);
+
+		assert_eq!(
+			Tipping::receipts(receipt_id),
+			Some(Receipt::new(&receipt_id, &sender, &None, &tips_balance_info, &amount, &500, 0))
+		);
+
+		let account_info = TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
+
+		let tips_balance = TipsBalance::new(&account_info, &amount);
+
+		assert_eq!(
+			Tipping::tips_balance_by_reference((
+				&server_id,
+				b"user".to_vec(),
+				b"user_id".to_vec(),
+				b"native".to_vec()
+			)),
+			Some(tips_balance)
 		);
 	})
 }
@@ -94,7 +167,7 @@ fn withdrawal_fee_works() {
 		let receiver_1 = account_key("john");
 		let receiver_2 = account_key("bob");
 
-		let amount = 100;
+		let amount = 10_000;
 
 		let tips_balance_info = TipsBalanceInfo::new(
 			&server_id,
@@ -105,9 +178,10 @@ fn withdrawal_fee_works() {
 
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender_1),
-			receiver_1,
+			Some(receiver_1),
 			tips_balance_info,
-			amount
+			amount,
+			None,
 		));
 
 		let tips_balance_info =
@@ -115,24 +189,83 @@ fn withdrawal_fee_works() {
 
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender_2),
-			receiver_2,
+			Some(receiver_2),
 			tips_balance_info,
-			amount
+			amount,
+			None,
 		));
 
-		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 5);
-		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 5);
+		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 25);
+		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 25);
 
-		let ft_identifiers = vec![b"native".to_vec(), b"1".to_vec()];
 		let receiver = account_key("satoshi");
 
-		assert_ok!(Tipping::withdraw_fee(RuntimeOrigin::root(), ft_identifiers, receiver));
-
+		assert_ok!(Tipping::withdraw_fee(RuntimeOrigin::root(), receiver));
 		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 0);
 		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 0);
 
-		assert_eq!(Balances::free_balance(receiver), 45);
-		assert_eq!(Assets::balance(1, receiver), 45);
+		assert_eq!(Balances::free_balance(receiver), 65);
+		assert_eq!(Assets::balance(1, receiver), 65);
+	})
+}
+
+#[test]
+fn withdrawal_reward_works() {
+	<ExternalityBuilder>::default().existential_deposit(1).build().execute_with(|| {
+		let tipping_account_id = Tipping::tipping_account_id();
+
+		assert_ok!(Assets::mint(
+			RuntimeOrigin::signed(account_key("alice")),
+			1,
+			tipping_account_id,
+			2
+		));
+
+		let server_id = account_key("alice");
+		let sender_1 = account_key("sender_1");
+		let sender_2 = account_key("sender_2");
+
+		let receiver_1 = account_key("john");
+		let receiver_2 = account_key("bob");
+
+		let amount = 10_000;
+
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			b"unlockable_content",
+			b"unlockable_content_id",
+			b"native",
+		);
+
+		assert_ok!(Tipping::pay_content(
+			RuntimeOrigin::signed(sender_1),
+			Some(receiver_1),
+			tips_balance_info,
+			amount,
+			None,
+		));
+
+		let tips_balance_info =
+			TipsBalanceInfo::new(&server_id, b"unlockable_content", b"unlockable_content_id", b"1");
+
+		assert_ok!(Tipping::pay_content(
+			RuntimeOrigin::signed(sender_2),
+			Some(receiver_2),
+			tips_balance_info,
+			amount,
+			None,
+		));
+
+		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 475);
+		assert_eq!(Tipping::reward_balance(server_id, b"1".to_vec()), 475);
+
+		assert_ok!(Tipping::withdraw_reward(RuntimeOrigin::signed(server_id)));
+
+		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 0);
+		assert_eq!(Tipping::reward_balance(server_id, b"1".to_vec()), 0);
+
+		assert_eq!(Balances::free_balance(server_id), 485);
+		assert_eq!(Assets::balance(1, server_id), 485);
 	})
 }
 
@@ -200,10 +333,6 @@ fn claim_reference_works() {
 		let tips_balance_info_1 = TipsBalanceInfo::new(&server_id, b"people", b"people_id", b"1");
 		let tips_balance_info_2 = TipsBalanceInfo::new(&server_id, b"people", b"people_id", b"2");
 
-		let mut tips_balance_0 = TipsBalance::new(&tips_balance_info_0, &1);
-		let mut tips_balance_1 = TipsBalance::new(&tips_balance_info_1, &1);
-		let mut tips_balance_2 = TipsBalance::new(&tips_balance_info_2, &2);
-
 		let main_tips_balance_info_0 =
 			TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
 
@@ -247,9 +376,6 @@ fn claim_reference_works() {
 			1,
 		));
 
-		tips_balance_0.set_amount(Zero::zero());
-		tips_balance_1.set_amount(Zero::zero());
-		tips_balance_2.set_amount(Zero::zero());
 		main_tips_balance_0.set_account_id(&account_key("john"));
 		main_tips_balance_1.set_account_id(&account_key("john"));
 		main_tips_balance_2.set_account_id(&account_key("john"));
@@ -261,7 +387,7 @@ fn claim_reference_works() {
 				b"people_id".to_vec(),
 				b"native".to_vec()
 			)),
-			Some(tips_balance_0.clone())
+			None,
 		);
 
 		assert_eq!(
@@ -271,7 +397,7 @@ fn claim_reference_works() {
 				b"people_id".to_vec(),
 				b"1".to_vec()
 			)),
-			Some(tips_balance_1.clone())
+			None,
 		);
 
 		assert_eq!(
@@ -281,7 +407,7 @@ fn claim_reference_works() {
 				b"people_id".to_vec(),
 				b"2".to_vec()
 			)),
-			Some(tips_balance_2.clone())
+			None,
 		);
 
 		assert_eq!(
@@ -319,7 +445,7 @@ fn claim_reference_works() {
 }
 
 #[test]
-pub fn claim_tip_works() {
+fn claim_tip_works() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		let tipping_account_id = Tipping::tipping_account_id();
 
@@ -511,7 +637,7 @@ fn call_event_should_work() {
 		let server_id = account_key("alice");
 		let sender = account_key("sender_1");
 		let receiver = account_key("satoshi");
-		let amount = 100;
+		let amount = 10_000;
 
 		let tips_balance_info = TipsBalanceInfo::new(
 			&server_id,
@@ -522,38 +648,57 @@ fn call_event_should_work() {
 
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender),
-			receiver,
+			Some(receiver),
 			tips_balance_info.clone(),
-			amount
+			amount,
+			None,
 		));
 
 		let receipt_ids = Tipping::receipt_ids();
 		let receipt_id = receipt_ids[0];
+		let receipt = Receipt::new(
+			&receipt_id,
+			&sender,
+			&Some(receiver),
+			&tips_balance_info,
+			&amount,
+			&500,
+			0,
+		);
 
-		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::PayUnlockableContent(
-			Receipt::new(&receipt_id, &sender, &receiver, &tips_balance_info, &amount, &5, 0),
-		)));
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::PayUnlockableContent {
+			from: sender,
+			to: Some(receiver),
+			receipt,
+		}));
 
-		// Withdrawal Event
-		assert_ok!(Tipping::withdraw_fee(
-			RuntimeOrigin::root(),
-			vec![b"native".to_vec()],
-			receiver
-		));
+		// Withdraw Fee Event
+		assert_ok!(Tipping::withdraw_fee(RuntimeOrigin::root(), receiver));
 
 		let sender = Tipping::tipping_account_id();
 
-		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::Withdrawal(
-			sender,
-			receiver,
-			vec![(b"native".to_vec(), 5)],
-		)));
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::Withdrawal {
+			from: sender,
+			to: receiver,
+			success: vec![(b"native".to_vec(), 25)],
+			failed: Vec::new(),
+		}));
+
+		// Withdraw Reward Event
+		assert_ok!(Tipping::withdraw_reward(RuntimeOrigin::signed(server_id)));
+
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::Withdrawal {
+			from: sender,
+			to: server_id,
+			success: vec![(b"native".to_vec(), 475)],
+			failed: Vec::new(),
+		}));
 
 		// SendTip Event
 		let server_id = account_key("alice");
 		let tips_balance_info =
 			TipsBalanceInfo::new(&server_id, b"people", b"people_id", b"native");
-		let tips_balance_key = tips_balance_info.key();
+		let tips_balance = TipsBalance::new(&tips_balance_info, &1);
 
 		assert_ok!(Tipping::send_tip(
 			RuntimeOrigin::signed(account_key("bob")),
@@ -563,11 +708,11 @@ fn call_event_should_work() {
 
 		let tipping_account_id = Tipping::tipping_account_id();
 
-		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::SendTip(
-			account_key("bob"),
-			tipping_account_id,
-			(tips_balance_key, 1),
-		)));
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::SendTip {
+			from: account_key("bob"),
+			to: tipping_account_id,
+			tips_balance,
+		}));
 
 		// ClaimReference Event
 		let main_tips_balance_info =
@@ -615,9 +760,11 @@ fn call_event_should_work() {
 			vec![b"native".to_vec()],
 		));
 
-		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::ClaimTip(
-			tipping_account_id,
-			(vec![(b"native".to_vec(), account_key("john"), 2)], None),
-		)));
+		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::ClaimTip {
+			from: tipping_account_id,
+			to: account_key("john"),
+			success: vec![(b"native".to_vec(), 2)],
+			failed: Vec::new(),
+		}));
 	})
 }

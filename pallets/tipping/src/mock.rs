@@ -99,6 +99,22 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
+	pub const AdminFee: u8 = 5;
+	pub const TransactionFee: u8 = 5;
+}
+
+impl pallet_tipping::Config for Test {
+	type RuntimeCall = RuntimeCall;
+	type TimeProvider = Timestamp;
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type Assets = Assets;
+	type WeightInfo = ();
+	type AdminFee = AdminFee;
+	type TransactionFee = TransactionFee;
+}
+
+parameter_types! {
 	pub const ApprovalDeposit: Balance = 1;
 	pub const AssetAccountDeposit: Balance = 10;
 	pub const AssetDeposit: Balance = 1;
@@ -121,15 +137,6 @@ impl pallet_assets::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type RuntimeEvent = RuntimeEvent;
 	type StringLimit = StringLimit;
-	type WeightInfo = ();
-}
-
-impl pallet_tipping::Config for Test {
-	type Assets = Assets;
-	type Currency = Balances;
-	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-	type TimeProvider = Timestamp;
 	type WeightInfo = ();
 }
 
@@ -167,15 +174,15 @@ impl ExternalityBuilder {
 				(1, john_public, 30),
 				(1, satoshi_public, 40),
 				(1, admin_public, 50),
-				(1, sender_1_public, 200),
-				(1, sender_2_public, 200),
+				(1, sender_1_public, 20_000),
+				(1, sender_2_public, 20_000),
 				(2, alice_public, 10),
 				(2, bob_public, 20),
 				(2, john_public, 30),
 				(2, satoshi_public, 40),
 				(2, admin_public, 50),
-				(2, sender_1_public, 200),
-				(2, sender_2_public, 200),
+				(2, sender_1_public, 20_000),
+				(2, sender_2_public, 20_000),
 			],
 		}
 		.assimilate_storage(&mut t)
@@ -188,8 +195,8 @@ impl ExternalityBuilder {
 				(john_public, 30),
 				(satoshi_public, 40),
 				(admin_public, 50),
-				(sender_1_public, 200),
-				(sender_2_public, 200),
+				(sender_1_public, 20_000),
+				(sender_2_public, 20_000),
 			],
 		}
 		.assimilate_storage(&mut t)
