@@ -118,6 +118,7 @@ pub type Executive = frame_executive::Executive<
 	ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	Migrations,
 >;
 pub type CollectionId = u128;
 pub type ItemId = u128;
@@ -724,11 +725,11 @@ impl pallet_tipping::Config for Runtime {
 	type WeightInfo = ();
 }
 
-// type Migrations = (
-// 	// This migration is used to set the interval value in the upward-messages. It should be
-// 	// deleted after the upgrade.
-// 	SetIntervalValueRuntimeUpgrade,
-// );
+type Migrations = (
+	// This migration is used to set the interval value in the upward-messages. It should be
+	// deleted after the upgrade.
+	SetIntervalValueRuntimeUpgrade,
+);
 
 /// Please set the value of interval according to your own needs.
 const INTERVAL: u32 = 1;
