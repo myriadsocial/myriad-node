@@ -76,11 +76,6 @@ pub mod pallet {
 		TipsBalanceOf<T>,
 	>;
 
-	// TODO: Do we need this storage?
-	#[pallet::storage]
-	#[pallet::getter(fn receipts)]
-	pub(super) type Receipts<T: Config> = StorageMap<_, Blake2_128Concat, HashOf<T>, ReceiptOf<T>>;
-
 	#[pallet::storage]
 	#[pallet::getter(fn withdrawal_balance)]
 	pub(super) type WithdrawalBalance<T: Config> =
@@ -97,10 +92,6 @@ pub mod pallet {
 		BalanceOf<T>,
 		ValueQuery,
 	>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn receipt_ids)]
-	pub(super) type ReceiptIds<T: Config> = StorageValue<_, Vec<HashOf<T>>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
