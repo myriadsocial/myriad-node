@@ -25,7 +25,7 @@ pub type BalanceOf<T> = <CurrencyOf<T> as Currency<AccountIdOf<T>>>::Balance;
 pub type TipsBalanceOf<T> = TipsBalance<BalanceOf<T>, AccountIdOf<T>, ServerIdOf<T>>;
 pub type TipsBalanceInfoOf<T> = TipsBalanceInfo<ServerIdOf<T>>;
 pub type TipsBalanceKeyOf<T> = TipsBalanceKey<ServerIdOf<T>>;
-pub type ReceiptOf<T> = Receipt<HashOf<T>, AccountIdOf<T>, BalanceOf<T>>;
+pub type ReceiptOf<T> = Receipt<AccountIdOf<T>, BalanceOf<T>>;
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
 pub struct TipsBalance<Balance, AccountId, ServerId> {
@@ -177,8 +177,7 @@ impl References {
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq, TypeInfo)]
-pub struct Receipt<Hash, AccountId, Balance> {
-	id: Hash,
+pub struct Receipt<AccountId, Balance> {
 	from: AccountId,
 	to: Option<AccountId>,
 	info: TipsBalanceInfo<AccountId>,
@@ -186,14 +185,12 @@ pub struct Receipt<Hash, AccountId, Balance> {
 	fee: Balance,
 	created_at: u128,
 }
-impl<Hash, AccountId, Balance> Receipt<Hash, AccountId, Balance>
+impl<AccountId, Balance> Receipt<AccountId, Balance>
 where
-	Hash: Clone,
 	Balance: Clone + Saturating + Copy,
 	AccountId: Clone,
 {
 	pub fn new(
-		id: &Hash,
 		from: &AccountId,
 		to: &Option<AccountId>,
 		info: &TipsBalanceInfo<AccountId>,
@@ -202,7 +199,6 @@ where
 		created_at: u128,
 	) -> Self {
 		Self {
-			id: id.clone(),
 			from: from.clone(),
 			to: to.clone(),
 			info: info.clone(),

@@ -2,8 +2,7 @@ use crate::*;
 
 use frame_support::{
 	dispatch::DispatchError,
-	pallet_prelude::Encode,
-	sp_runtime::traits::{AccountIdConversion, Hash, SaturatedConversion, Saturating, Zero},
+	sp_runtime::traits::{AccountIdConversion, SaturatedConversion, Saturating, Zero},
 	traits::{fungibles, Currency, ExistenceRequirement, Get},
 	PalletId,
 };
@@ -15,28 +14,6 @@ impl<T: Config> Pallet<T> {
 	/// The account ID that holds tipping's funds
 	pub fn tipping_account_id() -> T::AccountId {
 		PALLET_ID.into_account_truncating()
-	}
-
-	pub fn generate_receipt_id(from: &T::AccountId, info: &TipsBalanceInfoOf<T>) -> T::Hash {
-		let mut from_bytes = from.encode();
-
-		let mut server_id_bytes = info.get_server_id().encode();
-		let mut reference_type_bytes = info.get_reference_type().to_vec();
-		let mut reference_id_bytes = info.get_reference_id().to_vec();
-		let mut ft_identifier_bytes = info.get_ft_identifier().to_vec();
-
-		let from_info = frame_system::Pallet::<T>::account(from);
-
-		let mut nonce_bytes = from_info.nonce.encode();
-
-		from_bytes.append(&mut server_id_bytes);
-		from_bytes.append(&mut reference_type_bytes);
-		from_bytes.append(&mut reference_id_bytes);
-		from_bytes.append(&mut ft_identifier_bytes);
-		from_bytes.append(&mut nonce_bytes);
-
-		let seed = &from_bytes;
-		T::Hashing::hash(seed)
 	}
 
 	pub fn can_update_balance(key: &TipsBalanceKeyOf<T>) -> bool {
@@ -124,33 +101,15 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn do_update_reward_balance(
+		instance_id: u64,
 		tips_balance_info: &TipsBalanceInfoOf<T>,
 		balance: BalanceOf<T>,
 	) {
 		let server_id = tips_balance_info.get_server_id();
 		let ft_identifier = tips_balance_info.get_ft_identifier();
-		RewardBalance::<T>::mutate(server_id, ft_identifier, |value| {
+		RewardBalance::<T>::mutate((server_id, instance_id, ft_identifier), |value| {
 			*value += balance;
 		});
-	}
-
-	pub fn do_store_receipt(
-		from: &T::AccountId,
-		to: &Option<T::AccountId>,
-		detail: &TipsBalanceInfoOf<T>,
-		total_paid: &BalanceOf<T>,
-		total_fee: &BalanceOf<T>,
-	) -> ReceiptOf<T> {
-		let id = Self::generate_receipt_id(from, detail);
-		let now = T::TimeProvider::now().as_millis();
-		let receipt = Receipt::new(&id, from, to, detail, total_paid, total_fee, now);
-
-		Receipts::<T>::insert(id, &receipt);
-		ReceiptIds::<T>::mutate(|value| {
-			value.push(id);
-		});
-
-		receipt
 	}
 
 	pub fn do_store_tips_balance(

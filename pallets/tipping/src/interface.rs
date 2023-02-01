@@ -12,6 +12,7 @@ pub trait TippingInterface<T: frame_system::Config> {
 
 	fn pay_content(
 		sender: &T::AccountId,
+		instance_id: u64,
 		receiver: &Option<T::AccountId>,
 		tips_balance_info: &Self::TipsBalanceInfo,
 		amount: &Self::Balance,
@@ -26,6 +27,7 @@ pub trait TippingInterface<T: frame_system::Config> {
 	fn withdraw_reward(
 		sender: &T::AccountId,
 		receiver: &T::AccountId,
+		instance_id: u64,
 	) -> Result<(Self::WithdrawalResult, Self::WithdrawalResult), Self::Error>;
 
 	fn send_tip(
