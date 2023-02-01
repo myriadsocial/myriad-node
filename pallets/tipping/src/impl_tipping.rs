@@ -15,6 +15,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 
 	fn pay_content(
 		sender: &T::AccountId,
+		instance_id: u64,
 		receiver: &Option<T::AccountId>,
 		tips_balance_info: &Self::TipsBalanceInfo,
 		amount: &Self::Balance,
@@ -63,7 +64,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		}
 
 		Self::do_update_withdrawal_balance(ft_identifier, admin_fee);
-		Self::do_update_reward_balance(&info, server_fee);
+		Self::do_update_reward_balance(instance_id, &info, server_fee);
 
 		let now = T::TimeProvider::now().as_millis();
 		let receipt = Receipt::new(sender, receiver, &info, amount, &total_fee, now);
@@ -100,11 +101,12 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 	fn withdraw_reward(
 		sender: &T::AccountId,
 		receiver: &T::AccountId,
+		instance_id: u64,
 	) -> Result<(Self::WithdrawalResult, Self::WithdrawalResult), Self::Error> {
 		let mut success_withdrawal = Vec::new();
 		let mut failed_withdrawal = Vec::new();
 
-		for (ft_identifier, amount) in RewardBalance::<T>::drain_prefix(receiver) {
+		for (ft_identifier, amount) in RewardBalance::<T>::drain_prefix((receiver, instance_id)) {
 			let result = Self::do_transfer(&ft_identifier, sender, receiver, amount);
 
 			if result.is_ok() {
@@ -116,7 +118,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 
 		// Reinsert again failed transfer
 		for (ft_identifier, amount) in failed_withdrawal.iter() {
-			RewardBalance::<T>::insert(receiver, ft_identifier, amount);
+			RewardBalance::<T>::insert((receiver, instance_id, ft_identifier), amount);
 		}
 
 		Ok((success_withdrawal, failed_withdrawal))

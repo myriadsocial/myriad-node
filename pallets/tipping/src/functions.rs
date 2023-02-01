@@ -101,12 +101,13 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn do_update_reward_balance(
+		instance_id: u64,
 		tips_balance_info: &TipsBalanceInfoOf<T>,
 		balance: BalanceOf<T>,
 	) {
 		let server_id = tips_balance_info.get_server_id();
 		let ft_identifier = tips_balance_info.get_ft_identifier();
-		RewardBalance::<T>::mutate(server_id, ft_identifier, |value| {
+		RewardBalance::<T>::mutate((server_id, instance_id, ft_identifier), |value| {
 			*value += balance;
 		});
 	}

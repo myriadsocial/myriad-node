@@ -83,12 +83,13 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn reward_balance)]
-	pub(super) type RewardBalance<T: Config> = StorageDoubleMap<
+	pub(super) type RewardBalance<T: Config> = StorageNMap<
 		_,
-		Blake2_128Concat,
-		AccountIdOf<T>,
-		Blake2_128Concat,
-		FtIdentifier,
+		(
+			NMapKey<Blake2_128Concat, ServerIdOf<T>>,
+			NMapKey<Blake2_128Concat, u64>,
+			NMapKey<Blake2_128Concat, FtIdentifier>,
+		),
 		BalanceOf<T>,
 		ValueQuery,
 	>;
@@ -141,6 +142,7 @@ pub mod pallet {
 		pub fn pay_content(
 			origin: OriginFor<T>,
 			receiver: Option<AccountIdOf<T>>,
+			instance_id: u64,
 			tips_balance_info: TipsBalanceInfoOf<T>,
 			amount: BalanceOf<T>,
 			account_reference: Option<Vec<u8>>,
@@ -148,6 +150,7 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			let receipt = <Self as TippingInterface<T>>::pay_content(
 				&sender,
+				instance_id,
 				&receiver,
 				&tips_balance_info,
 				&amount,
@@ -179,10 +182,14 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::withdraw_reward())]
-		pub fn withdraw_reward(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+		pub fn withdraw_reward(
+			origin: OriginFor<T>,
+			instance_id: u64,
+		) -> DispatchResultWithPostInfo {
 			let sender = Self::tipping_account_id();
 			let receiver = ensure_signed(origin)?;
-			let result = <Self as TippingInterface<T>>::withdraw_reward(&sender, &receiver)?;
+			let result =
+				<Self as TippingInterface<T>>::withdraw_reward(&sender, &receiver, instance_id)?;
 
 			let (success, failed) = result;
 

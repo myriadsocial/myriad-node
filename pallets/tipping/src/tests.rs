@@ -20,7 +20,8 @@ fn pay_content_with_myria_works() {
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender),
 			Some(receiver),
-			tips_balance_info.clone(),
+			0,
+			tips_balance_info,
 			amount,
 			None,
 		));
@@ -30,7 +31,7 @@ fn pay_content_with_myria_works() {
 		assert_eq!(Balances::free_balance(tipping_account_id), 500);
 
 		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 25);
-		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 475);
+		assert_eq!(Tipping::reward_balance((server_id, 0, b"native".to_vec())), 475);
 	})
 }
 
@@ -49,7 +50,8 @@ fn pay_content_with_assets_works() {
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender),
 			Some(receiver),
-			tips_balance_info.clone(),
+			0u64,
+			tips_balance_info,
 			amount,
 			None,
 		));
@@ -59,7 +61,7 @@ fn pay_content_with_assets_works() {
 		assert_eq!(Assets::balance(1, tipping_account_id), 500u128);
 
 		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 25);
-		assert_eq!(Tipping::reward_balance(server_id, b"1".to_vec()), 475);
+		assert_eq!(Tipping::reward_balance((server_id, 0, b"1".to_vec())), 475);
 	})
 }
 
@@ -81,7 +83,8 @@ fn pay_content_to_escrow_works() {
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender),
 			None,
-			tips_balance_info.clone(),
+			0,
+			tips_balance_info,
 			amount,
 			Some(b"user_id".to_vec()),
 		));
@@ -90,7 +93,7 @@ fn pay_content_to_escrow_works() {
 		assert_eq!(Balances::free_balance(tipping_account_id), 10_500);
 
 		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 25);
-		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 475);
+		assert_eq!(Tipping::reward_balance((server_id, 0, b"native".to_vec())), 475);
 
 		let account_info = TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
 
@@ -139,6 +142,7 @@ fn withdrawal_fee_works() {
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender_1),
 			Some(receiver_1),
+			0,
 			tips_balance_info,
 			amount,
 			None,
@@ -150,6 +154,7 @@ fn withdrawal_fee_works() {
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender_2),
 			Some(receiver_2),
+			0,
 			tips_balance_info,
 			amount,
 			None,
@@ -200,6 +205,7 @@ fn withdrawal_reward_works() {
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender_1),
 			Some(receiver_1),
+			0,
 			tips_balance_info,
 			amount,
 			None,
@@ -211,18 +217,19 @@ fn withdrawal_reward_works() {
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender_2),
 			Some(receiver_2),
+			0,
 			tips_balance_info,
 			amount,
 			None,
 		));
 
-		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 475);
-		assert_eq!(Tipping::reward_balance(server_id, b"1".to_vec()), 475);
+		assert_eq!(Tipping::reward_balance((server_id, 0, b"native".to_vec())), 475);
+		assert_eq!(Tipping::reward_balance((server_id, 0, b"1".to_vec())), 475);
 
-		assert_ok!(Tipping::withdraw_reward(RuntimeOrigin::signed(server_id)));
+		assert_ok!(Tipping::withdraw_reward(RuntimeOrigin::signed(server_id), 0));
 
-		assert_eq!(Tipping::reward_balance(server_id, b"native".to_vec()), 0);
-		assert_eq!(Tipping::reward_balance(server_id, b"1".to_vec()), 0);
+		assert_eq!(Tipping::reward_balance((server_id, 0, b"native".to_vec())), 0);
+		assert_eq!(Tipping::reward_balance((server_id, 0, b"1".to_vec())), 0);
 
 		assert_eq!(Balances::free_balance(server_id), 485);
 		assert_eq!(Assets::balance(1, server_id), 485);
@@ -609,6 +616,7 @@ fn call_event_should_work() {
 		assert_ok!(Tipping::pay_content(
 			RuntimeOrigin::signed(sender),
 			Some(receiver),
+			0,
 			tips_balance_info.clone(),
 			amount,
 			None,
@@ -635,7 +643,7 @@ fn call_event_should_work() {
 		}));
 
 		// Withdraw Reward Event
-		assert_ok!(Tipping::withdraw_reward(RuntimeOrigin::signed(server_id)));
+		assert_ok!(Tipping::withdraw_reward(RuntimeOrigin::signed(server_id), 0));
 
 		System::assert_last_event(RuntimeEvent::Tipping(crate::Event::Withdrawal {
 			from: sender,
