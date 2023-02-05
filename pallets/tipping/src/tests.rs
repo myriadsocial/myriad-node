@@ -485,6 +485,50 @@ fn claim_tip_works() {
 }
 
 #[test]
+fn cant_pay_content_when_insufficient_balance() {
+	<ExternalityBuilder>::default().existential_deposit(1).build().execute_with(|| {
+		let server_id = account_key("alice");
+		let sender = account_key("bob");
+		let receiver = account_key("john");
+		let amount = 20;
+
+		let tips_balance_info = TipsBalanceInfo::new(
+			&server_id,
+			b"unlockable_content",
+			b"unlockable_content_id",
+			b"native",
+		);
+
+		assert_noop!(
+			Tipping::pay_content(
+				RuntimeOrigin::signed(sender),
+				Some(receiver),
+				0,
+				tips_balance_info,
+				amount,
+				None,
+			),
+			Error::<Test>::InsufficientBalance
+		);
+
+		let tips_balance_info =
+			TipsBalanceInfo::new(&server_id, b"unlockable_content", b"unlockable_content_id", b"1");
+
+		assert_noop!(
+			Tipping::pay_content(
+				RuntimeOrigin::signed(sender),
+				Some(receiver),
+				0,
+				tips_balance_info,
+				amount,
+				None,
+			),
+			Error::<Test>::InsufficientBalance
+		);
+	})
+}
+
+#[test]
 fn cant_claim_reference() {
 	<ExternalityBuilder>::default().existential_deposit(2).build().execute_with(|| {
 		let server_id = account_key("alice");

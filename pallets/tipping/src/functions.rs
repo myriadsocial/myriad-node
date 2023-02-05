@@ -21,6 +21,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn can_pay_content(
+		ft_identifier: &[u8],
 		sender: &T::AccountId,
 		amount: &BalanceOf<T>,
 	) -> Result<FeeDetail<BalanceOf<T>>, Error<T>> {
@@ -30,11 +31,31 @@ impl<T: Config> Pallet<T> {
 			.ok_or(Error::<T>::InsufficientFee)?;
 
 		let fee: BalanceOf<T> = *amount / tx_fee_denom.saturated_into();
-		let minimum_balance = CurrencyOf::<T>::minimum_balance();
 		let total_transfer = *amount + fee;
 
-		let current_balance = CurrencyOf::<T>::free_balance(sender);
-		let transferable_balance = current_balance - minimum_balance;
+		let transferable_balance: BalanceOf<T> = if ft_identifier == b"native" {
+			let minimum_balance = CurrencyOf::<T>::minimum_balance();
+			let account_balance = CurrencyOf::<T>::free_balance(sender);
+
+			if account_balance >= minimum_balance {
+				account_balance - minimum_balance
+			} else {
+				Zero::zero()
+			}
+		} else {
+			let asset_id = Self::asset_id(ft_identifier)?;
+			let asset_minimum_balance =
+				<T::Assets as fungibles::Inspect<T::AccountId>>::minimum_balance(asset_id);
+			let asset_account_balance =
+				<T::Assets as fungibles::Inspect<T::AccountId>>::balance(asset_id, sender);
+			let asset_transferable_balance = if asset_account_balance >= asset_minimum_balance {
+				asset_account_balance - asset_minimum_balance
+			} else {
+				0u128
+			};
+
+			asset_transferable_balance.saturated_into()
+		};
 
 		if total_transfer > transferable_balance {
 			return Err(Error::<T>::InsufficientBalance)

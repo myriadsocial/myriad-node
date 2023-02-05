@@ -27,7 +27,8 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 			}
 		}
 
-		let fee_detail = Self::can_pay_content(sender, amount)?;
+		let ft_identifier = tips_balance_info.get_ft_identifier();
+		let fee_detail = Self::can_pay_content(ft_identifier, sender, amount)?;
 		let admin_fee = fee_detail.admin_fee();
 		let server_fee = fee_detail.server_fee();
 		let total_fee = fee_detail.total_fee();
@@ -40,7 +41,6 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		);
 
 		let escrow_id = Self::tipping_account_id();
-		let ft_identifier = info.get_ft_identifier();
 
 		if let Some(receiver) = receiver {
 			Self::do_transfer(ft_identifier, sender, receiver, *amount)?;
