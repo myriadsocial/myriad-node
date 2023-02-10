@@ -195,7 +195,7 @@ pub mod pallet {
 			}
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::cancel_unregister())]
 		pub fn cancel_unregister(
 			origin: OriginFor<T>,
 			server_id: ServerId,
