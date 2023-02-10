@@ -95,7 +95,7 @@ benchmarks! {
 
 		let caller_origin = <T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller));
 		let _ = Tipping::<T>::pay_content(caller_origin, Some(receiver_id), 0, tips_balance_info, amount, None);
-	}: _(RawOrigin::Signed(server_id, 0))
+	}: _(RawOrigin::Signed(server_id), 0)
 
 	send_tip {
 		// Initial account
