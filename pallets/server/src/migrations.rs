@@ -47,6 +47,11 @@ pub fn migrate<T: Config>() -> Weight {
 		version = StorageVersion::new(6);
 	}
 
+	if version == 6 {
+		weight = weight.saturating_add(versions::v7::migrate::<T>());
+		version = StorageVersion::new(7);
+	}
+
 	version.put::<Pallet<T>>();
 	weight
 }
@@ -300,6 +305,81 @@ mod versions {
 					NewServerByOwner::<T>::insert(&old.owner, server_id, &new_server);
 
 					Some(new_server)
+				},
+			);
+
+			weight
+		}
+	}
+
+	pub mod v7 {
+		use crate::BalanceOf;
+		use frame_support::sp_runtime::traits::Zero;
+		use frame_system::pallet_prelude::BlockNumberFor;
+
+		use super::*;
+
+		pub fn migrate<T: Config>() -> Weight {
+			let mut weight = T::DbWeight::get().writes(1);
+
+			pub type ServerOf<T> = NewServer<AccountIdOf<T>, BalanceOf<T>, BlockNumberFor<T>>;
+
+			#[storage_alias]
+			type RewardBalance<T: Config> = StorageNMap<
+				Tipping,
+				(
+					NMapKey<Blake2_128Concat, AccountIdOf<T>>,
+					NMapKey<Blake2_128Concat, u64>,
+					NMapKey<Blake2_128Concat, Vec<u8>>,
+				),
+				BalanceOf<T>,
+				ValueQuery,
+			>;
+
+			NewServerById::<T>::translate(|server_id: ServerId, server: ServerOf<T>| {
+				weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+
+				if server_id == 0u64 {
+					return Some(server)
+				}
+
+				if server.get_stake_amount() > &Zero::zero() {
+					return Some(server)
+				}
+
+				ServerByApiUrl::<T>::remove(server.get_api_url());
+
+				None
+			});
+
+			NewServerByOwner::<T>::translate(
+				|owner: AccountIdOf<T>, server_id: ServerId, server: ServerOf<T>| {
+					if server_id == 0u64 {
+						return Some(server)
+					}
+
+					if server.get_stake_amount() > &Zero::zero() {
+						return Some(server)
+					}
+
+					let mut data = Vec::new();
+					let reward_balance = RewardBalance::<T>::drain_prefix((&owner, server_id));
+
+					for (ft_identifier, amount) in reward_balance {
+						if amount > Zero::zero() {
+							data.push((ft_identifier, amount));
+						}
+					}
+
+					if !data.is_empty() {
+						for (ft_identifier, amount) in data.iter() {
+							RewardBalance::<T>::insert((&owner, server_id, ft_identifier), amount);
+						}
+
+						return Some(server)
+					}
+
+					None
 				},
 			);
 
