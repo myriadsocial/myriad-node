@@ -1,6 +1,6 @@
 [package]
 name = 'myriad'
-version = '2.3.3'
+version = '2.3.4'
 edition = '2021'
 license = 'AGPL-3.0'
 authors = ['Myriad Dev Team <dev@myriad.social>']
@@ -80,7 +80,7 @@ beefy-gadget-rpc = { git = 'https://github.com/paritytech/substrate.git', branch
 
 # Octopus Dependencies
 ## Octopus Pallet Dependencies
-pallet-octopus-appchain = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30' }
+pallet-octopus-appchain = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30-1' }
 
 # Local Dependencies
 # Myriad Runtime Dependencies

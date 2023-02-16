@@ -198,7 +198,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 2033,
+	spec_version: 2034,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -527,6 +527,11 @@ impl pallet_octopus_appchain::Config for Runtime {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const NativeTokenDecimals: u128 = 1_000_000_000_000_000_000;
+	pub const FeeThreshold: u64 = 300;
+}
+
 impl pallet_octopus_bridge::Config for Runtime {
 	type AppchainInterface = OctopusAppchain;
 	type AssetBalance = Balance;
@@ -537,9 +542,11 @@ impl pallet_octopus_bridge::Config for Runtime {
 	type Currency = Balances;
 	type Fungibles = OctopusAssets;
 	type ItemId = ItemId;
+	type NativeTokenDecimals = NativeTokenDecimals;
 	type Nonfungibles = OctopusUniques;
 	type PalletId = OctopusAppchainPalletId;
 	type RuntimeEvent = RuntimeEvent;
+	type Threshold = FeeThreshold;
 	type UpwardMessagesInterface = OctopusUpwardMessages;
 	type WeightInfo = ();
 }
