@@ -22,8 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         command:
-          - 'check --all'
-          - 'test --all'
+          - 'check --all --locked'
+          - 'test --all --locked'
           - 'clippy --all -- -D warnings'
           - 'fmt --all -- --check'
     runs-on: ubuntu-20.04
