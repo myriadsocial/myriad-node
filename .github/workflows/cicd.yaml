@@ -72,7 +72,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
       - name: Run cargo build
-        uses: cargo build --release --locked
+        run: cargo build --release --locked
       - name: Copy binnary file
         run: cp target/release/myriad .
       - name: Send WASM to Discord
