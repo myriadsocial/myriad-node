@@ -171,8 +171,6 @@ pub mod opaque {
 pub mod currency {
 	use super::Balance;
 
-	pub const OCTS: Balance = 1_000_000_000_000_000_000;
-
 	pub const UNITS: Balance = 1_000_000_000_000_000_000;
 	pub const DOLLARS: Balance = UNITS;
 	pub const CENTS: Balance = DOLLARS / 100;

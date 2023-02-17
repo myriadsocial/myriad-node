@@ -1,0 +1,175 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    if: ${{ github.event_name == 'pull_request' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        command:
+          - 'check --all'
+          - 'test --all'
+          - 'clippy --all -- -D warnings'
+          - 'fmt --all -- --check'
+    runs-on: ubuntu-20.04
+    name: Test on nightly-2022-07-24 ( ${{ matrix.command }} )
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
+        with:
+          fetch-depth: 0
+      - name: Install protobuf-compiler
+        run: sudo apt install -y protobuf-compiler
+      - name: Install toolchain
+        uses: actions-rs/toolchain@b2417cde72dcf67f306c0ae8e0828a81bf0b189f
+        with:
+          profile: minimal
+          toolchain: nightly-2022-07-24
+          components: clippy, rustfmt
+          target: wasm32-unknown-unknown
+          override: true
+          default: true
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+      - name: Run cargo ${{ matrix.command }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: ${{ matrix.command }}
+
+  build:
+    if: ${{ github.event_name == 'push' && github.ref_type == 'branch' }}
+    runs-on: ubuntu-20.04
+    name: Build
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
+        with:
+          fetch-depth: 0
+      - name: Install protobuf-compiler
+        run: sudo apt install -y protobuf-compiler
+      - name: Install toolchain
+        uses: actions-rs/toolchain@b2417cde72dcf67f306c0ae8e0828a81bf0b189f
+        with:
+          profile: minimal
+          toolchain: nightly-2022-07-24
+          components: clippy, rustfmt
+          target: wasm32-unknown-unknown
+          override: true
+          default: true
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build --release --locked
+      - name: Copy binnary file
+        run: cp target/release/myriad .
+      - name: Send WASM to Discord
+        uses: tsickert/discord-webhook@c840d45a03a323fbc3f7507ac7769dbd91bfb164
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          embed-title: New WASM
+          embed-description: Build success on commit sha ${{ github.sha }}
+          filename: ./target/release/wbuild/myriad-runtime/myriad_runtime.compact.compressed.wasm
+      - name: Set Up QEMU
+        uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18
+      - name: Set Up Docker Buildx
+        id: set-up-buildx
+        uses: docker/setup-buildx-action@f03ac48505955848960e80bbb68046aa35c7b9e7
+        with:
+          install: true
+      - name: Cache Docker Layers
+        uses: actions/cache@6998d139ddd3e68c71e9e398d8e40b71a2f39812
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Build Docker
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          builder: ${{ steps.set-up-buildx.outputs.name }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          context: .
+          file: .maintain/docker/injected-binnary.Dockerfile
+          tags: ${{ github.repository }}:${{ github.sha }}
+          outputs: type=docker,dest=/tmp/docker_image.tar
+      - name: Move Cache Docker Layers
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      - name: Upload Build to Artifact
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: build_${{ github.sha }}
+          path: |
+            /tmp/docker_image.tar
+          retention-days: 5
+
+  release-please:
+    needs:
+      - build
+    runs-on: ubuntu-20.04
+    name: Release Please
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
+        with:
+          fetch-depth: 0
+      - name: Release
+        id: release
+        uses: google-github-actions/release-please-action@d3c71f9a0a55385580de793de58da057b3560862
+        with:
+          token: ${{ secrets.PAT }}
+          fork: true
+          release-type: rust
+          package-name: ${{ github.event.repository.name }}
+          include-v-in-tag: false
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+
+  publish-docker:
+    needs:
+      - release-please
+    runs-on: ubuntu-20.04
+    name: Publish Docker
+    steps:
+      - name: Login to DockerHub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Download Build from Artifact
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: build_${{ github.sha }}
+          path: /tmp
+      - name: Load Downloaded Image
+        run: |
+          docker load --input /tmp/docker_image.tar
+          docker images --no-trunc --digests ${{ github.repository }}
+      - name: Tag as Release Version
+        if: ${{ needs.release-please.outputs.release_created }}
+        run: |
+          docker tag ${{ github.repository }}:${{ github.sha }} ${{ github.repository }}:${{ needs.release-please.outputs.tag_name }}
+          docker tag ${{ github.repository }}:${{ github.sha }} ${{ github.repository }}:latest
+          docker images --no-trunc --digests ${{ github.repository }}
+      - name: Push
+        run: docker image push -a ${{ github.repository }}

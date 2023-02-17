@@ -13,7 +13,7 @@ use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_octopus_appchain::sr25519::AuthorityId as OctopusId;
 
 use myriad_runtime::{
-	currency::{OCTS, UNITS as MYRIA},
+	currency::UNITS as MYRIA,
 	opaque::{Block, SessionKeys},
 	AccountId, BabeConfig, Balance, BalancesConfig, GenesisConfig, OctopusAppchainConfig,
 	OctopusBridgeConfig, OctopusLposConfig, OctopusUpwardMessagesConfig, SessionConfig, Signature,
@@ -131,9 +131,9 @@ pub fn local_config() -> Result<ChainSpec, String> {
 				// Initial PoA authorities
 				vec![
 					// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-					authority_keys_from_seed("Alice", 100 * OCTS),
+					authority_keys_from_seed("Alice", 100 * MYRIA),
 					// 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
-					authority_keys_from_seed("Bob", 100 * OCTS),
+					authority_keys_from_seed("Bob", 100 * MYRIA),
 				],
 				// Pre-funded accounts
 				vec![
@@ -198,7 +198,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 				// Initial PoA authorities
 				vec![
 					// 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-					authority_keys_from_seed("Alice", 100 * OCTS),
+					authority_keys_from_seed("Alice", 100 * MYRIA),
 				],
 				// Pre-funded accounts
 				vec![(
