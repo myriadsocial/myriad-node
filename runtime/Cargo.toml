@@ -1,6 +1,6 @@
 [package]
 name = 'myriad-runtime'
-version = '2.3.3'
+version = '2.3.4'
 edition = '2021'
 license = 'AGPL-3.0'
 authors = ['Myriad Dev Team <dev@myriad.social>']
@@ -73,12 +73,12 @@ pallet-uniques = { git = 'https://github.com/paritytech/substrate.git', branch =
 
 # Octopus Dependencies
 ## Octopus Pallet Dependencies
-pallet-octopus-appchain = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30', default-features = false }
-pallet-octopus-appchain-benchmarking = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30', default-features = false, optional = true }
-pallet-octopus-bridge = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30', default-features = false }
-pallet-octopus-bridge-benchmarking = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30', default-features = false, optional = true }
-pallet-octopus-lpos = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30', default-features = false }
-pallet-octopus-upward-messages = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30', default-features = false }
+pallet-octopus-appchain = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30-1', default-features = false }
+pallet-octopus-appchain-benchmarking = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30-1', default-features = false, optional = true }
+pallet-octopus-bridge = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30-1', default-features = false }
+pallet-octopus-bridge-benchmarking = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30-1', default-features = false, optional = true }
+pallet-octopus-lpos = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30-1', default-features = false }
+pallet-octopus-upward-messages = { git = 'https://github.com/octopus-network/octopus-pallets.git', branch = 'release-v0.9.30-1', default-features = false }
 
 # Local Pallet
 pallet-server = { path = '../pallets/server', default-features = false }
