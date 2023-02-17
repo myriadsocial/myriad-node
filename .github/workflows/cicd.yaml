@@ -47,9 +47,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
       - name: Run cargo ${{ matrix.command }}
-        uses: actions-rs/cargo@v1
-        with:
-          command: ${{ matrix.command }}
+        run: cargo ${{ matrix.command }}
 
   build:
     if: ${{ github.event_name == 'push' && github.ref_type == 'branch' }}
@@ -74,9 +72,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
       - name: Run cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build --release --locked
+        uses: cargo build --release --locked
       - name: Copy binnary file
         run: cp target/release/myriad .
       - name: Send WASM to Discord
