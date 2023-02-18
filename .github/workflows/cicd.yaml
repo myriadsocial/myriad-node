@@ -149,11 +149,11 @@ jobs:
           fork: true
           package-name: ${{ github.event.repository.name }}
           release-type: rust
-          version-file: ./node/Cargo.toml
+          version-file: node/Cargo.toml
           extra-files: |
-            ./runtime/Cargo.toml
-            ./pallets/server/Cargo.toml
-            ./pallets/tipping/Cargo.toml
+            runtime/Cargo.toml
+            pallets/server/Cargo.toml
+            pallets/tipping/Cargo.toml
           release-as: ${{ steps.compute-version.outputs.semver }}
           include-v-in-tag: false
     outputs:
