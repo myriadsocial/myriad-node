@@ -1,4 +1,4 @@
-FROM paritytech/ci-linux:9575dfcd-20210729 AS chef
+FROM paritytech/ci-linux:42a94a57-20220730@sha256:9666da1a0ad5f4d127e3cbd7fcf2aae0165a33ecff4fb0efd9baf03f24093483 AS chef
 RUN cargo install cargo-chef --version 0.1.31
 WORKDIR /app
 
@@ -22,7 +22,7 @@ COPY ./Cargo.toml /app/Cargo.toml
 RUN cargo build --release
 
 # Production image, copy all the files and run
-FROM debian:buster-20210816-slim AS runner
+FROM debian:buster-20210816-slim@sha256:bdb7370812bd65a465f929fd8e61af294fe5988a954ea3c373511f125697603d AS runner
 LABEL social.myriad.image.authors="dev@myriad.social"
 # Create user and set ownership and permissions as required
 RUN useradd -m -u 1001 -U -s /bin/sh -d /home/myriad myriad && \
