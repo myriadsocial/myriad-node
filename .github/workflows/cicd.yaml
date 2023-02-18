@@ -128,20 +128,29 @@ jobs:
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
         with:
           fetch-depth: 0
+      - name: Compute Version
+        id: compute-version
+        shell: bash
+        run: |
+          VERSION=$(sed -n '/^[[:space:]]spec_version:/p' ./runtime/src/lib.rs | sed -e 's/^[[:space:]]spec_version: \(.*\),/\1/')
+          MAJOR=${VERSION:0:2}
+          if [[ ${MAJOR:1:1} == "0" ]]
+          then
+            MAJOR=${MAJOR:0:1}
+          fi
+          MINOR=${VERSION:2:1}
+          PATCH=${VERSION:3:1}
+          echo "::set-output name=semver::$MAJOR.$MINOR.$PATCH"
       - name: Release
         id: release
         uses: google-github-actions/release-please-action@d3c71f9a0a55385580de793de58da057b3560862
         with:
           token: ${{ secrets.PAT }}
           fork: true
+          release-as: ${{ steps.compute-version.outputs.semver }}
           release-type: rust
           package-name: ${{ github.event.repository.name }}
           include-v-in-tag: false
-          bump-patch-for-minor-pre-major: true
-          path: ./node
-          extra-files: |
-            - ./runtime/Cargo.toml
-            - ./pallets/*/Cargo.toml
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}

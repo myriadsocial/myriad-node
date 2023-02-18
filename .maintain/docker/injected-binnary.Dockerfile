@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:20.04@sha256:bffb6799d706144f263f4b91e1226745ffb5643ea0ea89c2f709208e8d70c999
 LABEL social.myriad.image.authors="dev@myriad.social"
 RUN apt-get update && \
 	DEBIAN_FRONTEND=noninteractive apt-get install -y \

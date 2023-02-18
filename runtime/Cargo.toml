@@ -1,6 +1,6 @@
 [package]
 name = 'myriad-runtime'
-version = '2.3.4'
+version = '2.3.3'
 edition = '2021'
 license = 'AGPL-3.0'
 authors = ['Myriad Dev Team <dev@myriad.social>']
