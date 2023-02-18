@@ -147,9 +147,14 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
           fork: true
-          release-as: ${{ steps.compute-version.outputs.semver }}
-          release-type: rust
           package-name: ${{ github.event.repository.name }}
+          release-type: rust
+          version-file: ./node/Cargo.toml
+          extra-files: |
+            ./runtime/Cargo.toml
+            ./pallets/server/Cargo.toml
+            ./pallets/tipping/Cargo.toml
+          release-as: ${{ steps.compute-version.outputs.semver }}
           include-v-in-tag: false
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
