@@ -149,6 +149,7 @@ jobs:
           fork: true
           package-name: ${{ github.event.repository.name }}
           release-type: rust
+          path: ./node
           version-file: node/Cargo.toml
           extra-files: |
             runtime/Cargo.toml
