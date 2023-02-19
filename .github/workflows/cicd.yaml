@@ -140,21 +140,16 @@ jobs:
           fi
           MINOR=${VERSION:2:1}
           PATCH=${VERSION:3:1}
-          echo "::set-output name=semver::$MAJOR.$MINOR.$PATCH"
+          echo "semver::$MAJOR.$MINOR.$PATCH" >> $GITHUB_OUTPUT
       - name: Release
         id: release
         uses: google-github-actions/release-please-action@d3c71f9a0a55385580de793de58da057b3560862
         with:
           token: ${{ secrets.PAT }}
           fork: true
+          plugins: cargo-workspace
           package-name: ${{ github.event.repository.name }}
           release-type: rust
-          path: ./node
-          version-file: node/Cargo.toml
-          extra-files: |
-            runtime/Cargo.toml
-            pallets/server/Cargo.toml
-            pallets/tipping/Cargo.toml
           release-as: ${{ steps.compute-version.outputs.semver }}
           include-v-in-tag: false
     outputs:
