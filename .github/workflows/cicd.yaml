@@ -140,7 +140,7 @@ jobs:
           fi
           MINOR=${VERSION:2:1}
           PATCH=${VERSION:3:1}
-          echo "semver::$MAJOR.$MINOR.$PATCH" >> $GITHUB_OUTPUT
+          echo "semver=$MAJOR.$MINOR.$PATCH" >> $GITHUB_OUTPUT
       - name: Release
         id: release
         uses: google-github-actions/release-please-action@d3c71f9a0a55385580de793de58da057b3560862
