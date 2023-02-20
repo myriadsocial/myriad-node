@@ -148,7 +148,6 @@ jobs:
           token: ${{ secrets.PAT }}
           fork: true
           plugins: cargo-workspace
-          path: ./node
           package-name: myriad
           release-type: rust
           release-as: ${{ steps.compute-version.outputs.semver }}
