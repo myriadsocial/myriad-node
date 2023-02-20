@@ -148,7 +148,8 @@ jobs:
           token: ${{ secrets.PAT }}
           fork: true
           plugins: cargo-workspace
-          package-name: ${{ github.event.repository.name }}
+          path: ./node
+          package-name: myriad
           release-type: rust
           release-as: ${{ steps.compute-version.outputs.semver }}
           include-v-in-tag: false
