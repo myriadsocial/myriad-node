@@ -3965,7 +3965,7 @@ dependencies = [
 
 [[package]]
 name = "myriad"
-version = "2.3.3"
+version = "2.3.4"
 dependencies = [
  "beefy-gadget",
  "beefy-gadget-rpc",
@@ -4027,7 +4027,7 @@ dependencies = [
 
 [[package]]
 name = "myriad-runtime"
-version = "2.3.3"
+version = "2.3.4"
 dependencies = [
  "beefy-merkle-tree",
  "beefy-primitives",
@@ -4747,7 +4747,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-server"
-version = "2.3.3"
+version = "2.3.4"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4857,7 +4857,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tipping"
-version = "2.3.3"
+version = "2.3.4"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
