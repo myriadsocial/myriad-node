@@ -15,9 +15,10 @@ use pallet_octopus_appchain::sr25519::AuthorityId as OctopusId;
 use myriad_runtime::{
 	currency::UNITS as MYRIA,
 	opaque::{Block, SessionKeys},
-	AccountId, BabeConfig, Balance, BalancesConfig, GenesisConfig, OctopusAppchainConfig,
-	OctopusBridgeConfig, OctopusLposConfig, OctopusUpwardMessagesConfig, SessionConfig, Signature,
-	SudoConfig, SystemConfig, BABE_GENESIS_EPOCH_CONFIG, WASM_BINARY,
+	AccountId, BabeConfig, Balance, BalancesConfig, CouncilConfig, DemocracyConfig, GenesisConfig,
+	OctopusAppchainConfig, OctopusBridgeConfig, OctopusLposConfig, OctopusUpwardMessagesConfig,
+	SessionConfig, Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+	BABE_GENESIS_EPOCH_CONFIG, WASM_BINARY,
 };
 
 use serde::{Deserialize, Serialize};
@@ -293,6 +294,12 @@ fn genesis(
 		octopus_lpos: OctopusLposConfig { era_payout: appchain_config.3, ..Default::default() },
 		octopus_upward_messages: OctopusUpwardMessagesConfig { interval: 1 },
 		octopus_assets: Default::default(),
+		democracy: DemocracyConfig::default(),
+		council: CouncilConfig { members: vec![], phantom: Default::default() },
+		technical_committee: TechnicalCommitteeConfig {
+			members: vec![],
+			phantom: Default::default(),
+		},
 		sudo: SudoConfig { key: Some(root_key) },
 	}
 }

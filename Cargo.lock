@@ -3965,7 +3965,7 @@ dependencies = [
 
 [[package]]
 name = "myriad"
-version = "2.3.4"
+version = "2.3.5"
 dependencies = [
  "beefy-gadget",
  "beefy-gadget-rpc",
@@ -4027,7 +4027,7 @@ dependencies = [
 
 [[package]]
 name = "myriad-runtime"
-version = "2.3.4"
+version = "2.3.5"
 dependencies = [
  "beefy-merkle-tree",
  "beefy-primitives",
@@ -4046,6 +4046,8 @@ dependencies = [
  "pallet-balances",
  "pallet-beefy",
  "pallet-beefy-mmr",
+ "pallet-collective",
+ "pallet-democracy",
  "pallet-grandpa",
  "pallet-im-online",
  "pallet-mmr",
@@ -4057,6 +4059,8 @@ dependencies = [
  "pallet-octopus-upward-messages",
  "pallet-offences",
  "pallet-offences-benchmarking",
+ "pallet-preimage",
+ "pallet-scheduler",
  "pallet-server",
  "pallet-session",
  "pallet-session-benchmarking",
@@ -4497,6 +4501,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-collective"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.30#a3ed0119c45cdd0d571ad34e5b3ee7518c8cef8d"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-democracy"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.30#a3ed0119c45cdd0d571ad34e5b3ee7518c8cef8d"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.30#a3ed0119c45cdd0d571ad34e5b3ee7518c8cef8d"
@@ -4746,8 +4783,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-preimage"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.30#a3ed0119c45cdd0d571ad34e5b3ee7518c8cef8d"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-scheduler"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.30#a3ed0119c45cdd0d571ad34e5b3ee7518c8cef8d"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-server"
-version = "2.3.4"
+version = "2.3.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4857,7 +4926,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tipping"
-version = "2.3.4"
+version = "2.3.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

@@ -1,6 +1,6 @@
 [package]
 name = 'myriad-runtime'
-version = '2.3.4'
+version = '2.3.5'
 edition = '2021'
 license = 'AGPL-3.0'
 authors = ['Myriad Dev Team <dev@myriad.social>']
@@ -58,11 +58,15 @@ pallet-babe = { git = 'https://github.com/paritytech/substrate.git', branch = 'p
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 pallet-beefy = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 pallet-beefy-mmr = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
+pallet-collective = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
+pallet-democracy = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 pallet-grandpa = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 pallet-im-online = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 pallet-mmr = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 pallet-offences = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 pallet-offences-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false, optional = true }
+pallet-preimage = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
+pallet-scheduler = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
 pallet-session = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false, features = ['historical'] }
 pallet-session-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false, optional = true }
 pallet-sudo = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.30', default-features = false }
@@ -103,10 +107,14 @@ runtime-benchmarks = [
 	## Substrate Pallet Dependencies
 	'pallet-babe/runtime-benchmarks',
 	'pallet-balances/runtime-benchmarks',
+	'pallet-collective/runtime-benchmarks',
+	'pallet-democracy/runtime-benchmarks',
 	'pallet-grandpa/runtime-benchmarks',
 	'pallet-im-online/runtime-benchmarks',
 	'pallet-mmr/runtime-benchmarks',
 	'pallet-offences-benchmarking/runtime-benchmarks',
+	'pallet-preimage/runtime-benchmarks',
+	'pallet-scheduler/runtime-benchmarks',
 	'pallet-session-benchmarking/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-uniques/runtime-benchmarks',
@@ -165,10 +173,14 @@ std = [
     'pallet-balances/std',
     'pallet-beefy-mmr/std',
     'pallet-beefy/std',
+	'pallet-collective/std',
+	'pallet-democracy/std',
     'pallet-grandpa/std',
     'pallet-im-online/std',
     'pallet-mmr/std',
 	'pallet-offences/std',
+	'pallet-preimage/std',
+	'pallet-scheduler/std',
     'pallet-session/std',
     'pallet-sudo/std',
     'pallet-timestamp/std',
@@ -203,10 +215,14 @@ try-runtime = [
 	'pallet-authorship/try-runtime',
 	'pallet-babe/try-runtime',
 	'pallet-balances/try-runtime',
+	'pallet-collective/try-runtime',
+	'pallet-democracy/try-runtime',
 	'pallet-grandpa/try-runtime',
 	'pallet-im-online/try-runtime',
 	'pallet-mmr/try-runtime',
 	'pallet-offences/try-runtime',
+	'pallet-preimage/try-runtime',
+	'pallet-scheduler/try-runtime',
 	'pallet-session/try-runtime',
 	'pallet-sudo/try-runtime',
 	'pallet-timestamp/try-runtime',
