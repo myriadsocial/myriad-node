@@ -52,6 +52,11 @@ pub fn migrate<T: Config>() -> Weight {
 		version = StorageVersion::new(7);
 	}
 
+	if version == 7 {
+		weight = weight.saturating_add(versions::v8::migrate::<T>());
+		version = StorageVersion::new(8);
+	}
+
 	version.put::<Pallet<T>>();
 	weight
 }
@@ -382,6 +387,46 @@ mod versions {
 					None
 				},
 			);
+
+			weight
+		}
+	}
+
+	pub mod v8 {
+		use super::*;
+
+		pub fn migrate<T: Config>() -> Weight {
+			let mut weight = T::DbWeight::get().reads_writes(2, 1);
+			let server = NewServerById::<T>::get(0);
+
+			if let Some(server) = server {
+				weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+
+				let api_url = server.get_api_url();
+				let server_id = ServerByApiUrl::<T>::get(api_url);
+
+				if let Some(server_id) = server_id {
+					if server_id != server.get_id() {
+						weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+
+						let unknown_server = NewServerById::<T>::get(server_id);
+
+						if let Some(server) = unknown_server {
+							weight = weight.saturating_add(T::DbWeight::get().writes(1));
+							let owner = server.get_owner();
+							NewServerByOwner::<T>::remove(owner, server_id);
+						}
+
+						NewServerById::<T>::remove(server_id);
+					}
+				}
+
+				ServerByApiUrl::<T>::insert(api_url, server.get_id());
+			}
+
+			let total_servers = NewServerById::<T>::iter_keys().count();
+
+			NewServerCount::<T>::set(total_servers as u64);
 
 			weight
 		}
