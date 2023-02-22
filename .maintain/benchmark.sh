@@ -21,14 +21,14 @@ cd $PROJECT_ROOT
 PALLET=$1
 FOLDER=$2
 
-cargo +nightly run --release --locked --features=runtime-benchmarks -- benchmark \
+cargo +nightly run --release --locked --features=runtime-benchmarks -- benchmark pallet \
   --chain=dev \
   --execution=wasm \
   --wasm-execution=compiled \
   --pallet="$PALLET" \
   --extrinsic="*" \
-  --steps=20 \
-  --repeat=10 \
+  --steps=50 \
+  --repeat=20 \
   --heap-pages=4096 \
   --template="./.maintain/pallet-weight-template.hbs" \
   --output="./pallets/${FOLDER}/src/weights.rs"
