@@ -45,7 +45,7 @@ jobs:
           override: true
           default: true
       - name: Rust Cache
-        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+        uses: Swatinem/rust-cache@6fd3edff6979b79f87531400ad694fb7f2c84b1f
       - name: Run cargo ${{ matrix.command }}
         run: cargo ${{ matrix.command }}
 
@@ -70,7 +70,7 @@ jobs:
           override: true
           default: true
       - name: Rust Cache
-        uses: Swatinem/rust-cache@359a70e43a0bb8a13953b04a90f76428b4959bb6
+        uses: Swatinem/rust-cache@6fd3edff6979b79f87531400ad694fb7f2c84b1f
       - name: Run cargo build
         run: cargo build --release --locked
       - name: Copy binnary file
