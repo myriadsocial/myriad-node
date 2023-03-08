@@ -143,7 +143,7 @@ jobs:
           echo "semver=$MAJOR.$MINOR.$PATCH" >> $GITHUB_OUTPUT
       - name: Release
         id: release
-        uses: google-github-actions/release-please-action@d3c71f9a0a55385580de793de58da057b3560862
+        uses: google-github-actions/release-please-action@e0b9d1885d92e9a93d5ce8656de60e3b806e542c
         with:
           token: ${{ secrets.PAT }}
           fork: true
