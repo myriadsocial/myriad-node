@@ -491,7 +491,7 @@ fn cant_pay_content_when_insufficient_balance() {
 		let server_id = account_key("alice");
 		let sender = account_key("bob");
 		let receiver = account_key("john");
-		let amount = 20;
+		let amount = 22; // ori 20
 
 		let tips_balance_info = TipsBalanceInfo::new(
 			&server_id,
