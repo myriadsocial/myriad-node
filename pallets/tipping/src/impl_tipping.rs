@@ -68,7 +68,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		Self::do_update_reward_balance(instance_id, &info, server_fee);
 
 		let now = T::TimeProvider::now().as_millis();
-		let receipt = Receipt::new(sender, receiver, &info, &net_pay, &total_fee, now);
+		let receipt = Receipt::new(sender, receiver, &info, amount, &total_fee, now);
 
 		Ok(receipt)
 	}
