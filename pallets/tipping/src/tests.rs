@@ -96,7 +96,7 @@ fn pay_content_to_escrow_works() {
 		assert_eq!(Tipping::reward_balance((server_id, 0, b"native".to_vec())), 475);
 
 		let account_info = TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
-		let net = 9_500 ; // added &net
+		let net = 9_500; // added &net
 
 		let tips_balance = TipsBalance::new(&account_info, &net); // &amount changed to &net
 
