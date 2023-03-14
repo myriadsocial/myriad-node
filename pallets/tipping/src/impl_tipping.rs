@@ -32,6 +32,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		let admin_fee = fee_detail.admin_fee();
 		let server_fee = fee_detail.server_fee();
 		let total_fee = fee_detail.total_fee();
+		let net_pay = *amount - total_fee;
 
 		let info = TipsBalanceInfo::new(
 			tips_balance_info.get_server_id(),
@@ -43,7 +44,7 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 		let escrow_id = Self::tipping_account_id();
 
 		if let Some(receiver) = receiver {
-			Self::do_transfer(ft_identifier, sender, receiver, *amount)?;
+			Self::do_transfer(ft_identifier, sender, receiver, net_pay)?;
 			Self::do_transfer(ft_identifier, sender, &escrow_id, total_fee)?;
 		} else {
 			if account_reference.is_none() {
@@ -57,9 +58,9 @@ impl<T: Config> TippingInterface<T> for Pallet<T> {
 				account_reference,
 				tips_balance_info.get_ft_identifier(),
 			);
-			let tips_balance = TipsBalance::new(&account_info, amount);
+			let tips_balance = TipsBalance::new(&account_info, &net_pay);
 
-			Self::do_transfer(ft_identifier, sender, &escrow_id, *amount + total_fee)?;
+			Self::do_transfer(ft_identifier, sender, &escrow_id, *amount)?;
 			Self::do_store_tips_balance(&tips_balance, false, None);
 		}
 

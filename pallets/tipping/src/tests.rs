@@ -26,8 +26,8 @@ fn pay_content_with_myria_works() {
 			None,
 		));
 
-		assert_eq!(Balances::free_balance(sender), 9_500);
-		assert_eq!(Balances::free_balance(receiver), 10_030);
+		assert_eq!(Balances::free_balance(sender), 10_000); // ori 9 500
+		assert_eq!(Balances::free_balance(receiver), 9_530); // ori 10 030
 		assert_eq!(Balances::free_balance(tipping_account_id), 500);
 
 		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 25);
@@ -56,8 +56,8 @@ fn pay_content_with_assets_works() {
 			None,
 		));
 
-		assert_eq!(Assets::balance(1, sender), 9_500u128);
-		assert_eq!(Assets::balance(1, receiver), 10_030u128);
+		assert_eq!(Assets::balance(1, sender), 10_000u128); // ori 9_500
+		assert_eq!(Assets::balance(1, receiver), 9_530u128); // ori 10_030
 		assert_eq!(Assets::balance(1, tipping_account_id), 500u128);
 
 		assert_eq!(Tipping::withdrawal_balance(b"1".to_vec()), 25);
@@ -89,15 +89,16 @@ fn pay_content_to_escrow_works() {
 			Some(b"user_id".to_vec()),
 		));
 
-		assert_eq!(Balances::free_balance(sender), 9_500);
-		assert_eq!(Balances::free_balance(tipping_account_id), 10_500);
+		assert_eq!(Balances::free_balance(sender), 10_000); // ori 9_500
+		assert_eq!(Balances::free_balance(tipping_account_id), 10_000); // ori 10_500
 
 		assert_eq!(Tipping::withdrawal_balance(b"native".to_vec()), 25);
 		assert_eq!(Tipping::reward_balance((server_id, 0, b"native".to_vec())), 475);
 
 		let account_info = TipsBalanceInfo::new(&server_id, b"user", b"user_id", b"native");
+		let net = 9_500; // added &net
 
-		let tips_balance = TipsBalance::new(&account_info, &amount);
+		let tips_balance = TipsBalance::new(&account_info, &net); // &amount changed to &net
 
 		assert_eq!(
 			Tipping::tips_balance_by_reference((
@@ -490,7 +491,7 @@ fn cant_pay_content_when_insufficient_balance() {
 		let server_id = account_key("alice");
 		let sender = account_key("bob");
 		let receiver = account_key("john");
-		let amount = 20;
+		let amount = 22; // ori 20
 
 		let tips_balance_info = TipsBalanceInfo::new(
 			&server_id,
