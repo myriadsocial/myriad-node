@@ -76,6 +76,7 @@ use pallet_transaction_payment::{
 
 // Local pallet
 pub use pallet_server;
+pub use pallet_access_token;
 pub use pallet_tipping;
 
 /// An index to a block.
@@ -839,6 +840,11 @@ impl pallet_server::Config for Runtime {
 	type WeightInfo = ();
 }
 
+impl pallet_access_token::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+}
+
 impl pallet_tipping::Config for Runtime {
 	type Assets = OctopusAssets;
 	type Currency = Balances;
@@ -901,6 +907,7 @@ construct_runtime!(
 
 		// Local pallets
 		Server: pallet_server,
+		AccessToken: pallet_access_token,
 		Tipping: pallet_tipping,
 	}
 );

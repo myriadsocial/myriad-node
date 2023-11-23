@@ -86,6 +86,7 @@ pallet-octopus-upward-messages = { git = 'https://github.com/octopus-network/oct
 
 # Local Pallet
 pallet-server = { path = '../pallets/server', default-features = false }
+pallet-access-token = { path = '../pallets/access_token', default-features = false }
 pallet-tipping = { path = '../pallets/tipping', default-features = false }
 
 [features]
@@ -200,6 +201,7 @@ std = [
 
 	# Local Pallet
 	'pallet-server/std',
+	'pallet-access-token/std',
 	'pallet-tipping/std',
 ]
 try-runtime = [

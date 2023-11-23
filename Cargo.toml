@@ -4,6 +4,7 @@ panic = 'unwind'
 [workspace]
 members = [
 	'node',
+	'pallets/access_token',
 	'pallets/server',
 	'pallets/tipping',
 	'runtime',
