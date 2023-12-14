@@ -76,7 +76,7 @@ jobs:
       - name: Copy binnary file
         run: cp target/release/myriad .
       - name: Send WASM to Discord
-        uses: tsickert/discord-webhook@c840d45a03a323fbc3f7507ac7769dbd91bfb164
+        uses: tsickert/discord-webhook@d094b6e04ecf81b65455d21fba706bce15c1fc43
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           embed-title: New WASM
