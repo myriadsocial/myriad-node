@@ -9,7 +9,7 @@ Restart=always
 RestartSec=5s
 WorkingDirectory=/home/devops/myriad-node
 # Create network if it doesn't exist
-ExecStartPre=-/usr/bin/docker network create --subnet=172.27.0.0/16 myriad
+ExecStartPre=-/usr/bin/docker network create --driver=bridge --subnet=172.27.0.0/16 myriad
 ExecStart=/usr/bin/docker compose -p myriad-node -f .maintain/docker/docker-compose.yml up
 ExecStop=/usr/bin/docker compose -p myriad-node -f .maintain/docker/docker-compose.yml down
 # Clean up network on stop
