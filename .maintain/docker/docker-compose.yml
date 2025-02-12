@@ -3,7 +3,7 @@ version: '3'
 services:
   node:
     container_name: myriad-node
-    image: myriadsocial/myriad-node
+    image: myriadsocial/myriad-node:3483c0cd2e0062e86c52fac3ba154d5ceeb56d59
     build:
       context: ../../
       dockerfile: .maintain/docker/Dockerfile
