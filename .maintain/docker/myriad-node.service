@@ -7,7 +7,7 @@ After=docker.service
 Type=simple
 Restart=always
 RestartSec=5s
-WorkingDirectory=/home/devops/myriad
+WorkingDirectory=/home/devops/myriad-node
 # Create network if it doesn't exist
 ExecStartPre=-/usr/bin/docker network create --subnet=172.27.0.0/16 myriad
 ExecStart=/usr/bin/docker compose -p myriad-node -f .maintain/docker/docker-compose.yml up
