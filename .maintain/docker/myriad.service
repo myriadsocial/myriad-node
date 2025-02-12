@@ -1,0 +1,19 @@
+[Unit]
+Description=Myriad Social Instance
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+WorkingDirectory=/home/devops/myriad
+# Create network if it doesn't exist
+ExecStartPre=-/usr/bin/docker network create --subnet=172.27.0.0/16 myriad
+ExecStart=/usr/bin/docker compose -p myriad-node -f .maintain/docker/docker-compose.yml up
+ExecStop=/usr/bin/docker compose -p myriad-node -f .maintain/docker/docker-compose.yml down
+# Clean up network on stop
+ExecStopPost=-/usr/bin/docker network rm myriad
+
+[Install]
+WantedBy=multi-user.target
